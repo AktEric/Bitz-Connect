@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build output
+dist/
+build/
+public/build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+backend/.env
+
+# Laravel
+backend/storage/logs/*.log
+backend/storage/framework/cache/data/
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/app/public/*
+!backend/storage/app/public/.gitkeep
+backend/bootstrap/cache/*.php
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Docker volumes (local data)
+docker/volumes/
+
+# Claude Code local state
+.claude/scheduled_tasks.lock
+.claude/worktrees/

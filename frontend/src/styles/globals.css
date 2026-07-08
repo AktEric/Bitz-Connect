@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Brand ─────────────────────────────────────── */
+    --primary:           263 84% 50%;   /* #6D28D9 violet */
+    --primary-foreground: 0 0% 100%;
+    --primary-light:     263 84% 96%;   /* very light violet bg */
+
+    /* ── Neutrals ──────────────────────────────────── */
+    --background:        220 20% 97%;   /* near-white cool gray */
+    --surface:           0 0% 100%;     /* cards / panels */
+    --foreground:        220 15% 10%;   /* near-black */
+    --muted-foreground:  220 10% 52%;
+    --border:            220 14% 92%;
+
+    /* ── Semantic ──────────────────────────────────── */
+    --destructive:       0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success:           142 71% 45%;
+    --warning:           38 92% 50%;
+
+    /* shadcn aliases (keep for compat) */
+    --card:              0 0% 100%;
+    --card-foreground:   220 15% 10%;
+    --secondary:         220 14% 95%;
+    --secondary-foreground: 220 15% 20%;
+    --muted:             220 14% 95%;
+    --accent:            263 84% 96%;
+    --accent-foreground: 263 84% 40%;
+    --input:             220 14% 92%;
+    --ring:              263 84% 50%;
+    --radius:            0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "cv02","cv03","cv04","cv11";
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar        { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track  { background: transparent; }
+  ::-webkit-scrollbar-thumb  { background: hsl(var(--border)); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* surface card helper */
+  .card {
+    @apply bg-white rounded-2xl border border-gray-100 shadow-sm;
+  }
+
+  /* focus ring */
+  .ring-brand {
+    @apply ring-2 ring-violet-500/30 ring-offset-0;
+  }
+}
+
+@layer components {
+  /* ── Skeleton pulse ─────────────────────────────── */
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-gray-100;
+  }
+
+  /* ── Badge ──────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+  .badge-primary { @apply badge bg-violet-100 text-violet-700; }
+  .badge-green   { @apply badge bg-green-100 text-green-700; }
+  .badge-amber   { @apply badge bg-amber-100 text-amber-700; }
+  .badge-gray    { @apply badge bg-gray-100 text-gray-600; }
+}

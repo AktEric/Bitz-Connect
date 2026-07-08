@@ -1,0 +1,96 @@
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: hotelconnect_nginx
+    ports:
+      - "9595:80"
+      - "9596:8000"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./backend:/var/www/html
+    depends_on:
+      - php
+      - node
+    networks:
+      - hotelconnect
+
+  php:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: hotelconnect_php
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hotelconnect
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: hotelconnect_postgres
+    environment:
+      POSTGRES_DB: hotelconnect
+      POSTGRES_USER: hotelconnect
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "9597:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hotelconnect"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hotelconnect
+
+  redis:
+    image: redis:7-alpine
+    container_name: hotelconnect_redis
+    ports:
+      - "9598:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hotelconnect
+
+  node:
+    image: node:20-alpine
+    container_name: hotelconnect_node
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "9599:3000"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    networks:
+      - hotelconnect
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: hotelconnect_mailpit
+    ports:
+      - "9600:8025"
+      - "9601:1025"
+    networks:
+      - hotelconnect
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  hotelconnect:
+    driver: bridge
