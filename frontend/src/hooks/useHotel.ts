@@ -249,3 +249,33 @@ export function useHotelAdmins(slug: string) {
     enabled: !!slug,
   })
 }
+
+/** Promote an employee to admin (Req 9.6) */
+export function usePromoteUser(slug: string) {
+  const qc = useQueryClient()
+  const { success, error } = useToast()
+  return useMutation({
+    mutationFn: (userId: number) => hotelService.promoteUser(slug, userId),
+    onSuccess: () => {
+      success('Colaborador promovido a admin com sucesso.')
+      qc.invalidateQueries({ queryKey: hotelJobsKeys.admins(slug) })
+      qc.invalidateQueries({ queryKey: employeeKeys.employees(slug) })
+    },
+    onError: (err) => error(extractApiError(err)),
+  })
+}
+
+/** Demote an admin to employee (Req 9.7, 9.8) */
+export function useDemoteUser(slug: string) {
+  const qc = useQueryClient()
+  const { success, error } = useToast()
+  return useMutation({
+    mutationFn: (userId: number) => hotelService.demoteUser(slug, userId),
+    onSuccess: () => {
+      success('Admin rebaixado a colaborador com sucesso.')
+      qc.invalidateQueries({ queryKey: hotelJobsKeys.admins(slug) })
+      qc.invalidateQueries({ queryKey: employeeKeys.employees(slug) })
+    },
+    onError: (err) => error(extractApiError(err)),
+  })
+}

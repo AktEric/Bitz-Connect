@@ -71,6 +71,18 @@ const hotelService = {
     return res.data
   },
 
+  /** PATCH /hotels/:slug/promote/:userId — promote employee to admin */
+  async promoteUser(slug: string, userId: number): Promise<ApiResponse<null>> {
+    const res = await api.patch<ApiResponse<null>>(`/hotels/${slug}/promote/${userId}`)
+    return res.data
+  },
+
+  /** PATCH /hotels/:slug/demote/:userId — demote admin to employee */
+  async demoteUser(slug: string, userId: number): Promise<ApiResponse<null>> {
+    const res = await api.patch<ApiResponse<null>>(`/hotels/${slug}/demote/${userId}`)
+    return res.data
+  },
+
   // ── Follow / Unfollow ────────────────────────────────────────
 
   /** POST /hotels/:slug/follow — follow a hotel (Req 8.2) */
