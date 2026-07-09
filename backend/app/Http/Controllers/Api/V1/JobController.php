@@ -7,6 +7,7 @@ use App\Domain\Job\DTOs\CreateJobDTO;
 use App\Domain\Job\DTOs\UpdateJobDTO;
 use App\Domain\Job\Services\JobService;
 use App\Events\Job\JobApplicationCreated;
+use App\Events\Job\JobApplicationStatusChanged;
 use App\Events\Job\JobPublished;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Job\ApplyJobRequest;
@@ -17,8 +18,10 @@ use App\Http\Resources\JobApplicationResource;
 use App\Http\Resources\JobResource;
 use App\Http\Traits\ApiResponseTrait;
 use App\Models\Job;
+use App\Models\JobApplication;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /**
  * Handles job and job application endpoints.
@@ -163,6 +166,34 @@ class JobController extends Controller
         );
 
         return $this->paginated('Candidaturas carregadas com sucesso.', $paginator);
+    }
+
+    /**
+     * PATCH /jobs/{uuid}/applications/{application}/status
+     * Update a job application's status (HotelAdmin only).
+     * Requirements: 5.8
+     */
+    public function updateApplicationStatus(Request $request, Job $job, JobApplication $application): JsonResponse
+    {
+        $this->authorize('viewApplications', $job);
+
+        if ($application->job_id !== $job->id) {
+            return $this->notFound('Candidatura não encontrada para esta vaga.');
+        }
+
+        $data = $request->validate([
+            'status' => ['required', Rule::in(['pending', 'viewed', 'rejected', 'hired'])],
+        ]);
+
+        $oldStatus = $application->status;
+        $application->update(['status' => $data['status']]);
+
+        JobApplicationStatusChanged::dispatch($application, $job, $oldStatus, $data['status']);
+
+        return $this->success(
+            'Status da candidatura atualizado com sucesso.',
+            new JobApplicationResource($application->load('job.hotel', 'user')),
+        );
     }
 
     /**

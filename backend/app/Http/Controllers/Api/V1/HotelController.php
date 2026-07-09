@@ -207,6 +207,48 @@ class HotelController extends Controller
     }
 
     /**
+     * GET /hotels/{hotel}/posts
+     * List posts published in the name of a specific hotel (paginated).
+     */
+    public function hotelPosts(Hotel $hotel): JsonResponse
+    {
+        $paginator = $hotel->posts()
+            ->with(['user', 'hotel'])
+            ->latest()
+            ->paginate(15);
+
+        $paginator->setCollection(
+            $paginator->getCollection()->map(fn ($post) => new \App\Http\Resources\PostResource($post))
+        );
+
+        return $this->paginated('Publicações do hotel carregadas com sucesso.', $paginator);
+    }
+
+    /**
+     * GET /hotels/{hotel:slug}/jobs/manage
+     * Lista TODAS as vagas do hotel (qualquer status) — só para admins,
+     * usado no painel de gestão de vagas.
+     */
+    public function manageJobs(Request $request, Hotel $hotel): JsonResponse
+    {
+        if (! $request->user()->isHotelAdminOf($hotel->id)) {
+            return $this->forbidden('Você não administra este hotel.');
+        }
+
+        $paginator = $hotel->jobs()
+            ->with('hotel')
+            ->withCount('applications')
+            ->latest()
+            ->paginate(20);
+
+        $paginator->setCollection(
+            $paginator->getCollection()->map(fn ($job) => new \App\Http\Resources\JobResource($job))
+        );
+
+        return $this->paginated('Vagas do hotel carregadas com sucesso.', $paginator);
+    }
+
+    /**
      * GET /hotels/{hotel}/admins
      * Returns the admin users of the hotel (basic info).
      */

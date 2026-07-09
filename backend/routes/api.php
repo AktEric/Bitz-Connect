@@ -56,6 +56,7 @@ Route::get('/plans',                           [SubscriptionController::class, '
 // Página pública do criador
 Route::get('/creators/{user}',                 [CreatorController::class, 'show']);
 Route::get('/hotels/{hotel}/jobs',             [HotelController::class, 'hotelJobs']);
+Route::get('/hotels/{hotel}/posts',            [HotelController::class, 'hotelPosts']);
 Route::get('/hotels/{hotel}/admins',           [HotelController::class, 'hotelAdmins']);
 Route::get('/hotels/{hotel}/employees',        [HotelController::class, 'employees']);
 
@@ -109,6 +110,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/subscription',                     [SubscriptionController::class, 'hotelSubscription']);
         Route::get('/analytics',                         [CompanyAnalyticsController::class, 'show']);
         Route::get('/analytics/export',                  [CompanyAnalyticsController::class, 'export']);
+        Route::get('/jobs/manage',                       [HotelController::class, 'manageJobs']);
     });
 
     // Feed
@@ -132,6 +134,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/jobs/{job}/status',                [JobController::class, 'updateStatus']);
     Route::post('/jobs/{job}/apply',                  [JobController::class, 'apply']);
     Route::get('/jobs/{job}/applications',            [JobController::class, 'applications']);
+    Route::patch('/jobs/{job}/applications/{application}/status', [JobController::class, 'updateApplicationStatus']);
     Route::get('/me/applications',                    [JobController::class, 'myApplications']);
 
     // Search

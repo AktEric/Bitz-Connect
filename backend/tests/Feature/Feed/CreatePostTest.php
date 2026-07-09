@@ -20,28 +20,28 @@ it('allows a hotel admin to create a post attached to their hotel', function () 
     Sanctum::actingAs($user);
 
     $response = $this->postJson('/api/v1/posts', [
-        'content'  => 'Post oficial do hotel',
-        'hotel_id' => $hotel->id,
+        'content'    => 'Post oficial do hotel',
+        'hotel_uuid' => $hotel->uuid,
     ]);
 
     $response->assertStatus(201)->assertJson(['success' => true]);
 });
 
-it('rejects post creation with hotel_id when the user is not an admin of that hotel', function () {
+it('rejects post creation with hotel_uuid when the user is not an admin of that hotel', function () {
     $user  = User::factory()->create();
     $hotel = Hotel::factory()->create();
 
     Sanctum::actingAs($user);
 
     $response = $this->postJson('/api/v1/posts', [
-        'content'  => 'Tentando publicar em nome de outro hotel',
-        'hotel_id' => $hotel->id,
+        'content'    => 'Tentando publicar em nome de outro hotel',
+        'hotel_uuid' => $hotel->uuid,
     ]);
 
     $response->assertStatus(403)->assertJson(['success' => false]);
 });
 
-it('allows creating a post without hotel_id (personal post)', function () {
+it('allows creating a post without hotel_uuid (personal post)', function () {
     $user = User::factory()->create();
 
     Sanctum::actingAs($user);

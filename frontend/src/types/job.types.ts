@@ -18,6 +18,7 @@ export interface Job {
   state: string
   salary_range: string | null
   status: JobStatus
+  applications_count?: number
   hotel: Hotel
   created_at: string
 }
@@ -25,7 +26,7 @@ export interface Job {
 export interface JobApplication {
   uuid: string
   job: Job
-  applicant: User
+  user: User
   cover_letter: string | null
   status: ApplicationStatus
   created_at: string

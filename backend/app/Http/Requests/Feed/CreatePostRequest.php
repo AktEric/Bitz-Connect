@@ -19,7 +19,7 @@ class CreatePostRequest extends FormRequest
     {
         return [
             'content'          => ['required', 'string', 'min:1', 'max:3000'],
-            'hotel_id'         => ['nullable', 'integer', 'exists:hotels,id'],
+            'hotel_uuid'       => ['nullable', 'string', 'exists:hotels,uuid'],
             'image'            => ['nullable', 'image', 'mimes:jpeg,png,webp,gif', 'max:10240'],
             'type'             => ['nullable', 'string', 'in:post,job_share', 'max:30'],
             'metadata'         => ['nullable', 'array'],

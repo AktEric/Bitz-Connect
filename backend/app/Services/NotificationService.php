@@ -283,7 +283,7 @@ class NotificationService
         );
     }
 
-    public function jobApplicationAccepted(User $applicant, User $hotelAdmin, string $jobTitle, string $jobUuid): void
+    public function jobApplicationAccepted(User $applicant, ?User $hotelAdmin, string $jobTitle, string $jobUuid): void
     {
         $this->create(
             $applicant,
@@ -296,7 +296,7 @@ class NotificationService
         );
     }
 
-    public function jobApplicationRejected(User $applicant, User $hotelAdmin, string $jobTitle, string $jobUuid): void
+    public function jobApplicationRejected(User $applicant, ?User $hotelAdmin, string $jobTitle, string $jobUuid): void
     {
         $this->create(
             $applicant,

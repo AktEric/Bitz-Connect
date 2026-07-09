@@ -28,9 +28,20 @@ export function useCreatePost() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ content, hotel_id, image }: { content: string; hotel_id?: number; image?: File }) =>
-      feedService.createPost(content, hotel_id, image),
+    mutationFn: ({ content, hotel_uuid, image }: { content: string; hotel_uuid?: string; image?: File }) =>
+      feedService.createPost(content, hotel_uuid, image),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['feed'] }),
+  })
+}
+
+/**
+ * Hook that lists posts published in the name of a hotel (paginated).
+ */
+export function useHotelPosts(slug: string, page = 1) {
+  return useQuery({
+    queryKey: ['hotel-posts', slug, page],
+    queryFn: () => feedService.getHotelPosts(slug, page),
+    enabled: !!slug,
   })
 }
 

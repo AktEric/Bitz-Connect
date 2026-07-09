@@ -15,6 +15,7 @@ export const jobKeys = {
   detail: (uuid: string) => ['jobs', 'detail', uuid] as const,
   applications: (uuid: string) => ['jobs', 'applications', uuid] as const,
   myApplications: ['jobs', 'my-applications'] as const,
+  manage: (slug: string) => ['jobs', 'manage', slug] as const,
 }
 
 /** Paginated list of active jobs with optional filters */
@@ -102,5 +103,46 @@ export function useUpdateJobStatus(jobUuid: string) {
     onError: (err) => {
       error(extractApiError(err))
     },
+  })
+}
+
+/** Update a job's details (HotelAdmin) */
+export function useUpdateJob(jobUuid: string) {
+  const qc = useQueryClient()
+  const { success, error } = useToast()
+
+  return useMutation({
+    mutationFn: (data: Partial<CreateJobData>) => jobService.updateJob(jobUuid, data),
+    onSuccess: (res) => {
+      success('Vaga atualizada com sucesso.')
+      qc.setQueryData(jobKeys.detail(jobUuid), res.data)
+      qc.invalidateQueries({ queryKey: jobKeys.all })
+    },
+    onError: (err) => error(extractApiError(err)),
+  })
+}
+
+/** Change an application's status (HotelAdmin) */
+export function useUpdateApplicationStatus(jobUuid: string) {
+  const qc = useQueryClient()
+  const { success, error } = useToast()
+
+  return useMutation({
+    mutationFn: ({ applicationUuid, status }: { applicationUuid: string; status: 'pending' | 'viewed' | 'rejected' | 'hired' }) =>
+      jobService.updateApplicationStatus(jobUuid, applicationUuid, status),
+    onSuccess: () => {
+      success('Status da candidatura atualizado.')
+      qc.invalidateQueries({ queryKey: jobKeys.applications(jobUuid) })
+    },
+    onError: (err) => error(extractApiError(err)),
+  })
+}
+
+/** All jobs of a hotel, any status (hotel admin panel) */
+export function useManageJobs(slug: string, page = 1) {
+  return useQuery({
+    queryKey: [...jobKeys.manage(slug), page],
+    queryFn: () => jobService.getManageJobs(slug, page),
+    enabled: !!slug,
   })
 }

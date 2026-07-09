@@ -1,5 +1,5 @@
 import api from './api'
-import type { ApiResponse } from '@/types/api.types'
+import type { ApiResponse, PaginatedResponse } from '@/types/api.types'
 import type { Post, Comment, FeedCursorPage } from '@/types/feed.types'
 
 // Shape do response raw do /feed (data + meta no mesmo nível)
@@ -37,7 +37,7 @@ const feedService = {
   /** POST /posts — create a new post (with optional image and type/metadata) */
   async createPost(
     content: string,
-    hotel_id?: number,
+    hotel_uuid?: string,
     image?: File,
     type?: string,
     metadata?: Record<string, unknown>,
@@ -45,7 +45,7 @@ const feedService = {
     if (image) {
       const form = new FormData()
       form.append('content', content)
-      if (hotel_id) form.append('hotel_id', String(hotel_id))
+      if (hotel_uuid) form.append('hotel_uuid', hotel_uuid)
       form.append('image', image)
       if (type) form.append('type', type)
       if (metadata) form.append('metadata', JSON.stringify(metadata))
@@ -56,11 +56,17 @@ const feedService = {
     }
     const res = await api.post<ApiResponse<Post>>('/posts', {
       content,
-      hotel_id,
+      hotel_uuid,
       ...(type ? { type } : {}),
       ...(metadata ? { metadata } : {}),
     })
     return res.data.data
+  },
+
+  /** GET /hotels/:slug/posts — posts published in the name of a hotel (paginated) */
+  async getHotelPosts(slug: string, page = 1): Promise<PaginatedResponse<Post>> {
+    const res = await api.get<PaginatedResponse<Post>>(`/hotels/${slug}/posts`, { params: { page } })
+    return res.data
   },
 
   /** POST /posts/:uuid/image — upload or replace post image */

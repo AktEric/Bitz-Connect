@@ -6,11 +6,21 @@ import { Avatar } from '@/components/ui/Avatar'
 
 const MAX_LENGTH = 3000
 
+interface PostFormProps {
+  /** Quando informado, a publicação é feita em nome do hotel (não do usuário). */
+  hotelUuid?: string
+  hotelName?: string
+  hotelLogoUrl?: string | null
+  placeholder?: string
+  onPosted?: () => void
+}
+
 /**
  * Form to create a new post — supports text + optional image.
+ * Quando `hotelUuid` é informado, publica em nome do hotel (painel do hotel).
  * Requirements: 4.1
  */
-export default function PostForm() {
+export default function PostForm({ hotelUuid, hotelName, hotelLogoUrl, placeholder, onPosted }: PostFormProps) {
   const { user } = useAuth()
   const [content, setContent]         = useState('')
   const [image, setImage]             = useState<File | null>(null)
@@ -41,11 +51,12 @@ export default function PostForm() {
     if (isEmpty || isOverLimit || createPost.isPending) return
 
     createPost.mutate(
-      { content: content.trim() || ' ', hotel_id: undefined, image: image ?? undefined },
+      { content: content.trim() || ' ', hotel_uuid: hotelUuid, image: image ?? undefined },
       {
         onSuccess: () => {
           setContent('')
           removeImage()
+          onPosted?.()
         },
       },
     )
@@ -56,13 +67,17 @@ export default function PostForm() {
   return (
     <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-card">
       <div className="flex gap-3">
-        <Avatar src={user.avatar_url} name={user.name} size="md" className="flex-shrink-0 mt-0.5" />
+        {hotelUuid ? (
+          <Avatar src={hotelLogoUrl} name={hotelName ?? 'Hotel'} size="md" className="flex-shrink-0 mt-0.5" />
+        ) : (
+          <Avatar src={user.avatar_url} name={user.name} size="md" className="flex-shrink-0 mt-0.5" />
+        )}
 
         <div className="flex-1 min-w-0">
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Compartilhe novidades com a comunidade hoteleira..."
+            placeholder={placeholder ?? 'Compartilhe novidades com a comunidade hoteleira...'}
             rows={preview ? 2 : 3}
             maxLength={MAX_LENGTH + 1}
             className={[

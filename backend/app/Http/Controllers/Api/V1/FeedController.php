@@ -16,6 +16,7 @@ use App\Http\Resources\CommentResource;
 use App\Http\Resources\PostResource;
 use App\Http\Traits\ApiResponseTrait;
 use App\Models\Comment;
+use App\Models\Hotel;
 use App\Models\Post;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -73,10 +74,14 @@ class FeedController extends Controller
      */
     public function createPost(CreatePostRequest $request): JsonResponse
     {
-        $hotelId = $request->validated('hotel_id');
+        $hotelUuid = $request->validated('hotel_uuid');
+        $hotelId   = null;
 
-        if ($hotelId !== null && ! $request->user()->isHotelAdminOf((int) $hotelId)) {
-            return $this->forbidden('Você não é administrador deste hotel.');
+        if ($hotelUuid !== null) {
+            if (! $request->user()->isHotelAdminOfUuid($hotelUuid)) {
+                return $this->forbidden('Você não é administrador deste hotel.');
+            }
+            $hotelId = Hotel::where('uuid', $hotelUuid)->firstOrFail()->id;
         }
 
         // Save image if provided
@@ -85,13 +90,14 @@ class FeedController extends Controller
             $imagePath = $request->file('image')->store('posts', 'public');
         }
 
-        $validated             = $request->validated();
+        $validated               = $request->validated();
+        $validated['hotel_id']   = $hotelId;
         $validated['image_path'] = $imagePath;
 
         $dto  = CreatePostDTO::fromArray($validated, $request->user()->id);
         $post = $this->feedService->createPost($dto);
 
-        return $this->created('Publicação criada com sucesso.', new PostResource($post));
+        return $this->created('Publicação criada com sucesso.', new PostResource($post->load('hotel')));
     }
 
     /**

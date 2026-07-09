@@ -66,6 +66,25 @@ const jobService = {
     return res.data
   },
 
+  /** PATCH /jobs/:uuid/applications/:applicationUuid/status — change an application's status (HotelAdmin) */
+  async updateApplicationStatus(
+    jobUuid: string,
+    applicationUuid: string,
+    status: 'pending' | 'viewed' | 'rejected' | 'hired',
+  ): Promise<ApiResponse<JobApplication>> {
+    const res = await api.patch<ApiResponse<JobApplication>>(
+      `/jobs/${jobUuid}/applications/${applicationUuid}/status`,
+      { status },
+    )
+    return res.data
+  },
+
+  /** GET /hotels/:slug/jobs/manage — all jobs (any status) for the hotel admin panel */
+  async getManageJobs(slug: string, page = 1): Promise<PaginatedResponse<Job>> {
+    const res = await api.get<PaginatedResponse<Job>>(`/hotels/${slug}/jobs/manage`, { params: { page } })
+    return res.data
+  },
+
   /** GET /me/applications — authenticated user's own applications */
   async getMyApplications(page = 1): Promise<PaginatedResponse<JobApplication>> {
     const res = await api.get<PaginatedResponse<JobApplication>>('/me/applications', {
