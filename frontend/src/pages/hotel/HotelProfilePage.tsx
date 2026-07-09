@@ -11,8 +11,12 @@ import {
   useApproveEmployee, useRejectEmployee,
   useClaimHotel, useHotelJobs,
 } from '@/hooks/useHotel'
+import { useHotelPosts } from '@/hooks/useFeed'
 import HotelHeader from '@/components/hotel/HotelHeader'
 import { EmployeeCard } from '@/components/hotel/EmployeeCard'
+import PostCard from '@/components/feed/PostCard'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { SkeletonCard } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import type { Job } from '@/types/job.types'
 
@@ -85,6 +89,7 @@ export default function HotelProfilePage() {
   const { data: employees = [] }        = useHotelEmployees(slug ?? '')
   const { data: pending = [] }          = usePendingEmployees(slug ?? '', isAdmin)
   const { data: jobsData }              = useHotelJobs(slug ?? '')
+  const { data: postsData, isLoading: postsLoading } = useHotelPosts(slug ?? '')
   const approveEmployee = useApproveEmployee(slug ?? '')
   const rejectEmployee  = useRejectEmployee(slug ?? '')
 
@@ -126,6 +131,7 @@ export default function HotelProfilePage() {
   if (!hotel) return null
 
   const jobs: Job[] = (jobsData?.data ?? []) as Job[]
+  const posts = postsData?.data ?? []
 
   const TABS: { id: Tab; label: string }[] = [
     { id: 'about',     label: 'Sobre' },
@@ -270,7 +276,25 @@ export default function HotelProfilePage() {
 
           {/* Publicações */}
           {tab === 'posts' && (
-            <p className="text-sm text-gray-400 italic">Publicações em breve.</p>
+            <div className="space-y-4">
+              {postsLoading && (
+                <div className="space-y-3">
+                  <SkeletonCard />
+                  <SkeletonCard />
+                </div>
+              )}
+
+              {!postsLoading && posts.length === 0 && (
+                <EmptyState
+                  title="Nenhuma publicação ainda"
+                  description="Publicações feitas em nome do hotel aparecerão aqui."
+                />
+              )}
+
+              {posts.map((post) => (
+                <PostCard key={post.uuid} post={post} />
+              ))}
+            </div>
           )}
 
           {/* Colaboradores */}

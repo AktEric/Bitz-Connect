@@ -260,7 +260,7 @@ it('satisfies Property 16: 403 error responses follow the standard envelope', fu
 it('satisfies Property 16: successful entity creation returns UUID as identifier — Req 8.4', function () {
     // Feature: hotel-connect, Property 16: Formato de resposta da API é consistente
     // Validates: Requirements 8.4
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'platform_admin']);
     Sanctum::actingAs($user);
 
     // Register response must expose uuid on the user object

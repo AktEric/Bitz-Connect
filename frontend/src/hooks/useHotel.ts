@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import hotelService from '@/services/hotel.service'
-import type { CreateHotelData, UpdateHotelData } from '@/types/hotel.types'
+import type { UpdateHotelData } from '@/types/hotel.types'
 import { useToast } from '@/contexts/ToastContext'
 import { extractApiError } from '@/utils/api-error'
 
@@ -37,23 +37,6 @@ export function useHotelDirectory(enabled = true) {
     queryKey: ['hotels', 'directory'],
     queryFn: () => hotelService.getDirectory(),
     enabled,
-  })
-}
-
-/** Create hotel */
-export function useCreateHotel() {
-  const qc = useQueryClient()
-  const { success, error } = useToast()
-
-  return useMutation({
-    mutationFn: (data: CreateHotelData) => hotelService.createHotel(data),
-    onSuccess: () => {
-      success('Hotel criado com sucesso.')
-      qc.invalidateQueries({ queryKey: hotelKeys.myHotels })
-    },
-    onError: (err) => {
-      error(extractApiError(err))
-    },
   })
 }
 

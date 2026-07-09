@@ -1,6 +1,6 @@
 import api from './api'
 import type { ApiResponse, PaginatedResponse } from '@/types/api.types'
-import type { Hotel, CreateHotelData, UpdateHotelData, Employee, HotelClaim } from '@/types/hotel.types'
+import type { Hotel, UpdateHotelData, Employee, HotelClaim } from '@/types/hotel.types'
 import type { Job } from '@/types/job.types'
 import type { User } from '@/types/auth.types'
 
@@ -12,12 +12,6 @@ const hotelService = {
   /** GET /hotels/:slug — public hotel profile */
   async getHotel(slug: string): Promise<ApiResponse<Hotel>> {
     const res = await api.get<ApiResponse<Hotel>>(`/hotels/${slug}`)
-    return res.data
-  },
-
-  /** POST /hotels — create a new hotel */
-  async createHotel(data: CreateHotelData): Promise<ApiResponse<Hotel>> {
-    const res = await api.post<ApiResponse<Hotel>>('/hotels', data)
     return res.data
   },
 

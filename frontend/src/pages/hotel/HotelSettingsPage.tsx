@@ -21,7 +21,7 @@ type FormValues = z.infer<typeof schema>
 
 /**
  * HotelSettingsPage — edição dos dados do hotel (nome, descrição, contato,
- * logo e capa). Reaproveita os mesmos campos/validação de CreateHotelPage.
+ * logo e capa).
  */
 export default function HotelSettingsPage() {
   const { slug = '' } = useParams<{ slug: string }>()

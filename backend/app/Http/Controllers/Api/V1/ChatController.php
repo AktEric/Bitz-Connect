@@ -50,8 +50,11 @@ class ChatController extends Controller
 
         $messages = Message::with(['sender', 'receiver', 'senderHotel', 'receiverHotel'])
             ->where(function ($q) use ($authId) {
-                $q->where('sender_id', $authId)
-                  ->orWhere('receiver_id', $authId);
+                $q->where(function ($q2) use ($authId) {
+                    // Mensagens que eu mandei em nome de um hotel não são "minhas" no
+                    // sentido pessoal — pertencem à caixa compartilhada do hotel.
+                    $q2->where('sender_id', $authId)->whereNull('sender_hotel_id');
+                })->orWhere('receiver_id', $authId);
             })
             ->orderByDesc('created_at')
             ->get();
@@ -111,7 +114,9 @@ class ChatController extends Controller
 
         $paginator = Message::with(['sender', 'receiver', 'senderHotel', 'receiverHotel'])
             ->where(function ($q) use ($authId, $user) {
-                $q->where('sender_id', $authId)->where('receiver_id', $user->id);
+                // Mensagens que eu mandei em nome de um hotel não entram aqui —
+                // pertencem à caixa compartilhada do hotel, não ao meu chat pessoal.
+                $q->where('sender_id', $authId)->whereNull('sender_hotel_id')->where('receiver_id', $user->id);
             })
             ->orWhere(function ($q) use ($authId, $user) {
                 $q->where('sender_id', $user->id)->where('receiver_id', $authId);

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Briefcase,
@@ -12,6 +12,7 @@ import {
   X,
   Building2,
   MessageSquare,
+  Globe,
 } from 'lucide-react'
 import { useHotelAuth } from '@/hooks/useHotelAuth'
 import { useHotelUnreadCount } from '@/hooks/useChat'
@@ -80,6 +81,18 @@ export default function HotelLayout() {
           <p className="truncate text-sm font-semibold text-white leading-tight">{hotelName}</p>
           <p className="text-xs text-amber-200">Painel do Hotel</p>
         </div>
+      </div>
+
+      {/* Voltar para a rede social */}
+      <div className="px-3 pt-4">
+        <Link
+          to="/feed"
+          onClick={closeSidebar}
+          className={`${navLinkBase} justify-center border border-white/25 bg-white/10 text-white hover:bg-white/20`}
+        >
+          <Globe className="h-4 w-4 flex-shrink-0" />
+          <span>Acessar HotelConnect</span>
+        </Link>
       </div>
 
       {/* Navigation */}

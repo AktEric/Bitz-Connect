@@ -17,7 +17,7 @@ uses(RefreshDatabase::class);
 // ──────────────────────────────────────────────────────────────
 
 it('creates a hotel and returns 201 with standard envelope', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'platform_admin']);
     Sanctum::actingAs($user);
 
     $response = $this->postJson('/api/v1/hotels', [
@@ -45,8 +45,20 @@ it('returns 401 when creating hotel without authentication', function () {
     $response->assertStatus(401)->assertJson(['success' => false]);
 });
 
-it('returns 422 when creating hotel with missing name', function () {
+it('returns 403 when a regular (non platform admin) user tries to create a hotel', function () {
     $user = User::factory()->create();
+    Sanctum::actingAs($user);
+
+    $response = $this->postJson('/api/v1/hotels', [
+        'name'        => 'Hotel Autoatendimento',
+        'description' => 'Hotéis não podem ser autocadastrados pelo perfil.',
+    ]);
+
+    $response->assertStatus(403)->assertJson(['success' => false]);
+});
+
+it('returns 422 when creating hotel with missing name', function () {
+    $user = User::factory()->create(['role' => 'platform_admin']);
     Sanctum::actingAs($user);
 
     $response = $this->postJson('/api/v1/hotels', []);
@@ -149,7 +161,7 @@ it('returns 401 on GET /me/hotels without token', function () {
 it('satisfies Property 7: hotel creator is linked as admin', function () {
     // Feature: hotel-connect, Property 7: Criação de hotel vincula HotelAdmin
     // Validates: Requirements 3.1, 3.8
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'platform_admin']);
     Sanctum::actingAs($user);
 
     $name = 'Hotel Propriedade ' . rand(1, 999);
@@ -185,7 +197,7 @@ it('satisfies Property 7: hotel creator is linked as admin', function () {
 it('satisfies Property 8: two hotels with the same name get distinct slugs', function () {
     // Feature: hotel-connect, Property 8: Unicidade de slug de hotel
     // Validates: Requirements 3.6
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'platform_admin']);
     Sanctum::actingAs($user);
 
     $name = 'Hotel Duplicado';
