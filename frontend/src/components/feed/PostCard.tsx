@@ -9,6 +9,7 @@ import { useDeletePost, useUpdatePost } from '@/hooks/useFeed'
 import { JobShareCard } from '@/components/chat/JobShareCard'
 import { UserLink } from '@/components/common/UserLink'
 import { ProfileAvatar } from '@/components/common/ProfileAvatar'
+import { CompanyAvatar } from '@/components/common/CompanyAvatar'
 import { CompanyLink } from '@/components/common/CompanyLink'
 import { PremiumBadge } from '@/components/subscription/PremiumBadge'
 import LikeButton from './LikeButton'
@@ -79,24 +80,30 @@ export default function PostCard({ post }: PostCardProps) {
     <article className="rounded-2xl border border-gray-100 bg-white shadow-card overflow-hidden animate-fade-in">
       {/* Header */}
       <div className="flex items-start gap-3 px-5 pt-5">
-        <div className="flex-shrink-0">
-          <ProfileAvatar uuid={post.user.uuid} name={post.user.name} src={post.user.avatar_url} size="md" />
-        </div>
+        {post.hotel ? (
+          <div className="flex-shrink-0">
+            <CompanyAvatar slug={post.hotel.slug} name={post.hotel.name} logoUrl={post.hotel.logo_url} size="md" />
+          </div>
+        ) : (
+          <div className="flex-shrink-0">
+            <ProfileAvatar uuid={post.user.uuid} name={post.user.name} src={post.user.avatar_url} size="md" />
+          </div>
+        )}
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <UserLink uuid={post.user.uuid} name={post.user.name} className="font-semibold text-gray-900 hover:text-violet-600 transition-colors text-sm" />
-            <PremiumBadge plan={post.user.plan} compact />
-            {post.hotel && (
-              <>
-                <span className="text-gray-300">·</span>
-                <CompanyLink slug={post.hotel.slug} name={post.hotel.name} className="flex items-center gap-1 text-xs text-gray-500 hover:text-violet-600 transition-colors">
-                  <Building2 className="h-3 w-3" />
-                  {post.hotel.name}
-                </CompanyLink>
-              </>
-            )}
-          </div>
+          {post.hotel ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <CompanyLink slug={post.hotel.slug} name={post.hotel.name} className="flex items-center gap-1 font-semibold text-gray-900 hover:text-violet-600 transition-colors text-sm">
+                {post.hotel.name}
+                <Building2 className="h-3.5 w-3.5 text-gray-400" />
+              </CompanyLink>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <UserLink uuid={post.user.uuid} name={post.user.name} className="font-semibold text-gray-900 hover:text-violet-600 transition-colors text-sm" />
+              <PremiumBadge plan={post.user.plan} compact />
+            </div>
+          )}
           <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
             <time dateTime={post.created_at}>
               {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: ptBR })}
