@@ -47,6 +47,7 @@ const HotelEmployeesPage = lazy(() => import('@/pages/hotel/HotelEmployeesPage')
 const HotelPostsPage = lazy(() => import('@/pages/hotel/HotelPostsPage'))
 const HotelSettingsPage = lazy(() => import('@/pages/hotel/HotelSettingsPage'))
 const HotelAdminsPage = lazy(() => import('@/pages/hotel/HotelAdminsPage'))
+const HotelMessagesPage = lazy(() => import('@/pages/hotel/HotelMessagesPage'))
 
 function Loading() {
   return (
@@ -115,6 +116,7 @@ export default function AppRoutes() {
           <Route path="/hotel/:slug/posts" element={<HotelPostsPage />} />
           <Route path="/hotel/:slug/settings" element={<HotelSettingsPage />} />
           <Route path="/hotel/:slug/admins" element={<HotelAdminsPage />} />
+          <Route path="/hotel/:slug/messages" element={<HotelMessagesPage />} />
         </Route>
 
         {/* Legacy redirects — preserve old links */}

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\MessageType;
+use App\Models\Hotel;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Str;
@@ -168,6 +169,59 @@ class NotificationService
             title:       "{$sender->name} enviou uma mensagem",
             description: $description,
             link:        "/chat/{$sender->uuid}",
+        );
+    }
+
+    /**
+     * Notifica quando uma mensagem foi enviada EM NOME de um hotel (caixa
+     * compartilhada) — o remetente exibido é o hotel, não o admin que digitou.
+     */
+    public function newMessageFromHotel(User $recipient, Hotel $hotel, ?string $content = null): void
+    {
+        $description = mb_strlen($content ?? '') > 100 ? mb_substr($content, 0, 100) . '…' : ($content ?? '');
+
+        $existing = Notification::where('user_id', $recipient->id)
+            ->where('type', 'new_message_hotel')
+            ->where('link', "/chat/hotels/{$hotel->uuid}")
+            ->where('read', false)
+            ->first();
+
+        if ($existing) {
+            $existing->update(['description' => $description, 'updated_at' => now()]);
+            return;
+        }
+
+        $this->create(
+            recipient:   $recipient,
+            actor:       null,
+            type:        'new_message_hotel',
+            category:    'message',
+            title:       "{$hotel->name} enviou uma mensagem",
+            description: $description,
+            link:        "/chat/hotels/{$hotel->uuid}",
+        );
+    }
+
+    /**
+     * Notifica um admin do hotel que a caixa compartilhada recebeu uma nova
+     * mensagem de um candidato/pessoa.
+     */
+    public function newMessageToHotel(User $admin, User $sender, Hotel $hotel, ?string $content = null): void
+    {
+        if ($admin->id === $sender->id) {
+            return;
+        }
+
+        $description = mb_strlen($content ?? '') > 100 ? mb_substr($content, 0, 100) . '…' : ($content ?? '');
+
+        $this->create(
+            recipient:   $admin,
+            actor:       $sender,
+            type:        'new_message_to_hotel',
+            category:    'message',
+            title:       "{$sender->name} enviou uma mensagem para {$hotel->name}",
+            description: $description,
+            link:        "/hotel/{$hotel->slug}/messages?user={$sender->uuid}",
         );
     }
 

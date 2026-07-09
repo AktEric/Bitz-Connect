@@ -11,20 +11,24 @@ import {
   Menu,
   X,
   Building2,
+  MessageSquare,
 } from 'lucide-react'
 import { useHotelAuth } from '@/hooks/useHotelAuth'
+import { useHotelUnreadCount } from '@/hooks/useChat'
 
 interface NavItem {
   label: string
   to: string
   Icon: React.ElementType
+  badge?: number
 }
 
-function buildNavItems(slug: string): NavItem[] {
+function buildNavItems(slug: string, messagesUnread = 0): NavItem[] {
   return [
     { label: 'Editar Perfil',           to: `/hotel/${slug}/dashboard`,  Icon: LayoutDashboard },
     { label: 'Gerenciar Vagas',          to: `/hotel/${slug}/jobs`,       Icon: Briefcase },
     { label: 'Gerenciar Colaboradores',  to: `/hotel/${slug}/employees`,  Icon: Users },
+    { label: 'Mensagens',                to: `/hotel/${slug}/messages`,   Icon: MessageSquare, badge: messagesUnread },
     { label: 'Publicações',              to: `/hotel/${slug}/posts`,      Icon: FileText },
     { label: 'Configurações',            to: `/hotel/${slug}/settings`,   Icon: Settings },
     { label: 'Administradores',          to: `/hotel/${slug}/admins`,     Icon: Shield },
@@ -53,7 +57,8 @@ export default function HotelLayout() {
 
   const slug = session?.hotelSlug ?? ''
   const hotelName = session?.hotelName ?? 'Hotel'
-  const navItems = buildNavItems(slug)
+  const { data: unreadData } = useHotelUnreadCount(slug)
+  const navItems = buildNavItems(slug, unreadData?.count ?? 0)
 
   function handleLogout() {
     exitHotel()
@@ -80,7 +85,7 @@ export default function HotelLayout() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-1">
-          {navItems.map(({ label, to, Icon }) => (
+          {navItems.map(({ label, to, Icon, badge }) => (
             <li key={to}>
               <NavLink
                 to={to}
@@ -91,7 +96,12 @@ export default function HotelLayout() {
                 }
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
-                <span>{label}</span>
+                <span className="flex-1">{label}</span>
+                {!!badge && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/90 px-1 text-[10px] font-bold text-amber-700">
+                    {badge > 9 ? '9+' : badge}
+                  </span>
+                )}
               </NavLink>
             </li>
           ))}

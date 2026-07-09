@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   Pencil, Briefcase, Plus, MapPin, Share2, UserCheck,
-  UserX, Flag, Heart,
+  UserX, Flag, Heart, MessageSquare,
 } from 'lucide-react'
 import {
   useHotel, useUploadLogo, useUploadCover,
@@ -69,6 +69,7 @@ type Tab = 'about' | 'posts' | 'employees' | 'jobs'
 export default function HotelProfilePage() {
   const { slug } = useParams<{ slug: string }>()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('about')
   const [shareCopied, setShareCopied] = useState(false)
 
@@ -192,6 +193,16 @@ export default function HotelProfilePage() {
           <Briefcase className="h-4 w-4" />
           Ver Vagas
         </button>
+
+        {user && !isAdmin && (
+          <button
+            onClick={() => navigate('/chat', { state: { openHotelSlug: hotel.slug } })}
+            className="flex items-center gap-1.5 rounded-full border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Mensagem
+          </button>
+        )}
 
         <button
           onClick={handleShare}

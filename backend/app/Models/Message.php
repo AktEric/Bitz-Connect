@@ -17,7 +17,9 @@ class Message extends Model
     protected $fillable = [
         'uuid',
         'sender_id',
+        'sender_hotel_id',
         'receiver_id',
+        'receiver_hotel_id',
         'content',
         'read_at',
         'type',
@@ -53,5 +55,27 @@ class Message extends Model
     public function receiver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    /** Preenchido quando a mensagem foi enviada em nome do hotel (caixa compartilhada). */
+    public function senderHotel(): BelongsTo
+    {
+        return $this->belongsTo(Hotel::class, 'sender_hotel_id');
+    }
+
+    /** Preenchido quando a mensagem é endereçada à caixa compartilhada do hotel. */
+    public function receiverHotel(): BelongsTo
+    {
+        return $this->belongsTo(Hotel::class, 'receiver_hotel_id');
+    }
+
+    public function isFromHotel(): bool
+    {
+        return $this->sender_hotel_id !== null;
+    }
+
+    public function isToHotel(): bool
+    {
+        return $this->receiver_hotel_id !== null;
     }
 }

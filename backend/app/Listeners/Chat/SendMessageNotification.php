@@ -7,11 +7,8 @@ use App\Services\NotificationService;
 
 /**
  * Listens for MessageSent and delegates notification creation to NotificationService.
- *
- * Note: NotificationService::newMessage() will be updated in Task 3 to accept
- * $type and $content. Until then, the method is called with whatever signature
- * it exposes. The listener already passes all four parameters so that Task 3
- * can complete the implementation without touching this file.
+ * Three cases: pessoa → pessoa, hotel → pessoa (caixa compartilhada respondendo),
+ * pessoa → hotel (notifica todos os admins aprovados do hotel).
  *
  * Requirements: 1.3, 1.5, 1.6
  */
@@ -21,7 +18,29 @@ class SendMessageNotification
 
     public function handle(MessageSent $event): void
     {
-        $message = $event->message->loadMissing(['sender', 'receiver']);
+        $message = $event->message->loadMissing(['sender', 'receiver', 'senderHotel', 'receiverHotel']);
+
+        if ($message->receiver_hotel_id) {
+            $hotel = $message->receiverHotel;
+            foreach ($hotel->admins as $admin) {
+                $this->notifications->newMessageToHotel(
+                    admin:   $admin,
+                    sender:  $message->sender,
+                    hotel:   $hotel,
+                    content: $message->content,
+                );
+            }
+            return;
+        }
+
+        if ($message->sender_hotel_id) {
+            $this->notifications->newMessageFromHotel(
+                recipient: $message->receiver,
+                hotel:     $message->senderHotel,
+                content:   $message->content,
+            );
+            return;
+        }
 
         $this->notifications->newMessage(
             recipient: $message->receiver,

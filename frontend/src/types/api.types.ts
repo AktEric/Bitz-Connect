@@ -77,19 +77,28 @@ export interface ChatUser {
   city?: string | null
 }
 
+/**
+ * Um dos lados de uma conversa — pode ser uma pessoa ou a caixa de entrada
+ * compartilhada de um hotel (quando a mensagem foi enviada/endereçada em
+ * nome do hotel, não de um admin específico).
+ */
+export type ChatParty =
+  | { type: 'user'; uuid: string; name: string; avatar_url: string | null }
+  | { type: 'hotel'; uuid: string; slug: string; name: string; avatar_url: string | null }
+
 export interface Message {
   uuid: string
   content: string
   is_mine: boolean
   read_at: string | null
   created_at: string
-  sender: ChatUser
+  sender: ChatParty
   type: MessageType
   metadata: JobMetadata | Record<string, unknown> | null
 }
 
 export interface Conversation {
-  user: ChatUser
+  party: ChatParty
   last_message: {
     content: string
     created_at: string

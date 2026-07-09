@@ -3,12 +3,19 @@ import { useLocation } from 'react-router-dom'
 import { differenceInHours, formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Search, Send, MessageSquare } from 'lucide-react'
-import { useConversations, useMessages, useSendMessage, useMarkRead } from '@/hooks/useChat'
+import {
+  useConversations, useMessages, useSendMessage, useMarkRead,
+  useHotelThreadMessages, useSendToHotel, useMarkHotelThreadRead,
+} from '@/hooks/useChat'
 import { useUserProfile } from '@/hooks/useProfile'
+import { useHotel } from '@/hooks/useHotel'
 import { UserLink } from '@/components/common/UserLink'
 import { ProfileAvatar } from '@/components/common/ProfileAvatar'
+import { CompanyLink } from '@/components/common/CompanyLink'
+import { CompanyAvatar } from '@/components/common/CompanyAvatar'
+import { Avatar } from '@/components/ui/Avatar'
 import { MessageBubble } from '@/components/chat/MessageBubble'
-import type { Conversation } from '@/types/api.types'
+import type { Conversation, ChatParty } from '@/types/api.types'
 
 // ──────────────────────────────────────────────────────────
 // Helpers
@@ -24,6 +31,11 @@ function formatTime(iso: string): string {
   return format(msgDate, 'dd/MM/yyyy', { locale: ptBR })
 }
 
+/** Chave estável para uma conversa, já que o outro lado pode ser pessoa ou hotel. */
+function partyKey(party: ChatParty): string {
+  return `${party.type}:${party.uuid}`
+}
+
 // ──────────────────────────────────────────────────────────
 // Conversation list item
 // ──────────────────────────────────────────────────────────
@@ -37,8 +49,7 @@ function ConversationItem({
   isActive: boolean
   onClick: () => void
 }) {
-  const { user, last_message, unread_count } = conversation
-
+  const { party, last_message, unread_count } = conversation
   const hasUnread = unread_count > 0
 
   return (
@@ -48,10 +59,16 @@ function ConversationItem({
         isActive ? 'bg-primary/10' : hasUnread ? 'bg-violet-50 hover:bg-violet-100' : 'hover:bg-gray-50'
       }`}
     >
-      <ProfileAvatar name={user.name} src={user.avatar_url} uuid={user.uuid} size="md" />
+      {party.type === 'hotel' ? (
+        <Avatar name={party.name} src={party.avatar_url} size="md" />
+      ) : (
+        <ProfileAvatar name={party.name} src={party.avatar_url} uuid={party.uuid} size="md" />
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-1">
-          <UserLink uuid={user.uuid} name={user.name} className={`text-sm truncate ${isActive ? 'text-primary font-medium' : hasUnread ? 'text-gray-900 font-semibold' : 'text-gray-900 font-medium'}`} />
+          <span className={`text-sm truncate ${isActive ? 'text-primary font-medium' : hasUnread ? 'text-gray-900 font-semibold' : 'text-gray-900 font-medium'}`}>
+            {party.name}
+          </span>
           <span className="text-xs text-gray-400 flex-shrink-0">
             {formatTime(last_message.created_at)}
           </span>
@@ -77,19 +94,32 @@ function ConversationItem({
 // ──────────────────────────────────────────────────────────
 
 function MessageWindow({ conversation }: { conversation: Conversation }) {
-  const { user } = conversation
+  const { party } = conversation
+  const isHotel = party.type === 'hotel'
   const [text, setText] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { data: messages = [], isLoading } = useMessages(user.uuid)
-  const sendMessage = useSendMessage(user.uuid)
-  const markRead = useMarkRead(user.uuid)
+  const hotelSlug = isHotel ? party.slug : ''
+  const userMessages = useMessages(isHotel ? '' : party.uuid)
+  const hotelMessages = useHotelThreadMessages(hotelSlug)
+
+  const messages = isHotel ? hotelMessages.data ?? [] : userMessages.data ?? []
+  const isLoading = isHotel ? hotelMessages.isLoading : userMessages.isLoading
+
+  const sendMessage = useSendMessage(isHotel ? '' : party.uuid)
+  const sendToHotel = useSendToHotel(hotelSlug)
+  const markRead = useMarkRead(isHotel ? '' : party.uuid)
+  const markHotelRead = useMarkHotelThreadRead(hotelSlug)
 
   // Mark as read when opening the conversation
   useEffect(() => {
-    markRead.mutate()
+    if (isHotel) {
+      markHotelRead.mutate()
+    } else {
+      markRead.mutate()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.uuid])
+  }, [party.uuid, isHotel])
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -98,8 +128,14 @@ function MessageWindow({ conversation }: { conversation: Conversation }) {
 
   function handleSend() {
     const trimmed = text.trim()
-    if (!trimmed || sendMessage.isPending) return
-    sendMessage.mutate(trimmed)
+    if (!trimmed) return
+    if (isHotel) {
+      if (sendToHotel.isPending) return
+      sendToHotel.mutate(trimmed)
+    } else {
+      if (sendMessage.isPending) return
+      sendMessage.mutate(trimmed)
+    }
     setText('')
   }
 
@@ -110,6 +146,8 @@ function MessageWindow({ conversation }: { conversation: Conversation }) {
     }
   }
 
+  const sending = isHotel ? sendToHotel.isPending : sendMessage.isPending
+
   // Messages come newest-first from the server — reverse to display oldest at top
   const ordered = [...messages].reverse()
 
@@ -117,10 +155,17 @@ function MessageWindow({ conversation }: { conversation: Conversation }) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white flex-shrink-0">
-        <ProfileAvatar name={user.name} src={user.avatar_url} uuid={user.uuid} size="md" />
-        <div>
-          <UserLink uuid={user.uuid} name={user.name} className="text-sm font-semibold text-gray-900" />
-        </div>
+        {isHotel ? (
+          <>
+            <CompanyAvatar slug={hotelSlug} name={party.name} logoUrl={party.avatar_url} size="md" />
+            <CompanyLink slug={hotelSlug} name={party.name} className="text-sm font-semibold text-gray-900" />
+          </>
+        ) : (
+          <>
+            <ProfileAvatar name={party.name} src={party.avatar_url} uuid={party.uuid} size="md" />
+            <UserLink uuid={party.uuid} name={party.name} className="text-sm font-semibold text-gray-900" />
+          </>
+        )}
       </div>
 
       {/* Messages */}
@@ -155,7 +200,7 @@ function MessageWindow({ conversation }: { conversation: Conversation }) {
         />
         <button
           onClick={handleSend}
-          disabled={!text.trim() || sendMessage.isPending}
+          disabled={!text.trim() || sending}
           className="h-9 w-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-primary text-white hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <Send className="h-4 w-4" />
@@ -169,10 +214,7 @@ function MessageWindow({ conversation }: { conversation: Conversation }) {
 // ChatPage
 // ──────────────────────────────────────────────────────────
 
-/**
- * Helper component that fetches a user profile to create a temporary conversation.
- * Rendered only when openUserUuid is set but not found in existing conversations.
- */
+/** Monta uma conversa temporária com uma pessoa que ainda não tem histórico. */
 function PendingConversationLoader({
   userUuid,
   onLoaded,
@@ -184,81 +226,102 @@ function PendingConversationLoader({
 
   useEffect(() => {
     if (profile) {
-      const tempConv: Conversation = {
-        user: {
-          uuid: profile.uuid,
-          name: profile.name,
-          avatar_url: profile.avatar_url,
-        },
-        last_message: {
-          content: '',
-          created_at: new Date().toISOString(),
-          is_mine: false,
-        },
+      onLoaded({
+        party: { type: 'user', uuid: profile.uuid, name: profile.name, avatar_url: profile.avatar_url },
+        last_message: { content: '', created_at: new Date().toISOString(), is_mine: false },
         unread_count: 0,
-      }
-      onLoaded(tempConv)
+      })
     }
   }, [profile, onLoaded])
 
   return null
 }
 
+/** Monta uma conversa temporária com a caixa de um hotel que ainda não tem histórico. */
+function PendingHotelConversationLoader({
+  hotelSlug,
+  onLoaded,
+}: {
+  hotelSlug: string
+  onLoaded: (conv: Conversation) => void
+}) {
+  const { data: hotel } = useHotel(hotelSlug)
+
+  useEffect(() => {
+    if (hotel) {
+      onLoaded({
+        party: { type: 'hotel', uuid: hotel.uuid, slug: hotel.slug, name: hotel.name, avatar_url: hotel.logo_url },
+        last_message: { content: '', created_at: new Date().toISOString(), is_mine: false },
+        unread_count: 0,
+      })
+    }
+  }, [hotel, onLoaded])
+
+  return null
+}
+
 export default function ChatPage() {
   const location = useLocation()
-  const openUserUuid: string | undefined = (location.state as { openUserUuid?: string } | null)?.openUserUuid
+  const state = location.state as { openUserUuid?: string; openHotelSlug?: string } | null
+  const openUserUuid = state?.openUserUuid
+  const openHotelSlug = state?.openHotelSlug
 
   const [search, setSearch] = useState('')
-  const [activeUuid, setActiveUuid] = useState<string | null>(null)
+  const [activeKey, setActiveKey] = useState<string | null>(null)
   const [tempConversation, setTempConversation] = useState<Conversation | null>(null)
-  const [pendingUuid, setPendingUuid] = useState<string | null>(null)
+  const [pendingUserUuid, setPendingUserUuid] = useState<string | null>(null)
+  const [pendingHotelSlug, setPendingHotelSlug] = useState<string | null>(null)
 
   const { data: conversations = [], isLoading } = useConversations()
 
-  // Handle openUserUuid from navigate state
   useEffect(() => {
-    if (!openUserUuid) return
-
-    const existing = conversations.find((c) => c.user.uuid === openUserUuid)
-    if (existing) {
-      setActiveUuid(openUserUuid)
-      setTempConversation(null)
-      setPendingUuid(null)
-    } else {
-      // Need to fetch profile; set pending uuid which triggers PendingConversationLoader
-      setPendingUuid(openUserUuid)
+    if (openUserUuid) {
+      const existing = conversations.find((c) => c.party.type === 'user' && c.party.uuid === openUserUuid)
+      if (existing) {
+        setActiveKey(partyKey(existing.party))
+        setTempConversation(null)
+        setPendingUserUuid(null)
+      } else {
+        setPendingUserUuid(openUserUuid)
+      }
+    } else if (openHotelSlug) {
+      const existing = conversations.find((c) => c.party.type === 'hotel' && c.party.slug === openHotelSlug)
+      if (existing) {
+        setActiveKey(partyKey(existing.party))
+        setTempConversation(null)
+        setPendingHotelSlug(null)
+      } else {
+        setPendingHotelSlug(openHotelSlug)
+      }
     }
-  // Only run when openUserUuid or conversations change in a meaningful way
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openUserUuid, conversations.length])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openUserUuid, openHotelSlug, conversations.length])
 
   function handleTempConversationLoaded(conv: Conversation) {
     setTempConversation(conv)
-    setActiveUuid(conv.user.uuid)
-    setPendingUuid(null)
+    setActiveKey(partyKey(conv.party))
+    setPendingUserUuid(null)
+    setPendingHotelSlug(null)
   }
 
-  const filtered = conversations.filter((c) =>
-    c.user.name.toLowerCase().includes(search.toLowerCase()),
-  )
+  const filtered = conversations.filter((c) => c.party.name.toLowerCase().includes(search.toLowerCase()))
 
-  // Merge temp conversation into list if it's not already there
-  const displayList = tempConversation && !conversations.find((c) => c.user.uuid === tempConversation.user.uuid)
-    ? [tempConversation, ...filtered]
-    : filtered
+  const displayList =
+    tempConversation && !conversations.find((c) => partyKey(c.party) === partyKey(tempConversation.party))
+      ? [tempConversation, ...filtered]
+      : filtered
 
   const activeConversation =
-    conversations.find((c) => c.user.uuid === activeUuid) ??
-    (tempConversation?.user.uuid === activeUuid ? tempConversation : null)
+    conversations.find((c) => partyKey(c.party) === activeKey) ??
+    (tempConversation && partyKey(tempConversation.party) === activeKey ? tempConversation : null)
 
   return (
     <>
-      {/* Loader for unknown user */}
-      {pendingUuid && (
-        <PendingConversationLoader
-          userUuid={pendingUuid}
-          onLoaded={handleTempConversationLoaded}
-        />
+      {pendingUserUuid && (
+        <PendingConversationLoader userUuid={pendingUserUuid} onLoaded={handleTempConversationLoaded} />
+      )}
+      {pendingHotelSlug && (
+        <PendingHotelConversationLoader hotelSlug={pendingHotelSlug} onLoaded={handleTempConversationLoaded} />
       )}
 
       <div className="flex h-[calc(100vh-3.5rem-3rem)] overflow-hidden bg-white rounded-xl border border-gray-100 shadow-sm">
@@ -302,10 +365,10 @@ export default function ChatPage() {
             ) : (
               displayList.map((conv) => (
                 <ConversationItem
-                  key={conv.user.uuid}
+                  key={partyKey(conv.party)}
                   conversation={conv}
-                  isActive={conv.user.uuid === activeUuid}
-                  onClick={() => setActiveUuid(conv.user.uuid)}
+                  isActive={partyKey(conv.party) === activeKey}
+                  onClick={() => setActiveKey(partyKey(conv.party))}
                 />
               ))
             )}
@@ -315,7 +378,7 @@ export default function ChatPage() {
         {/* Right column — message window */}
         <div className="flex-1 flex flex-col min-w-0">
           {activeConversation ? (
-            <MessageWindow key={activeConversation.user.uuid} conversation={activeConversation} />
+            <MessageWindow key={partyKey(activeConversation.party)} conversation={activeConversation} />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
               <MessageSquare className="h-14 w-14 text-gray-200" />

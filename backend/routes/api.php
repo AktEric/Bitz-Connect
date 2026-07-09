@@ -111,6 +111,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/analytics',                         [CompanyAnalyticsController::class, 'show']);
         Route::get('/analytics/export',                  [CompanyAnalyticsController::class, 'export']);
         Route::get('/jobs/manage',                       [HotelController::class, 'manageJobs']);
+
+        // Caixa de entrada compartilhada do hotel (qualquer admin aprovado)
+        Route::get('/chat/unread-count',                 [ChatController::class, 'hotelUnreadCount']);
+        Route::get('/chat/conversations',                [ChatController::class, 'hotelConversations']);
+        Route::get('/chat/{user}/messages',              [ChatController::class, 'hotelAdminMessages']);
+        Route::post('/chat/{user}/messages',             [ChatController::class, 'hotelAdminSend']);
+        Route::patch('/chat/{user}/read',                [ChatController::class, 'hotelAdminMarkRead']);
     });
 
     // Feed
@@ -148,6 +155,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('chat')->group(function () {
         Route::get('/unread-count',           [ChatController::class, 'unreadCount']);
         Route::get('/conversations',          [ChatController::class, 'conversations']);
+        // Conversa pessoal com a caixa compartilhada de um hotel
+        Route::get('/hotels/{hotel}/messages',  [ChatController::class, 'hotelThreadMessages']);
+        Route::post('/hotels/{hotel}/messages', [ChatController::class, 'sendToHotel']);
+        Route::patch('/hotels/{hotel}/read',    [ChatController::class, 'markHotelThreadRead']);
         Route::get('/{user}/messages',        [ChatController::class, 'messages']);
         Route::post('/{user}/messages',       [ChatController::class, 'send']);
         Route::patch('/{user}/read',          [ChatController::class, 'markRead']);
