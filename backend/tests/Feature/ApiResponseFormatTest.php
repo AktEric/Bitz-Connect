@@ -58,7 +58,7 @@ it('POST /auth/login returns success envelope', function () {
 });
 
 it('POST /hotels returns success envelope', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => 'platform_admin']);
     Sanctum::actingAs($user);
 
     $response = $this->postJson('/api/v1/hotels', [

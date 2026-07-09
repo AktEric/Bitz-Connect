@@ -88,13 +88,17 @@ export default function CreateJobPage() {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <p className="text-gray-600">
-          Você precisa ter um hotel cadastrado para publicar vagas.
+          Você precisa administrar um hotel para publicar vagas.
+        </p>
+        <p className="mt-2 text-sm text-gray-400">
+          Vincule uma experiência de trabalho ao hotel no seu perfil e peça para um
+          administrador aprovar e te promover.
         </p>
         <button
-          onClick={() => navigate('/hotels/new')}
+          onClick={() => navigate('/hotels')}
           className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
         >
-          Criar hotel
+          Ver meus hotéis
         </button>
       </div>
     )

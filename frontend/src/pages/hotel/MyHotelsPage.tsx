@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom'
-import { Building2, Plus, MapPin } from 'lucide-react'
+import { Building2, MapPin } from 'lucide-react'
 import { useMyHotels } from '@/hooks/useHotel'
 import { CompanyAvatar } from '@/components/common/CompanyAvatar'
 import { CompanyLink } from '@/components/common/CompanyLink'
 
 /**
  * Lists hotels where the authenticated user is admin or approved employee.
+ * Hotels are provisioned externally pela equipe da plataforma (login + CNPJ) —
+ * não há autocadastro pelo perfil. Para ganhar acesso, a pessoa vincula uma
+ * experiência ao hotel (fica pendente) e um admin aprova, podendo depois
+ * promovê-la a administradora.
  * Requirements: 2.3, 2.4
  */
 export default function MyHotelsPage() {
@@ -22,28 +26,19 @@ export default function MyHotelsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Empresas / Hotéis</h1>
-        <Link
-          to="/hotels/new"
-          className="flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Criar Hotel
-        </Link>
       </div>
 
       {hotels.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-white py-16 text-center shadow-sm">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-white py-16 text-center shadow-sm px-6">
           <Building2 className="mb-3 h-10 w-10 text-gray-200" />
           <p className="text-gray-500">Você ainda não gerencia nenhum hotel.</p>
-          <Link
-            to="/hotels/new"
-            className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Criar primeiro hotel
-          </Link>
+          <p className="mt-2 max-w-sm text-sm text-gray-400">
+            Hotéis são cadastrados pela equipe da plataforma. Para ter acesso, adicione uma
+            experiência de trabalho vinculada ao hotel no seu perfil — um administrador
+            aprovará sua vinculação e poderá te promover a administrador.
+          </p>
         </div>
       ) : (
         <div className="space-y-3">

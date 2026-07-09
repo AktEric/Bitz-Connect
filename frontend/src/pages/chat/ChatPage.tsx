@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { differenceInHours, formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Search, Send, MessageSquare } from 'lucide-react'
+import { Search, Send, MessageSquare, Building2 } from 'lucide-react'
 import {
   useConversations, useMessages, useSendMessage, useMarkRead,
   useHotelThreadMessages, useSendToHotel, useMarkHotelThreadRead,
+  useHotelConversations, useHotelAdminMessages, useSendAsHotel, useMarkHotelAdminRead,
 } from '@/hooks/useChat'
 import { useUserProfile } from '@/hooks/useProfile'
-import { useHotel } from '@/hooks/useHotel'
+import { useHotel, useMyHotels } from '@/hooks/useHotel'
 import { UserLink } from '@/components/common/UserLink'
 import { ProfileAvatar } from '@/components/common/ProfileAvatar'
 import { CompanyLink } from '@/components/common/CompanyLink'
@@ -16,6 +17,12 @@ import { CompanyAvatar } from '@/components/common/CompanyAvatar'
 import { Avatar } from '@/components/ui/Avatar'
 import { MessageBubble } from '@/components/chat/MessageBubble'
 import type { Conversation, ChatParty } from '@/types/api.types'
+
+/** Contexto extra quando a conversa é da caixa compartilhada de um hotel que eu administro. */
+interface HotelInboxContext {
+  slug: string
+  name: string
+}
 
 // ──────────────────────────────────────────────────────────
 // Helpers
@@ -36,16 +43,27 @@ function partyKey(party: ChatParty): string {
   return `${party.type}:${party.uuid}`
 }
 
+/**
+ * Chave estável para item exibido na lista — quando a conversa vem da caixa
+ * compartilhada de um hotel que administro, inclui o hotel na chave para não
+ * colidir com uma eventual conversa pessoal com a mesma pessoa.
+ */
+function mergedKey(party: ChatParty, hotelInbox?: HotelInboxContext): string {
+  return hotelInbox ? `hotel-inbox:${hotelInbox.slug}:${party.uuid}` : partyKey(party)
+}
+
 // ──────────────────────────────────────────────────────────
 // Conversation list item
 // ──────────────────────────────────────────────────────────
 
 function ConversationItem({
   conversation,
+  hotelInbox,
   isActive,
   onClick,
 }: {
   conversation: Conversation
+  hotelInbox?: HotelInboxContext
   isActive: boolean
   onClick: () => void
 }) {
@@ -73,9 +91,17 @@ function ConversationItem({
             {formatTime(last_message.created_at)}
           </span>
         </div>
+        {hotelInbox && (
+          <p className="flex items-center gap-1 text-[11px] text-amber-600 mt-0.5">
+            <Building2 className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">via {hotelInbox.name}</span>
+          </p>
+        )}
         <div className="flex items-center justify-between gap-1 mt-0.5">
           <p className="text-xs text-gray-500 truncate">
-            {last_message.is_mine && <span className="text-gray-400">Você: </span>}
+            {last_message.is_mine && (
+              <span className="text-gray-400">{hotelInbox ? 'Hotel: ' : 'Você: '}</span>
+            )}
             {last_message.content}
           </p>
           {unread_count > 0 && (
@@ -93,33 +119,52 @@ function ConversationItem({
 // Message window
 // ──────────────────────────────────────────────────────────
 
-function MessageWindow({ conversation }: { conversation: Conversation }) {
+function MessageWindow({
+  conversation,
+  hotelInbox,
+}: {
+  conversation: Conversation
+  hotelInbox?: HotelInboxContext
+}) {
   const { party } = conversation
   const isHotel = party.type === 'hotel'
+  const isHotelInbox = !!hotelInbox
   const [text, setText] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const hotelSlug = isHotel ? party.slug : ''
-  const userMessages = useMessages(isHotel ? '' : party.uuid)
+  const inboxSlug = hotelInbox?.slug ?? ''
+  const inboxUserUuid = isHotelInbox ? party.uuid : ''
+
+  const userMessages = useMessages(isHotel || isHotelInbox ? '' : party.uuid)
   const hotelMessages = useHotelThreadMessages(hotelSlug)
+  const inboxMessages = useHotelAdminMessages(inboxSlug, inboxUserUuid)
 
-  const messages = isHotel ? hotelMessages.data ?? [] : userMessages.data ?? []
-  const isLoading = isHotel ? hotelMessages.isLoading : userMessages.isLoading
+  const messages = isHotelInbox
+    ? inboxMessages.data ?? []
+    : isHotel
+      ? hotelMessages.data ?? []
+      : userMessages.data ?? []
+  const isLoading = isHotelInbox ? inboxMessages.isLoading : isHotel ? hotelMessages.isLoading : userMessages.isLoading
 
-  const sendMessage = useSendMessage(isHotel ? '' : party.uuid)
+  const sendMessage = useSendMessage(isHotel || isHotelInbox ? '' : party.uuid)
   const sendToHotel = useSendToHotel(hotelSlug)
-  const markRead = useMarkRead(isHotel ? '' : party.uuid)
+  const sendAsHotel = useSendAsHotel(inboxSlug, inboxUserUuid)
+  const markRead = useMarkRead(isHotel || isHotelInbox ? '' : party.uuid)
   const markHotelRead = useMarkHotelThreadRead(hotelSlug)
+  const markInboxRead = useMarkHotelAdminRead(inboxSlug, inboxUserUuid)
 
   // Mark as read when opening the conversation
   useEffect(() => {
-    if (isHotel) {
+    if (isHotelInbox) {
+      markInboxRead.mutate()
+    } else if (isHotel) {
       markHotelRead.mutate()
     } else {
       markRead.mutate()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [party.uuid, isHotel])
+  }, [party.uuid, isHotel, isHotelInbox])
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -129,7 +174,10 @@ function MessageWindow({ conversation }: { conversation: Conversation }) {
   function handleSend() {
     const trimmed = text.trim()
     if (!trimmed) return
-    if (isHotel) {
+    if (isHotelInbox) {
+      if (sendAsHotel.isPending) return
+      sendAsHotel.mutate(trimmed)
+    } else if (isHotel) {
       if (sendToHotel.isPending) return
       sendToHotel.mutate(trimmed)
     } else {
@@ -146,7 +194,7 @@ function MessageWindow({ conversation }: { conversation: Conversation }) {
     }
   }
 
-  const sending = isHotel ? sendToHotel.isPending : sendMessage.isPending
+  const sending = isHotelInbox ? sendAsHotel.isPending : isHotel ? sendToHotel.isPending : sendMessage.isPending
 
   // Messages come newest-first from the server — reverse to display oldest at top
   const ordered = [...messages].reverse()
@@ -163,7 +211,15 @@ function MessageWindow({ conversation }: { conversation: Conversation }) {
         ) : (
           <>
             <ProfileAvatar name={party.name} src={party.avatar_url} uuid={party.uuid} size="md" />
-            <UserLink uuid={party.uuid} name={party.name} className="text-sm font-semibold text-gray-900" />
+            <div className="min-w-0">
+              <UserLink uuid={party.uuid} name={party.name} className="text-sm font-semibold text-gray-900" />
+              {hotelInbox && (
+                <p className="flex items-center gap-1 text-[11px] text-amber-600">
+                  <Building2 className="h-3 w-3 flex-shrink-0" />
+                  <span className="truncate">Respondendo como {hotelInbox.name}</span>
+                </p>
+              )}
+            </div>
           </>
         )}
       </div>
@@ -193,7 +249,7 @@ function MessageWindow({ conversation }: { conversation: Conversation }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Escreva uma mensagem..."
+          placeholder={isHotelInbox ? 'Responder como o hotel...' : 'Escreva uma mensagem...'}
           rows={1}
           className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary max-h-32 overflow-auto"
           style={{ lineHeight: '1.5' }}
@@ -260,6 +316,35 @@ function PendingHotelConversationLoader({
   return null
 }
 
+interface DisplayItem {
+  conversation: Conversation
+  hotelInbox?: HotelInboxContext
+}
+
+/**
+ * Carrega as conversas da caixa compartilhada de um hotel que administro,
+ * para que apareçam junto com meu chat pessoal (não fico preso ao painel do hotel
+ * para ver o que os candidatos respondem).
+ */
+function HotelInboxLoader({
+  hotelSlug,
+  hotelName,
+  onData,
+}: {
+  hotelSlug: string
+  hotelName: string
+  onData: (slug: string, name: string, conversations: Conversation[]) => void
+}) {
+  const { data } = useHotelConversations(hotelSlug)
+
+  useEffect(() => {
+    onData(hotelSlug, hotelName, data ?? [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hotelSlug, hotelName, data])
+
+  return null
+}
+
 export default function ChatPage() {
   const location = useLocation()
   const state = location.state as { openUserUuid?: string; openHotelSlug?: string } | null
@@ -273,6 +358,21 @@ export default function ChatPage() {
   const [pendingHotelSlug, setPendingHotelSlug] = useState<string | null>(null)
 
   const { data: conversations = [], isLoading } = useConversations()
+
+  const { data: myHotelsResp } = useMyHotels()
+  const myHotels = myHotelsResp?.data ?? []
+
+  const [hotelInboxData, setHotelInboxData] = useState<
+    Record<string, { name: string; conversations: Conversation[] }>
+  >({})
+
+  function handleHotelInboxData(slug: string, name: string, convs: Conversation[]) {
+    setHotelInboxData((prev) => {
+      const existing = prev[slug]
+      if (existing && existing.conversations === convs) return prev
+      return { ...prev, [slug]: { name, conversations: convs } }
+    })
+  }
 
   useEffect(() => {
     if (openUserUuid) {
@@ -304,16 +404,32 @@ export default function ChatPage() {
     setPendingHotelSlug(null)
   }
 
-  const filtered = conversations.filter((c) => c.party.name.toLowerCase().includes(search.toLowerCase()))
+  const personalItems: DisplayItem[] = conversations.map((conversation) => ({ conversation }))
 
-  const displayList =
-    tempConversation && !conversations.find((c) => partyKey(c.party) === partyKey(tempConversation.party))
-      ? [tempConversation, ...filtered]
-      : filtered
+  const hotelInboxItems: DisplayItem[] = Object.entries(hotelInboxData).flatMap(([slug, { name, conversations: convs }]) =>
+    convs.map((conversation) => ({ conversation, hotelInbox: { slug, name } })),
+  )
 
-  const activeConversation =
-    conversations.find((c) => partyKey(c.party) === activeKey) ??
-    (tempConversation && partyKey(tempConversation.party) === activeKey ? tempConversation : null)
+  const hasTempAlready = tempConversation && personalItems.some(
+    (item) => partyKey(item.conversation.party) === partyKey(tempConversation.party),
+  )
+
+  const allItems: DisplayItem[] = [
+    ...(tempConversation && !hasTempAlready ? [{ conversation: tempConversation }] : []),
+    ...personalItems,
+    ...hotelInboxItems,
+  ].sort(
+    (a, b) => new Date(b.conversation.last_message.created_at).getTime()
+      - new Date(a.conversation.last_message.created_at).getTime(),
+  )
+
+  const displayList = allItems.filter((item) =>
+    item.conversation.party.name.toLowerCase().includes(search.toLowerCase()),
+  )
+
+  const activeItem = allItems.find(
+    (item) => mergedKey(item.conversation.party, item.hotelInbox) === activeKey,
+  ) ?? null
 
   return (
     <>
@@ -323,6 +439,14 @@ export default function ChatPage() {
       {pendingHotelSlug && (
         <PendingHotelConversationLoader hotelSlug={pendingHotelSlug} onLoaded={handleTempConversationLoaded} />
       )}
+      {myHotels.map((hotel) => (
+        <HotelInboxLoader
+          key={hotel.slug}
+          hotelSlug={hotel.slug}
+          hotelName={hotel.name}
+          onData={handleHotelInboxData}
+        />
+      ))}
 
       <div className="flex h-[calc(100vh-3.5rem-3rem)] overflow-hidden bg-white rounded-xl border border-gray-100 shadow-sm">
         {/* Left column — conversation list */}
@@ -363,22 +487,30 @@ export default function ChatPage() {
                 </p>
               </div>
             ) : (
-              displayList.map((conv) => (
-                <ConversationItem
-                  key={partyKey(conv.party)}
-                  conversation={conv}
-                  isActive={partyKey(conv.party) === activeKey}
-                  onClick={() => setActiveKey(partyKey(conv.party))}
-                />
-              ))
+              displayList.map(({ conversation, hotelInbox }) => {
+                const key = mergedKey(conversation.party, hotelInbox)
+                return (
+                  <ConversationItem
+                    key={key}
+                    conversation={conversation}
+                    hotelInbox={hotelInbox}
+                    isActive={key === activeKey}
+                    onClick={() => setActiveKey(key)}
+                  />
+                )
+              })
             )}
           </div>
         </div>
 
         {/* Right column — message window */}
         <div className="flex-1 flex flex-col min-w-0">
-          {activeConversation ? (
-            <MessageWindow key={partyKey(activeConversation.party)} conversation={activeConversation} />
+          {activeItem ? (
+            <MessageWindow
+              key={mergedKey(activeItem.conversation.party, activeItem.hotelInbox)}
+              conversation={activeItem.conversation}
+              hotelInbox={activeItem.hotelInbox}
+            />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
               <MessageSquare className="h-14 w-14 text-gray-200" />

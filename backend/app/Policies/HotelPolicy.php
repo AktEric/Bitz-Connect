@@ -33,12 +33,15 @@ class HotelPolicy
     }
 
     /**
-     * Any authenticated user can create a hotel.
+     * Hotels are provisioned externally by the platform team (login + CNPJ
+     * handed over directly) — regular users request a relation to an
+     * existing hotel instead of self-creating one. Only platform admins
+     * (via before()) may create a hotel.
      * Requirements: 3.1
      */
     public function create(User $user): bool
     {
-        return true;
+        return false;
     }
 
     /**

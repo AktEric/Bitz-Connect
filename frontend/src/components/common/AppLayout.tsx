@@ -3,7 +3,7 @@ import {
   Home, Briefcase, Search, MessageSquare, Users, Bell,
   LogOut, Settings, Bookmark, User, ChevronDown,
   Building2, Sparkles, Menu, X, Calendar, UsersRound,
-  Video as VideoIcon, GraduationCap, Handshake,
+  Video as VideoIcon, GraduationCap, Handshake, LayoutDashboard,
 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -11,9 +11,16 @@ import { useAuth } from '@/hooks/useAuth'
 import { useUnreadCount } from '@/hooks/useNotifications'
 import { useUnreadMessages, chatKeys } from '@/hooks/useChat'
 import { usePendingConnections } from '@/hooks/useConnections'
+import { useMyHotels } from '@/hooks/useHotel'
 import { Avatar } from '@/components/ui/Avatar'
 import { cn } from '@/utils/cn'
 import NotificationBell from '@/components/common/NotificationBell'
+
+/** Meu primeiro hotel administrado que tem plano PRO ativo, se houver. */
+function useMyProHotel() {
+  const { data } = useMyHotels()
+  return data?.data.find((hotel) => hotel.is_pro)
+}
 
 // ──────────────────────────────────────────────────────────
 // Nav config
@@ -54,7 +61,6 @@ const DRAWER_ITEMS = [
   { to: '/mentorships', label: 'Mentorias',  Icon: Handshake,  enabled: true },
   { to: '/plans',    label: 'HotelConnect PRO', Icon: Sparkles, enabled: true },
   { to: '/hotels',   label: 'Meus Hotéis',   Icon: Building2,  enabled: true },
-  { to: '/hotels/new', label: 'Criar Hotel', Icon: Building2,  enabled: true },
   { to: '/saved',    label: 'Itens salvos',  Icon: Bookmark,   enabled: false },
   { to: '/events',   label: 'Eventos',       Icon: Calendar,   enabled: false },
   { to: '/groups',   label: 'Grupos',        Icon: UsersRound, enabled: false },
@@ -176,12 +182,12 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
       {/* Logo */}
       <div className={cn('flex h-16 items-center border-b border-gray-100 px-4 flex-shrink-0', collapsed && 'justify-center px-2')}>
         {collapsed ? (
-          <span className="text-xl font-bold text-violet-600">H</span>
+          <Link to="/feed">
+            <img src="/logo-icon.png" alt="HotelConnect" className="h-8 w-8" />
+          </Link>
         ) : (
           <Link to="/feed" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-600 text-white">
-              <span className="text-sm font-bold">H</span>
-            </div>
+            <img src="/logo-icon.png" alt="HotelConnect" className="h-8 w-8" />
             <span className="text-lg font-bold text-gray-900">HotelConnect</span>
           </Link>
         )}
@@ -237,7 +243,6 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
             <div className="my-3 h-px bg-gray-100" />
             <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Empresas / Hotéis</p>
             <SideNavItem to="/hotels" label="Meus Hotéis" Icon={Building2} />
-            <SideNavItem to="/hotels/new" label="Criar Hotel" Icon={Building2} />
           </>
         )}
       </nav>
@@ -426,6 +431,25 @@ function BottomNav() {
 // Messages badge (desktop topbar)
 // ──────────────────────────────────────────────────────────
 
+/** Ícone de volta ao painel do hotel — só aparece para admins de hotel com plano PRO. */
+function HotelPanelButton() {
+  const proHotel = useMyProHotel()
+
+  if (!proHotel) return null
+
+  return (
+    <Link
+      to={`/hotel/${proHotel.slug}/dashboard`}
+      title={`Painel do hotel — ${proHotel.name}`}
+      className="relative flex items-center justify-center h-9 w-9 rounded-xl text-amber-600 hover:bg-amber-50 transition-colors"
+      aria-label="Painel do hotel"
+    >
+      <LayoutDashboard className="h-5 w-5" />
+      <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-amber-500" />
+    </Link>
+  )
+}
+
 function MessagesBadgeButton() {
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -485,6 +509,7 @@ function Topbar({ sidebarWidth }: { sidebarWidth: number }) {
       <div className="flex-1" />
 
       <div className="flex items-center gap-1">
+        <HotelPanelButton />
         <NotificationBell />
         <MessagesBadgeButton />
 
@@ -550,13 +575,13 @@ function MobileTopbar({ onOpenDrawer }: { onOpenDrawer: () => void }) {
       </button>
 
       <Link to="/feed" className="flex items-center gap-1.5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-600 text-white">
-          <span className="text-xs font-bold">H</span>
-        </div>
+        <img src="/logo-icon.png" alt="HotelConnect" className="h-7 w-7" />
         <span className="text-base font-bold text-gray-900">HotelConnect</span>
       </Link>
 
       <div className="flex-1" />
+
+      <HotelPanelButton />
 
       <Link
         to="/search"

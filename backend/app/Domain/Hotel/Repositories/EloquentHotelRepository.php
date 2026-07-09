@@ -74,7 +74,7 @@ class EloquentHotelRepository implements HotelRepositoryInterface
     {
         return Hotel::whereHas('hotelUsers', fn ($q) =>
             $q->where('user_id', $user->id)->where('role', 'admin')
-        )->paginate(15);
+        )->with('subscriptions')->paginate(15);
     }
 
     public function slugExists(string $slug): bool

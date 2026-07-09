@@ -22,7 +22,6 @@ const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'))
 const EditProfilePage = lazy(() => import('@/pages/profile/EditProfilePage'))
 const HotelProfilePage = lazy(() => import('@/pages/hotel/HotelProfilePage'))
 const MyHotelsPage = lazy(() => import('@/pages/hotel/MyHotelsPage'))
-const CreateHotelPage = lazy(() => import('@/pages/hotel/CreateHotelPage'))
 const JobsPage = lazy(() => import('@/pages/jobs/JobsPage'))
 const JobDetailPage = lazy(() => import('@/pages/jobs/JobDetailPage'))
 const CreateJobPage = lazy(() => import('@/pages/jobs/CreateJobPage'))
@@ -86,7 +85,6 @@ export default function AppRoutes() {
           <Route path="/profile/edit" element={<EditProfilePage />} />
           <Route path="/users/:uuid" element={<ProfilePage />} />
           <Route path="/hotels" element={<MyHotelsPage />} />
-          <Route path="/hotels/new" element={<CreateHotelPage />} />
           <Route path="/hotels/:slug" element={<HotelProfilePage />} />
           <Route path="/company/:slug" element={<HotelProfilePage />} />
           <Route path="/jobs" element={<JobsPage />} />
