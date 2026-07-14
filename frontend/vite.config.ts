@@ -13,6 +13,9 @@ export default defineConfig({
   server: {
     port: 3000,
     host: '0.0.0.0',
+    // Permite acessar via domínio/túnel externo (Vite bloqueia Host headers
+    // desconhecidos por padrão) — ok manter em true enquanto for só teste interno.
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: 'http://php:8000',
