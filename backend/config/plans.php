@@ -61,6 +61,7 @@ return [
                 Feature::CreateCourses->value,
                 Feature::SellMentorships->value,
                 Feature::RecommendationBoost->value,
+                Feature::PublishStories->value,
             ],
             'benefits' => [
                 ['label' => 'Selo PRO no perfil'],
@@ -72,6 +73,7 @@ return [
                 ['label' => 'Criação de cursos', 'prepared' => true],
                 ['label' => 'Venda de mentorias', 'prepared' => true],
                 ['label' => 'Maior alcance nas recomendações', 'prepared' => true],
+                ['label' => 'Stories em destaque'],
             ],
         ],
 
@@ -94,6 +96,7 @@ return [
                 Feature::CandidateSearch->value,
                 Feature::ProfessionalFilters->value,
                 Feature::UnlimitedInvites->value,
+                Feature::PublishStories->value,
             ],
             'benefits' => [
                 ['label' => 'Selo Empresa PRO'],
@@ -107,6 +110,7 @@ return [
                 ['label' => 'Busca avançada de candidatos'],
                 ['label' => 'Filtros profissionais'],
                 ['label' => 'Convites ilimitados', 'prepared' => true],
+                ['label' => 'Stories em destaque'],
             ],
         ],
     ],

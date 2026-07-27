@@ -38,4 +38,5 @@ enum Feature: string
     // ── Shared ────────────────────────────────────────────────
     case ProBadge        = 'pro_badge';
     case SearchHighlight = 'search_highlight';
+    case PublishStories  = 'publish_stories';
 }

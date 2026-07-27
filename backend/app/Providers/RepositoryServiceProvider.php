@@ -57,5 +57,10 @@ class RepositoryServiceProvider extends ServiceProvider
             \App\Domain\Mentorship\Repositories\MentorshipRepositoryInterface::class,
             \App\Domain\Mentorship\Repositories\EloquentMentorshipRepository::class,
         );
+
+        $this->app->bind(
+            \App\Domain\Story\Repositories\StoryRepositoryInterface::class,
+            \App\Domain\Story\Repositories\EloquentStoryRepository::class,
+        );
     }
 }

@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Building2, Sparkles } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import Logo from '@/components/common/Logo'
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -55,10 +56,7 @@ export default function LoginPessoaPage() {
         </div>
 
         <Link to="/" className="relative z-10 flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm ring-1 ring-white/25">
-            <span className="text-lg font-bold">H</span>
-          </div>
-          <span className="text-xl font-bold tracking-tight">HotelConnect</span>
+          <Logo iconClassName="h-10 w-10" textClassName="text-xl" variant="white" />
         </Link>
 
         <div className="relative z-10 max-w-md">
@@ -101,10 +99,7 @@ export default function LoginPessoaPage() {
       <div className="flex w-full flex-col justify-center px-6 py-12 sm:px-12 lg:w-1/2 lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm">
           <Link to="/" className="mb-10 flex items-center gap-2.5 lg:hidden">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
-              <span className="text-base font-bold">H</span>
-            </div>
-            <span className="text-lg font-bold text-gray-900">HotelConnect</span>
+            <Logo iconClassName="h-9 w-9" textClassName="text-lg" />
           </Link>
 
           <h2 className="text-2xl font-bold text-gray-900">Bem-vindo de volta</h2>
