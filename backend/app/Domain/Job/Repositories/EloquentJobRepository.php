@@ -17,9 +17,13 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 class EloquentJobRepository implements JobRepositoryInterface
 {
-    public function getAllActive(int $perPage = 15): LengthAwarePaginator
+    public function getAllActive(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
         return Job::where('status', 'active')
+            ->when($filters['contract_type'] ?? null, fn ($q, $v) => $q->where('contract_type', $v))
+            ->when($filters['modality'] ?? null, fn ($q, $v) => $q->where('modality', $v))
+            ->when($filters['city'] ?? null, fn ($q, $v) => $q->where('city', 'ilike', "%{$v}%"))
+            ->when($filters['state'] ?? null, fn ($q, $v) => $q->where('state', 'ilike', "%{$v}%"))
             ->with('hotel')
             ->latest()
             ->paginate($perPage);
