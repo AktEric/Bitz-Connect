@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { X, MapPin } from 'lucide-react'
+import { X, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useToast } from '@/contexts/ToastContext'
 import { useRegisterStoryView, useToggleStoryLike, useShareStory } from '@/hooks/useStories'
 import type { StoryGroup } from '@/types/story.types'
@@ -109,6 +109,8 @@ export function StoryViewer({ groups, initialIndex, onClose }: StoryViewerProps)
 
   if (!group || !story) return null
 
+  const canGoPrev = storyIndex > 0 || ownerIndex > 0
+
   const handleLike = () => {
     const next = !liked
     setLiked(next)
@@ -175,6 +177,24 @@ export function StoryViewer({ groups, initialIndex, onClose }: StoryViewerProps)
         {/* Zonas de toque (anterior/próximo) */}
         <button aria-label="Story anterior" className="absolute left-0 z-10 w-1/3" style={{ top: '4rem', bottom: '6.5rem' }} onClick={goPrevStory} />
         <button aria-label="Próximo story" className="absolute right-0 z-10 w-1/3" style={{ top: '4rem', bottom: '6.5rem' }} onClick={goNextStory} />
+
+        {/* Setas de navegação (avançar/voltar sem esperar o timer) */}
+        {canGoPrev && (
+          <button
+            onClick={goPrevStory}
+            aria-label="Story anterior"
+            className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/50"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+        )}
+        <button
+          onClick={goNextStory}
+          aria-label="Próximo story"
+          className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/30 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/50"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
 
         {/* Conteúdo do card */}
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-8 text-center text-white">

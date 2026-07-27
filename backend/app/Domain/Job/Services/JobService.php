@@ -24,12 +24,12 @@ class JobService
     ) {}
 
     /**
-     * List active jobs paginated.
+     * List active jobs paginated, optionally filtered by contract_type/modality/city/state.
      * Requirements: 5.1, 5.2
      */
-    public function listActiveJobs(int $perPage = 15): LengthAwarePaginator
+    public function listActiveJobs(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
-        return $this->jobRepository->getAllActive($perPage);
+        return $this->jobRepository->getAllActive($perPage, $filters);
     }
 
     /**

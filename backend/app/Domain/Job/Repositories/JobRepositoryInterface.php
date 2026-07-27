@@ -16,8 +16,12 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 interface JobRepositoryInterface
 {
-    /** List active jobs paginated (with hotel eager-loaded). */
-    public function getAllActive(int $perPage = 15): LengthAwarePaginator;
+    /**
+     * List active jobs paginated (with hotel eager-loaded).
+     *
+     * @param array{contract_type?: string, modality?: string, city?: string, state?: string} $filters
+     */
+    public function getAllActive(int $perPage = 15, array $filters = []): LengthAwarePaginator;
 
     /** Find a job by its UUID. */
     public function findByUuid(string $uuid): ?Job;

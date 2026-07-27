@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom'
 import { MessageSquare, Send, Heart, Share2 } from 'lucide-react'
-import { useApplyToJob } from '@/hooks/useJobs'
 import type { Job } from '@/types/job.types'
 
 interface StoryJobActionsProps {
@@ -14,7 +13,6 @@ interface StoryJobActionsProps {
 /** Ações do story de vaga: mensagem, candidatar-se, curtir, compartilhar. */
 export function StoryJobActions({ job, liked, likesCount, onLike, onShare }: StoryJobActionsProps) {
   const navigate = useNavigate()
-  const apply = useApplyToJob(job.uuid)
 
   return (
     <div className="flex w-full items-center gap-2">
@@ -25,9 +23,8 @@ export function StoryJobActions({ job, liked, likesCount, onLike, onShare }: Sto
         <MessageSquare className="h-4 w-4" /> Mensagem
       </button>
       <button
-        onClick={() => apply.mutate({})}
-        disabled={apply.isPending}
-        className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2.5 text-sm font-semibold text-violet-700 transition-colors hover:bg-white/90 disabled:opacity-60"
+        onClick={() => navigate(`/jobs/${job.uuid}`)}
+        className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2.5 text-sm font-semibold text-violet-700 transition-colors hover:bg-white/90"
       >
         <Send className="h-4 w-4" /> Candidatar-se
       </button>

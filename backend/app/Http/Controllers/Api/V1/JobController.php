@@ -42,7 +42,9 @@ class JobController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $paginator = $this->jobService->listActiveJobs();
+        $filters = $request->only(['contract_type', 'modality', 'city', 'state']);
+
+        $paginator = $this->jobService->listActiveJobs(15, $filters);
 
         $paginator->setCollection(
             $paginator->getCollection()->map(fn ($job) => new JobResource($job))
