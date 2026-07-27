@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\ReviewController;
 use App\Http\Controllers\Api\V1\JobController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\SearchController;
+use App\Http\Controllers\Api\V1\StoryController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VideoController;
@@ -228,4 +229,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/videos/{video}/comments',                [VideoController::class, 'addComment']);
     Route::delete('/videos/{video}/comments/{comment}',    [VideoController::class, 'deleteComment']);
     Route::post('/videos/{video}/share',                   [VideoController::class, 'share']);
+
+    // Stories (destaque de vaga/mentoria; publicação restrita a contas PRO)
+    Route::get('/stories',                [StoryController::class, 'index']);
+    Route::post('/stories',               [StoryController::class, 'store']);
+    Route::delete('/stories/{story}',     [StoryController::class, 'destroy']);
+    Route::post('/stories/{story}/view',  [StoryController::class, 'registerView']);
+    Route::post('/stories/{story}/like',  [StoryController::class, 'toggleLike']);
+    Route::post('/stories/{story}/share', [StoryController::class, 'share']);
 });

@@ -6,6 +6,7 @@ import { useVideos } from '@/hooks/useVideos'
 import { useJobs } from '@/hooks/useJobs'
 import { useHotelDirectory } from '@/hooks/useHotel'
 import PostForm from '@/components/feed/PostForm'
+import { StoriesBar } from '@/components/story/StoriesBar'
 import PostCard from '@/components/feed/PostCard'
 import { VideoCard } from '@/components/video/VideoCard'
 import { PremiumBadge } from '@/components/subscription/PremiumBadge'
@@ -42,6 +43,8 @@ export default function FeedPage() {
         <aside className="hidden lg:block"><SidebarLeft /></aside>
 
         <main className="min-w-0">
+          {(tab === 'todos' || tab === 'vagas') && <StoriesBar />}
+
           {(tab === 'todos' || tab === 'publicacoes') && <PostForm />}
 
           {/* Filter tabs */}

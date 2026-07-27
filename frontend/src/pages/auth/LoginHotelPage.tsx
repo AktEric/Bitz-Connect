@@ -8,6 +8,7 @@ import api from '@/services/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useHotelAuth } from '@/hooks/useHotelAuth'
 import type { User } from '@/types/auth.types'
+import Logo from '@/components/common/Logo'
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -87,10 +88,7 @@ export default function LoginHotelPage() {
         </div>
 
         <Link to="/" className="relative z-10 flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm ring-1 ring-white/25">
-            <span className="text-lg font-bold">H</span>
-          </div>
-          <span className="text-xl font-bold tracking-tight">HotelConnect</span>
+          <Logo iconClassName="h-10 w-10" textClassName="text-xl" variant="white" />
         </Link>
 
         <div className="relative z-10 max-w-md">
@@ -133,10 +131,7 @@ export default function LoginHotelPage() {
       <div className="flex w-full flex-col justify-center px-6 py-12 sm:px-12 lg:w-1/2 lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm">
           <Link to="/" className="mb-10 flex items-center gap-2.5 lg:hidden">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 text-white">
-              <span className="text-base font-bold">H</span>
-            </div>
-            <span className="text-lg font-bold text-gray-900">HotelConnect</span>
+            <Logo iconClassName="h-9 w-9" textClassName="text-lg" />
           </Link>
 
           <h2 className="text-2xl font-bold text-gray-900">Painel do Hotel</h2>

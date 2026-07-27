@@ -15,6 +15,7 @@ import { useMyHotels } from '@/hooks/useHotel'
 import { Avatar } from '@/components/ui/Avatar'
 import { cn } from '@/utils/cn'
 import NotificationBell from '@/components/common/NotificationBell'
+import Logo from '@/components/common/Logo'
 
 /** Meu primeiro hotel administrado que tem plano PRO ativo, se houver. */
 function useMyProHotel() {
@@ -183,12 +184,11 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
       <div className={cn('flex h-16 items-center border-b border-gray-100 px-4 flex-shrink-0', collapsed && 'justify-center px-2')}>
         {collapsed ? (
           <Link to="/feed">
-            <img src="/logo-icon.png" alt="HotelConnect" className="h-8 w-8" />
+            <Logo iconClassName="h-8 w-8" showText={false} />
           </Link>
         ) : (
           <Link to="/feed" className="flex items-center gap-2">
-            <img src="/logo-icon.png" alt="HotelConnect" className="h-8 w-8" />
-            <span className="text-lg font-bold text-gray-900">HotelConnect</span>
+            <Logo iconClassName="h-8 w-8" textClassName="text-lg" />
           </Link>
         )}
         <button
@@ -575,8 +575,7 @@ function MobileTopbar({ onOpenDrawer }: { onOpenDrawer: () => void }) {
       </button>
 
       <Link to="/feed" className="flex items-center gap-1.5">
-        <img src="/logo-icon.png" alt="HotelConnect" className="h-7 w-7" />
-        <span className="text-base font-bold text-gray-900">HotelConnect</span>
+        <Logo iconClassName="h-7 w-7" textClassName="text-base" />
       </Link>
 
       <div className="flex-1" />
