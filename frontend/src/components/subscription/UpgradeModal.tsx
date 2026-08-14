@@ -27,7 +27,7 @@ const DEFAULT_HIGHLIGHTS = [
 export function UpgradeModal({
   open,
   onClose,
-  title = 'Este recurso é do HotelConnect PRO',
+  title = 'Este recurso é do ConnectHotel PRO',
   description = 'Desbloqueie ferramentas profissionais para crescer na plataforma.',
   highlights = DEFAULT_HIGHLIGHTS,
 }: UpgradeModalProps) {
@@ -66,7 +66,7 @@ export function UpgradeModal({
           {/* Gradient header */}
           <div className="bg-gradient-to-br from-amber-400 to-amber-600 px-6 py-7 text-white">
             <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold">
-              <Sparkles className="h-3 w-3" /> HotelConnect PRO
+              <Sparkles className="h-3 w-3" /> ConnectHotel PRO
             </span>
             <h2 id="upgrade-modal-title" className="mt-3 text-xl font-semibold">
               {title}
@@ -93,7 +93,7 @@ export function UpgradeModal({
                   navigate('/plans')
                 }}
               >
-                Conhecer HotelConnect PRO
+                Conhecer ConnectHotel PRO
               </Button>
               <Button variant="ghost" fullWidth onClick={onClose}>
                 Agora não

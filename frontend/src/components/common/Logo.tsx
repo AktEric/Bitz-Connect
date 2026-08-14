@@ -6,7 +6,7 @@ interface LogoProps {
 }
 
 /**
- * Marca oficial HotelConnect (ícone + wordmark), conforme manual da marca.
+ * Marca oficial ConnectHotel (ícone + wordmark), conforme manual da marca.
  */
 export default function Logo({
   iconClassName = 'h-8 w-8',
@@ -18,17 +18,17 @@ export default function Logo({
 
   return (
     <>
-      <img src={iconSrc} alt="HotelConnect" className={iconClassName} />
+      <img src={iconSrc} alt="ConnectHotel" className={iconClassName} />
       {showText && (
         <span className={`font-bold tracking-tight ${textClassName}`}>
           {variant === 'white' ? (
-            <span className="text-white">HotelConnect</span>
+            <span className="text-white">ConnectHotel</span>
           ) : (
             <>
-              <span className="text-[#1B1240]">Hotel</span>
-              <span className="bg-gradient-to-r from-[#4D14D9] to-[#7C3AED] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#5B21E0] to-[#4D14D9] bg-clip-text text-transparent">
                 Connect
               </span>
+              <span className="text-[#0E1327]">Hotel</span>
             </>
           )}
         </span>

@@ -19,6 +19,7 @@ class PlanResource extends JsonResource
             'name'        => $this->resource['name'],
             'tagline'     => $this->resource['tagline'] ?? null,
             'price_cents' => $this->resource['price_cents'] ?? 0,
+            'price_note'  => $this->resource['price_note'] ?? null,
             'interval'    => $this->resource['interval'] ?? null,
             'audience'    => $this->resource['audience'] ?? 'user',
             'featured'    => $this->resource['featured'] ?? false,

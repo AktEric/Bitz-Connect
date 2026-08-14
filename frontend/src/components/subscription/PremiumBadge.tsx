@@ -26,7 +26,7 @@ export function PremiumBadge({ plan, compact = false, className }: PremiumBadgeP
 
   return (
     <span
-      title={`HotelConnect ${label}`}
+      title={`ConnectHotel ${label}`}
       className={cn(
         'inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500',
         'font-semibold text-white shadow-sm',

@@ -91,7 +91,7 @@ export default function CoursesPage() {
         open={upgradeOpen}
         onClose={() => setUpgradeOpen(false)}
         title="Crie e venda cursos"
-        description="A criação de cursos é exclusiva do HotelConnect PRO - Consultor."
+        description="A criação de cursos é exclusiva do ConnectHotel PRO - Consultor."
       />
     </div>
   )

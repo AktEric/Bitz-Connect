@@ -1,0 +1,91 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: hotelconnect_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./frontend/dist:/srv/frontend:ro
+      - ./backend:/var/www/html:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - php
+    networks:
+      - hotelconnect
+
+  php:
+    build:
+      context: ./backend
+      dockerfile: ../docker/php/Dockerfile.prod
+    container_name: hotelconnect_php
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    volumes:
+      - ./backend/storage:/var/www/html/storage
+      - ./backend/bootstrap/cache:/var/www/html/bootstrap/cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hotelconnect
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: hotelconnect_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-hotelconnect}
+      POSTGRES_USER: ${DB_USERNAME:-hotelconnect}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-hotelconnect}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hotelconnect
+
+  redis:
+    image: redis:7-alpine
+    container_name: hotelconnect_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data_prod:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hotelconnect
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: hotelconnect_mailpit
+    restart: unless-stopped
+    networks:
+      - hotelconnect
+
+volumes:
+  postgres_data_prod:
+  redis_data_prod:
+  caddy_data:
+  caddy_config:
+
+networks:
+  hotelconnect:
+    driver: bridge

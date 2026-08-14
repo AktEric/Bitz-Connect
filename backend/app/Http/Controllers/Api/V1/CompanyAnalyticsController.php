@@ -60,7 +60,7 @@ class CompanyAnalyticsController extends Controller
             // BOM para o Excel reconhecer UTF-8 corretamente.
             fwrite($out, "\xEF\xBB\xBF");
 
-            fputcsv($out, ['Relatório HotelConnect — ' . $hotel->name]);
+            fputcsv($out, ['Relatório ConnectHotel — ' . $hotel->name]);
             fputcsv($out, ['Gerado em', now()->format('d/m/Y H:i')]);
             fputcsv($out, []);
 
@@ -101,7 +101,7 @@ class CompanyAnalyticsController extends Controller
 
         // Precisa do plano PRO Empresa.
         if (! $this->entitlements->allows($hotel, Feature::CompanyAnalytics)) {
-            return $this->forbidden('O dashboard de analytics é exclusivo do HotelConnect PRO - Empresa.');
+            return $this->forbidden('O dashboard de analytics é exclusivo do ConnectHotel PRO - Empresa.');
         }
 
         return null;

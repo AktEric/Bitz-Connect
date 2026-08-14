@@ -52,7 +52,7 @@ export default function PlansPage() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-8 text-center">
         <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-          <Sparkles className="h-3.5 w-3.5" /> HotelConnect PRO
+          <Sparkles className="h-3.5 w-3.5" /> ConnectHotel PRO
         </span>
         <h1 className="mt-3 text-3xl font-bold text-gray-900">Escolha seu plano</h1>
         <p className="mt-2 text-gray-500">
