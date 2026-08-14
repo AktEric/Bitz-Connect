@@ -1,0 +1,20 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--host"
+      ],
+      "cwd": "frontend",
+      "port": 3000,
+      "env": {
+        "VITE_API_PROXY_TARGET": "http://localhost:9595"
+      }
+    }
+  ]
+}

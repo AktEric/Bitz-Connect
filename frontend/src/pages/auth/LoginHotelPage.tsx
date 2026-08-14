@@ -97,11 +97,11 @@ export default function LoginHotelPage() {
             Painel para hotéis e redes
           </div>
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
-            Encontre os talentos que vão elevar a experiência do seu hóspede.
+            O primeiro ecossistema da hotelaria no Brasil!
           </h1>
           <p className="mt-4 text-base leading-relaxed text-amber-50">
-            Gerencie vagas, equipe e a reputação da sua marca em um painel
-            feito sob medida para a hotelaria.
+            Encontre talentos, gerencie vagas e equipe e construa a reputação
+            da sua marca em um painel feito sob medida para a hotelaria.
           </p>
 
           <div className="mt-10 flex items-center gap-8">
@@ -123,7 +123,7 @@ export default function LoginHotelPage() {
         </div>
 
         <p className="relative z-10 text-xs text-amber-100">
-          © {new Date().getFullYear()} HotelConnect. Todos os direitos reservados.
+          © {new Date().getFullYear()} ConnectHotel. Todos os direitos reservados.
         </p>
       </div>
 
