@@ -78,7 +78,7 @@ export default function HotelDashboardPage() {
       {!canAnalytics ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-8 text-center">
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-            <Sparkles className="h-3.5 w-3.5" /> HotelConnect PRO — Empresa
+            <Sparkles className="h-3.5 w-3.5" /> ConnectHotel PRO — Empresa
           </span>
           <h2 className="mt-3 text-lg font-semibold text-gray-900">Analytics é um recurso PRO Empresa</h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-gray-500">
@@ -86,7 +86,7 @@ export default function HotelDashboardPage() {
             Assine o plano Empresa para desbloquear o dashboard completo.
           </p>
           <Button className="mt-4" icon={<Sparkles className="h-4 w-4" />} onClick={() => navigate('/plans')}>
-            Conhecer HotelConnect PRO
+            Conhecer ConnectHotel PRO
           </Button>
         </div>
       ) : isLoading || !data ? (

@@ -32,6 +32,7 @@ export type Feature =
   | 'featured_company_page'
   | 'pro_badge'
   | 'search_highlight'
+  | 'publish_stories'
 
 export type Entitlements = Record<Feature, boolean>
 
@@ -46,6 +47,8 @@ export interface Plan {
   name: string
   tagline: string | null
   price_cents: number
+  /** Linha extra sob o valor (ex.: taxa sobre transações na plataforma). */
+  price_note: string | null
   interval: 'month' | 'year' | null
   audience: PlanAudience
   featured: boolean

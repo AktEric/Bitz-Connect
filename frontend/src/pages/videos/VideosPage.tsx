@@ -126,7 +126,7 @@ export default function VideosPage() {
         open={upgradeOpen}
         onClose={() => setUpgradeOpen(false)}
         title="Publique vídeos profissionais"
-        description="A publicação de vídeos é exclusiva do HotelConnect PRO - Consultor."
+        description="A publicação de vídeos é exclusiva do ConnectHotel PRO - Consultor."
       />
     </div>
   )

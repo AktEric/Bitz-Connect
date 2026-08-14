@@ -65,11 +65,11 @@ export default function LoginPessoaPage() {
             A rede da hotelaria brasileira
           </div>
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
-            Sua próxima grande oportunidade na hotelaria começa aqui.
+            O primeiro ecossistema da hotelaria no Brasil!
           </h1>
           <p className="mt-4 text-base leading-relaxed text-violet-100">
-            Conecte-se a profissionais, hotéis e vagas em um só lugar — construa
-            sua reputação, cresça sua rede e leve sua carreira mais longe.
+            Profissionais, hotéis e especialistas em um só lugar — sua próxima
+            grande oportunidade na hotelaria começa aqui.
           </p>
 
           <div className="mt-10 flex items-center gap-8">
@@ -91,7 +91,7 @@ export default function LoginPessoaPage() {
         </div>
 
         <p className="relative z-10 text-xs text-violet-200">
-          © {new Date().getFullYear()} HotelConnect. Todos os direitos reservados.
+          © {new Date().getFullYear()} ConnectHotel. Todos os direitos reservados.
         </p>
       </div>
 

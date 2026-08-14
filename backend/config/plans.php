@@ -7,12 +7,14 @@ use App\Enums\SubscriptionPlan;
 |--------------------------------------------------------------------------
 | Subscription Plan Catalog
 |--------------------------------------------------------------------------
-| Single source of truth for the plans offered by HotelConnect. Adding a new
+| Single source of truth for the plans offered by ConnectHotel. Adding a new
 | plan or benefit is done here — the EntitlementService, pricing page and API
 | all read from this catalog, so no plan-specific logic lives elsewhere.
 |
 | price_cents .... amount in BRL cents (0 = free). Billing gateway (Stripe /
 |                  Mercado Pago) will map to these amounts later.
+| price_note ..... extra pricing line shown under the amount (e.g. the take
+|                  rate charged on transactions besides the subscription).
 | audience ....... 'user' | 'hotel' — which kind of subject may hold the plan.
 | features ....... Feature enum values granted by the plan (the entitlements).
 | benefits ....... human-readable bullet list for the pricing page. Items may
@@ -45,9 +47,10 @@ return [
         ],
 
         SubscriptionPlan::ProConsultor->value => [
-            'name'        => 'HotelConnect PRO — Consultor',
+            'name'        => 'ConnectHotel PRO — Consultor',
             'tagline'     => 'Para consultores independentes que criam conteúdo.',
             'price_cents' => 4990,
+            'price_note'  => '+ 2,9% por consultoria ou venda transacionada pela plataforma',
             'interval'    => 'month',
             'audience'    => 'user',
             'featured'    => true,
@@ -78,9 +81,9 @@ return [
         ],
 
         SubscriptionPlan::ProEmpresa->value => [
-            'name'        => 'HotelConnect PRO — Empresa',
+            'name'        => 'ConnectHotel PRO — Empresa',
             'tagline'     => 'Para hotéis e empresas que recrutam e se destacam.',
-            'price_cents' => 19990,
+            'price_cents' => 9990,
             'interval'    => 'month',
             'audience'    => 'hotel',
             'featured'    => true,
@@ -99,6 +102,7 @@ return [
                 Feature::PublishStories->value,
             ],
             'benefits' => [
+                ['label' => 'Acesso aos principais candidatos, de acordo com as suas vagas ou com os perfis que já atuam na área'],
                 ['label' => 'Selo Empresa PRO'],
                 ['label' => 'Perfil empresarial premium'],
                 ['label' => 'Página empresarial destacada'],

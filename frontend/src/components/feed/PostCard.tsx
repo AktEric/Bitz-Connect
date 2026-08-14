@@ -60,7 +60,7 @@ export default function PostCard({ post }: PostCardProps) {
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'HotelConnect', text, url })
+        await navigator.share({ title: 'ConnectHotel', text, url })
         return
       } catch {
         // user cancelled or not supported — fall through to clipboard

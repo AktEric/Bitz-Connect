@@ -1,7 +1,7 @@
 {
-    "name": "hotelconnect/api",
+    "name": "connecthotel/api",
     "type": "project",
-    "description": "HotelConnect API — Rede social profissional para o setor hoteleiro",
+    "description": "ConnectHotel API — Rede social profissional para o setor hoteleiro",
     "keywords": ["laravel", "hotel", "social"],
     "license": "MIT",
     "require": {

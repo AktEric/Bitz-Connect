@@ -15,9 +15,9 @@ vi.mock('@/services/subscription.service', () => ({
       data: {
         currency: 'BRL',
         plans: [
-          { id: 'free', name: 'Gratuito', tagline: 't', price_cents: 0, interval: null, audience: 'user', featured: false, features: [], benefits: [{ label: 'Perfil' }] },
-          { id: 'pro_consultor', name: 'PRO Consultor', tagline: 't', price_cents: 4990, interval: 'month', audience: 'user', featured: true, features: ['pro_badge'], benefits: [{ label: 'Vídeos' }, { label: 'Cursos', prepared: true }] },
-          { id: 'pro_empresa', name: 'PRO Empresa', tagline: 't', price_cents: 19990, interval: 'month', audience: 'hotel', featured: true, features: ['company_dashboard'], benefits: [{ label: 'Dashboard' }] },
+          { id: 'free', name: 'Gratuito', tagline: 't', price_cents: 0, price_note: null, interval: null, audience: 'user', featured: false, features: [], benefits: [{ label: 'Perfil' }] },
+          { id: 'pro_consultor', name: 'PRO Consultor', tagline: 't', price_cents: 4990, price_note: '+ 2,9% por consultoria ou venda transacionada pela plataforma', interval: 'month', audience: 'user', featured: true, features: ['pro_badge'], benefits: [{ label: 'Vídeos' }, { label: 'Cursos', prepared: true }] },
+          { id: 'pro_empresa', name: 'PRO Empresa', tagline: 't', price_cents: 9990, price_note: null, interval: 'month', audience: 'hotel', featured: true, features: ['company_dashboard'], benefits: [{ label: 'Dashboard' }] },
         ],
       },
     }),

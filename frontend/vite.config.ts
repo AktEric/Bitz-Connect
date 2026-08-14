@@ -18,7 +18,11 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api': {
-        target: 'http://php:8000',
+        // O nginx do compose é quem fala com o php-fpm; ele escuta 8000 na rede
+        // interna (o container php só expõe 9000/fpm, que não atende HTTP).
+        // Rodando o Vite fora do compose, aponte para a porta publicada do nginx
+        // com VITE_API_PROXY_TARGET=http://localhost:9595.
+        target: process.env.VITE_API_PROXY_TARGET ?? 'http://nginx:8000',
         changeOrigin: true,
       },
     },

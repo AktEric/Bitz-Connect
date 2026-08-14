@@ -62,7 +62,7 @@ export default function CreatorPage() {
       <div className="mx-auto max-w-2xl px-4 py-12">
         <EmptyState
           title="Este usuário ainda não é um criador PRO"
-          description="A página de criador está disponível para assinantes do HotelConnect PRO - Consultor."
+          description="A página de criador está disponível para assinantes do ConnectHotel PRO - Consultor."
           icon={<VideoIcon className="h-8 w-8" />}
           action={{ label: 'Ver perfil', onClick: () => { window.location.href = `/users/${creator.uuid}` } }}
         />

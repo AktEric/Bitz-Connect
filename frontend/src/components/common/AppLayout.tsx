@@ -41,7 +41,7 @@ const NAV_EXTRA = [
   { to: '/courses',      label: 'Cursos',           Icon: GraduationCap },
   { to: '/mentorships',  label: 'Mentorias',        Icon: Handshake },
   { to: '/connections',  label: 'Conexões',         Icon: Users },
-  { to: '/plans',        label: 'HotelConnect PRO', Icon: Sparkles },
+  { to: '/plans',        label: 'ConnectHotel PRO', Icon: Sparkles },
 ] as const
 
 // Bottom navigation (mobile) — 6 items
@@ -60,7 +60,7 @@ const DRAWER_ITEMS = [
   { to: '/videos',   label: 'Vídeos',        Icon: VideoIcon,  enabled: true },
   { to: '/courses',  label: 'Cursos',        Icon: GraduationCap, enabled: true },
   { to: '/mentorships', label: 'Mentorias',  Icon: Handshake,  enabled: true },
-  { to: '/plans',    label: 'HotelConnect PRO', Icon: Sparkles, enabled: true },
+  { to: '/plans',    label: 'ConnectHotel PRO', Icon: Sparkles, enabled: true },
   { to: '/hotels',   label: 'Meus Hotéis',   Icon: Building2,  enabled: true },
   { to: '/saved',    label: 'Itens salvos',  Icon: Bookmark,   enabled: false },
   { to: '/events',   label: 'Eventos',       Icon: Calendar,   enabled: false },
@@ -144,7 +144,7 @@ function PremiumCard({ collapsed }: { collapsed: boolean }) {
       </button>
       <div className="flex items-center gap-2 mb-2">
         <Sparkles className="h-4 w-4 text-yellow-300" />
-        <span className="text-xs font-semibold">HotelConnect Pro</span>
+        <span className="text-xs font-semibold">ConnectHotel Pro</span>
       </div>
       <p className="text-xs text-violet-200 leading-snug mb-3">
         Acesse análises avançadas, destaque seu perfil e muito mais.

@@ -66,7 +66,7 @@ class VideoController extends Controller
     public function store(CreateVideoRequest $request): JsonResponse
     {
         if ($request->user()->cannot('publish_videos')) {
-            return $this->forbidden('A publicação de vídeos é exclusiva do HotelConnect PRO - Consultor.');
+            return $this->forbidden('A publicação de vídeos é exclusiva do ConnectHotel PRO - Consultor.');
         }
 
         $videoPath     = $request->file('video')->store('videos', 'public');

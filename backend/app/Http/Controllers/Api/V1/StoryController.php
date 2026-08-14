@@ -74,7 +74,7 @@ class StoryController extends Controller
                 return $this->forbidden('Você não administra o hotel desta vaga.');
             }
             if (! $this->entitlements->allows($job->hotel, Feature::PublishStories)) {
-                return $this->forbidden('A publicação de stories é exclusiva do HotelConnect PRO - Empresa.');
+                return $this->forbidden('A publicação de stories é exclusiva do ConnectHotel PRO - Empresa.');
             }
 
             $imagePath = $request->hasFile('image') ? $request->file('image')->store('story-images', 'public') : null;
@@ -86,7 +86,7 @@ class StoryController extends Controller
                 return $this->forbidden('Você não é o autor desta mentoria.');
             }
             if ($user->cannot('publish_stories')) {
-                return $this->forbidden('A publicação de stories é exclusiva do HotelConnect PRO - Consultor.');
+                return $this->forbidden('A publicação de stories é exclusiva do ConnectHotel PRO - Consultor.');
             }
 
             $imagePath = $request->hasFile('image') ? $request->file('image')->store('story-images', 'public') : null;

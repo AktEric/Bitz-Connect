@@ -45,6 +45,7 @@ export function PlanCard({ plan, currency, currentPlan, onSelect, loading }: Pla
           <span className="text-sm text-gray-400">/mês</span>
         )}
       </div>
+      {plan.price_note && <p className="mt-1 text-xs text-gray-500">{plan.price_note}</p>}
 
       <ul className="mt-5 flex-1 space-y-2.5">
         {plan.benefits.map((benefit) => (
