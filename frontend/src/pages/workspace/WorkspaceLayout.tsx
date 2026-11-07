@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, ArrowLeftRight, LogOut, Moon, Sun, Globe, CheckCircle2, type LucideIcon,
+  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Moon, Sun, Globe, CheckCircle2, type LucideIcon,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import { useAuth } from '@/hooks/useAuth'
@@ -82,6 +82,9 @@ export default function WorkspaceLayout() {
     groups[groups.length - 1].items.push({ to: 'comecar', label: 'Primeiros passos', Icon: Rocket })
     groups[groups.length - 1].items.push({ to: 'configuracoes', label: 'Papéis e estrutura', Icon: Settings2 })
     groups[groups.length - 1].items.push({ to: 'auditoria', label: 'Auditoria', Icon: ScrollText })
+  }
+  if (lead || info.me.can_see_dashboard) {
+    groups[groups.length - 1].items.push({ to: 'relatorios', label: 'Relatórios', Icon: FileBarChart })
   }
   if (lead) {
     groups.splice(2, 0, {

@@ -6,7 +6,7 @@ import type {
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData,
+  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -57,6 +57,8 @@ const workspaceService = {
   givePunchConsent: (slug: string) => post<{ punch_consent_at: string }>(`${w(slug)}/me/privacy/consent`, {}),
   exportMyData: (slug: string) => get<Record<string, unknown>>(`${w(slug)}/me/export`),
   timeReceipt: (slug: string, uuid: string) => get<TimeReceipt>(`${w(slug)}/time/entries/${uuid}/receipt`),
+  reports: (slug: string) => get<ReportItem[]>(`${w(slug)}/reports`),
+  report: (slug: string, key: string, month: string) => get<ReportData>(`${w(slug)}/reports/${key}`, month ? { month } : undefined),
   timeIntegrity: (slug: string) => get<IntegrityResult>(`${w(slug)}/time/integrity`),
   timesheet: (slug: string, params: { month?: string; user?: string }) => get<Timesheet>(`${w(slug)}/time/timesheet`, params),
   timeClosings: (slug: string) => get<ClosingItem[]>(`${w(slug)}/time/closings`),
