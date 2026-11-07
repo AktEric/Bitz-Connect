@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarPlus, Check, ChevronLeft, ChevronRight, Copy, Link2, MapPin, Trash2 } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
@@ -219,8 +220,11 @@ function DayList({ slug, day, items }: { slug: string; day: string; items: Calen
 export default function WorkspaceCalendarPage() {
   const { slug } = useWs()
   const today = ymd(new Date())
-  const [cursor, setCursor] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1) })
-  const [selected, setSelected] = useState(today)
+  // ?d=AAAA-MM-DD (vindo da busca global) abre o mês e o dia indicados
+  const [params] = useSearchParams()
+  const jump = /^\d{4}-\d{2}-\d{2}$/.test(params.get('d') ?? '') ? parseYmd(params.get('d') as string) : null
+  const [cursor, setCursor] = useState(() => { const d = jump ?? new Date(); return new Date(d.getFullYear(), d.getMonth(), 1) })
+  const [selected, setSelected] = useState(jump ? ymd(jump) : today)
   const [hidden, setHidden] = useState<Set<CalendarItemType>>(new Set())
   const [modal, setModal] = useState<'event' | 'birthday' | 'ics' | null>(null)
 

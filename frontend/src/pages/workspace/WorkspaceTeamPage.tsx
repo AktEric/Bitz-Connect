@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Link2, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
@@ -156,7 +157,8 @@ function DepartmentsPanel({ slug }: { slug: string }) {
 export default function WorkspaceTeamPage() {
   const { slug, info } = useWs()
   const [tab, setTab] = useState<'people' | 'invites' | 'departments'>('people')
-  const [q, setQ] = useState('')
+  const [params] = useSearchParams()
+  const [q, setQ] = useState(params.get('q') ?? '')
   const [dept, setDept] = useState('')
   const [editing, setEditing] = useState<WorkspaceMember | null>(null)
 

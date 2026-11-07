@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ChatGroupController;
 use App\Http\Controllers\Api\V1\CompanyDirectoryController;
 use App\Http\Controllers\Api\V1\CompanyInviteController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
+use App\Http\Controllers\Api\V1\WorkspaceSearchController;
 use App\Http\Controllers\Api\V1\AccountSecurityController;
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\CalendarController;
@@ -252,6 +253,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/invites',                  [CompanyInviteController::class, 'index']);
         Route::post('/invites',                 [CompanyInviteController::class, 'store']);
         Route::delete('/invites/{invite}',      [CompanyInviteController::class, 'destroy']);
+        Route::get('/search',                            [WorkspaceSearchController::class, 'index'])->middleware('throttle:60,1');
         Route::get('/calendar',                          [CalendarController::class, 'index']);
         Route::post('/calendar/events',                  [CalendarController::class, 'storeEvent']);
         Route::patch('/calendar/events/{uuid}',          [CalendarController::class, 'updateEvent']);

@@ -474,3 +474,10 @@ export interface AuditPage {
   last_page: number
   actions: string[]
 }
+
+export interface SearchResults {
+  people: { uuid: string; name: string; avatar_url: string | null; job_title: string | null; department: string | null }[]
+  posts: { uuid: string; excerpt: string; author: string | null; created_at: string | null }[]
+  events: { uuid: string; title: string; kind: 'event' | 'holiday'; date: string }[]
+  requests: { uuid: string; title: string; status: string; type: string; requester: string | null }[]
+}

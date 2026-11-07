@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, ArrowLeftRight, LogOut, Globe, CheckCircle2, type LucideIcon,
+  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, ArrowLeftRight, LogOut, Globe, CheckCircle2, type LucideIcon,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import { useAuth } from '@/hooks/useAuth'
@@ -10,6 +10,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import NotificationBell from '@/components/common/NotificationBell'
 import ChatSidebar from '@/components/chat/ChatSidebar'
 import { cn } from '@/utils/cn'
+import CommandPalette from './CommandPalette'
 import { Spinner } from './ui'
 
 interface NavItem { to: string; label: string; Icon: LucideIcon; end?: boolean; badge?: number }
@@ -25,6 +26,16 @@ export default function WorkspaceLayout() {
   const [chatOpen, setChatOpen] = useState(false)
   const [drawer, setDrawer] = useState(false)
   const [menu, setMenu] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  // Ctrl/Cmd+K abre a busca global em qualquer tela do Workspace
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setSearchOpen((v) => !v) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   useEffect(() => { setDrawer(false); setMenu(false) }, [location.pathname])
 
@@ -128,6 +139,13 @@ export default function WorkspaceLayout() {
         </Link>
         <div className="ml-auto flex items-center gap-1">
           <button
+            type="button" onClick={() => setSearchOpen(true)} aria-label="Buscar (Ctrl+K)"
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+          >
+            <Search className="h-[18px] w-[18px]" /> <span className="hidden sm:inline">Buscar</span>
+            <kbd className="hidden rounded border border-gray-200 px-1.5 py-0.5 text-[10px] font-normal text-gray-400 lg:block">Ctrl K</kbd>
+          </button>
+          <button
             type="button"
             onClick={() => setChatOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 xl:hidden"
@@ -218,6 +236,8 @@ export default function WorkspaceLayout() {
           </div>
         </div>
       )}
+
+      {searchOpen && <CommandPalette slug={slug} pages={groups.flatMap((g) => g.items.map((i) => ({ to: i.to, label: i.label })))} onClose={() => setSearchOpen(false)} />}
 
       <ChatSidebar open={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
