@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Workspace\Services\TimeClock;
+use App\Domain\Workspace\Services\CalendarService;
 use App\Domain\Workspace\Services\PunchRules;
+use App\Domain\Workspace\Services\TimeBank;
 use App\Domain\Workspace\Services\TimeClosingService;
 use App\Domain\Workspace\Services\WorkspaceAccess;
 use App\Models\AuditLog;
@@ -32,6 +34,8 @@ class TimeClockController extends WorkspaceBaseController
         private readonly TimeClock $clock,
         private readonly TimeClosingService $closing,
         private readonly PunchRules $rules,
+        private readonly TimeBank $bank,
+        private readonly CalendarService $calendar,
     ) {
         parent::__construct($access, $notifications);
     }
@@ -275,6 +279,8 @@ class TimeClockController extends WorkspaceBaseController
             ->groupBy(fn ($e) => CarbonImmutable::instance($e->punched_at)->setTimezone(TimeClock::TZ)->toDateString());
 
         $schedule = $this->scheduleFor($hotel, $target);
+        $perDay   = $this->bank->expectedByDay($hotel, $target, $schedule, $first, $last);
+        $holidays = $this->calendar->holidayDates($hotel, $first, $last);
         $days = [];
         $worked = 0;
         $expected = 0;
@@ -282,7 +288,7 @@ class TimeClockController extends WorkspaceBaseController
             $key     = $d->toDateString();
             $entries = $all->get($key, collect());
             $mins    = $this->clock->workedMinutes($entries, $key === $now->toDateString() ? $now : null);
-            $exp     = $d <= $now ? WorkSchedule::minutesFor($schedule, $d->dayOfWeek) : 0;
+            $exp     = $d <= $now ? $perDay[$key] : 0;
             $worked   += $mins;
             $expected += $exp;
             $days[] = [
@@ -290,6 +296,7 @@ class TimeClockController extends WorkspaceBaseController
                 'weekday'          => $d->dayOfWeek,
                 'worked_minutes'   => $mins,
                 'expected_minutes' => $exp,
+                'holiday'          => $holidays[$key] ?? null,
                 'entries'          => $entries->map(fn ($e) => $this->clock->format($e) + [
                     'local_time' => CarbonImmutable::instance($e->punched_at)->setTimezone(TimeClock::TZ)->format('H:i'),
                 ])->values(),

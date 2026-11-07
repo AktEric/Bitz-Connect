@@ -50,7 +50,7 @@ it('has no balance before the person ever punches', function () {
 });
 
 it('accumulates worked minus expected over closed days only', function () {
-    // seg 2 (8h, ok) e ter 3 (9h) — qua 4 e qui 5 sem marcação (−8h cada); hoje (sex 6) não conta
+    // seg 2 é Finados (feriado: esperado 0, as 8h trabalhadas viram saldo), ter 3 (9h) — qua 4 e qui 5 sem marcação (−8h cada); hoje (sex 6) não conta
     bankPunchDay($this->hotel, $this->worker, '2026-11-02');
     bankPunchDay($this->hotel, $this->worker, '2026-11-03', '08:00', '17:00');
     bankPunchDay($this->hotel, $this->worker, '2026-11-06', '08:00', '10:00');
@@ -59,8 +59,8 @@ it('accumulates worked minus expected over closed days only', function () {
     $res = $this->getJson("{$this->base}/time/bank")->assertOk();
     $res->assertJsonPath('data.since', '2026-11-02')
         ->assertJsonPath('data.worked_minutes', 480 + 540)
-        ->assertJsonPath('data.expected_minutes', 4 * 480)
-        ->assertJsonPath('data.balance_minutes', 1020 - 1920);
+        ->assertJsonPath('data.expected_minutes', 3 * 480)
+        ->assertJsonPath('data.balance_minutes', 1020 - 1440);
 });
 
 it('does not charge days covered by approved vacation', function () {
@@ -71,7 +71,8 @@ it('does not charge days covered by approved vacation', function () {
     ]);
 
     Sanctum::actingAs($this->worker);
-    $this->getJson("{$this->base}/time/bank")->assertOk()->assertJsonPath('data.balance_minutes', 0);
+    // 2/11 é feriado (Finados): as 8h trabalhadas viram saldo; 3 a 5/11 são férias e não geram débito
+    $this->getJson("{$this->base}/time/bank")->assertOk()->assertJsonPath('data.balance_minutes', 480);
 });
 
 it('uses the person schedule for the expected hours', function () {
@@ -83,8 +84,8 @@ it('uses the person schedule for the expected hours', function () {
     bankPunchDay($this->hotel, $this->worker, '2026-11-02', '08:00', '12:00');
 
     Sanctum::actingAs($this->worker);
-    // seg–qui: 4 dias × 4h esperadas; trabalhou só segunda (4h) → −12h
-    $this->getJson("{$this->base}/time/bank")->assertJsonPath('data.balance_minutes', 240 - 960);
+    // seg 2/11 é feriado (esperado 0; 4h trabalhadas); ter–qui: 3 dias × 4h esperadas sem marcação → 240 − 720
+    $this->getJson("{$this->base}/time/bank")->assertJsonPath('data.balance_minutes', 240 - 720);
 });
 
 it('lets only RH post manual bank entries, with a reason, and notifies the person', function () {
@@ -115,4 +116,37 @@ it('limits who can see someone else bank and the team overview', function () {
 
     Sanctum::actingAs($this->rh);
     $this->getJson("{$this->base}/time/bank/team")->assertOk()->assertJsonCount(4, 'data');
+});
+
+it('does not expect work on national holidays, company holidays or vacations, and says which holiday it is', function () {
+    \App\Models\CalendarEvent::create([
+        'uuid' => (string) Str::uuid(), 'hotel_id' => $this->hotel->id, 'title' => 'Aniversário da cidade', 'kind' => 'holiday',
+        'starts_on' => '2026-11-04', 'created_by' => $this->rh->id,
+    ]);
+    WorkspaceRequest::create([
+        'uuid' => (string) Str::uuid(), 'hotel_id' => $this->hotel->id, 'requester_id' => $this->worker->id,
+        'type' => 'vacation', 'title' => 'Férias', 'starts_on' => '2026-11-05', 'ends_on' => '2026-11-05', 'status' => 'approved',
+    ]);
+
+    Sanctum::actingAs($this->worker);
+    $days = collect($this->getJson("{$this->base}/time/timesheet?month=2026-11")->assertOk()->json('data.days'))->keyBy('date');
+
+    expect($days['2026-11-02']['expected_minutes'])->toBe(0)->and($days['2026-11-02']['holiday'])->toBe('Finados');   // nacional (segunda)
+    expect($days['2026-11-03']['expected_minutes'])->toBe(480)->and($days['2026-11-03']['holiday'])->toBeNull();      // dia comum
+    expect($days['2026-11-04']['expected_minutes'])->toBe(0)->and($days['2026-11-04']['holiday'])->toBe('Aniversário da cidade'); // da empresa
+    expect($days['2026-11-05']['expected_minutes'])->toBe(0);                                                          // férias aprovadas
+    expect($days['2026-11-06']['expected_minutes'])->toBe(480);
+});
+
+it('keeps "ponto facultativo" days as regular work days unless the company registers them', function () {
+    Sanctum::actingAs($this->worker);
+    $day = collect($this->getJson("{$this->base}/time/timesheet?month=2026-02")->assertOk()->json('data.days'))->firstWhere('date', '2026-02-17'); // terça de Carnaval
+    expect($day['expected_minutes'])->toBe(480)->and($day['holiday'])->toBeNull();
+
+    Sanctum::actingAs($this->rh);
+    $this->postJson("{$this->base}/calendar/events", ['title' => 'Carnaval', 'kind' => 'holiday', 'starts_on' => '2026-02-16', 'ends_on' => '2026-02-17'])->assertCreated();
+
+    Sanctum::actingAs($this->worker);
+    $day = collect($this->getJson("{$this->base}/time/timesheet?month=2026-02")->json('data.days'))->firstWhere('date', '2026-02-17');
+    expect($day['expected_minutes'])->toBe(0)->and($day['holiday'])->toBe('Carnaval');
 });

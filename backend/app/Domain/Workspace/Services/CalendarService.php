@@ -63,6 +63,40 @@ class CalendarService
         return $out;
     }
 
+    /**
+     * Feriados que zeram a jornada esperada entre $from e $to (data => nome): os nacionais (exceto "ponto facultativo",
+     * que cada empresa decide) e os feriados cadastrados pela empresa.
+     *
+     * @return array<string, string>
+     */
+    public function holidayDates(Hotel $hotel, CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $out = [];
+        foreach (range($from->year, $to->year) as $y) {
+            foreach ($this->nationalHolidays($y) as $date => $name) {
+                if (! str_contains($name, 'ponto facultativo') && $date >= $from->toDateString() && $date <= $to->toDateString()) {
+                    $out[$date] = $name;
+                }
+            }
+        }
+
+        $company = CalendarEvent::where('hotel_id', $hotel->id)->where('kind', 'holiday')
+            ->whereDate('starts_on', '<=', $to->toDateString())
+            ->where(fn ($q) => $q->whereDate('ends_on', '>=', $from->toDateString())
+                ->orWhere(fn ($q2) => $q2->whereNull('ends_on')->whereDate('starts_on', '>=', $from->toDateString())))
+            ->get();
+        foreach ($company as $e) {
+            $end = $e->ends_on ?? $e->starts_on;
+            for ($d = CarbonImmutable::parse($e->starts_on->toDateString(), TimeClock::TZ); $d <= CarbonImmutable::parse($end->toDateString(), TimeClock::TZ); $d = $d->addDay()) {
+                if ($d->toDateString() >= $from->toDateString() && $d->toDateString() <= $to->toDateString()) {
+                    $out[$d->toDateString()] = $e->title;
+                }
+            }
+        }
+
+        return $out;
+    }
+
     /** Ocorrência do dia/mês de $date no ano $year (29/02 vira 28/02 em ano não bissexto). */
     private function occurrence(CarbonImmutable $date, int $year): CarbonImmutable
     {

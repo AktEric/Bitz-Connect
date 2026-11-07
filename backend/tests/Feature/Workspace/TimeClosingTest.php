@@ -50,8 +50,8 @@ it('previews the month and closes it with a frozen snapshot', function () {
     $row = collect($preview->json('data.rows'))->firstWhere('user_uuid', $this->worker->uuid);
     expect($row['days_worked'])->toBe(3);
     expect($row['worked_minutes'])->toBe(480 + 480 + 540);
-    expect($row['expected_minutes'])->toBe(22 * 480);
-    expect($row['absent_days'])->toBe(19);
+    expect($row['expected_minutes'])->toBe(21 * 480); // 22 dias úteis menos 12/10 (N. S. Aparecida)
+    expect($row['absent_days'])->toBe(18);
 
     $this->postJson("{$this->base}/time/closings", ['month' => '2026-10'])->assertCreated()->assertJsonPath('data.status', 'closed');
     $this->postJson("{$this->base}/time/closings", ['month' => '2026-10'])->assertStatus(409);

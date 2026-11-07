@@ -20,7 +20,26 @@ use Carbon\CarbonImmutable;
  */
 class TimeBank
 {
-    public function __construct(private readonly TimeClock $clock) {}
+    public function __construct(private readonly TimeClock $clock, private readonly CalendarService $calendar) {}
+
+    /**
+     * Minutos esperados em cada dia do intervalo: a jornada da pessoa, zerada em feriados e em férias aprovadas.
+     *
+     * @return array<string, int> data (Y-m-d) => minutos
+     */
+    public function expectedByDay(Hotel $hotel, User $user, ?WorkSchedule $schedule, CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $vacation = $this->vacationDays($hotel, $user, $from, $to);
+        $holidays = $this->calendar->holidayDates($hotel, $from, $to);
+
+        $out = [];
+        for ($d = $from; $d <= $to; $d = $d->addDay()) {
+            $key = $d->toDateString();
+            $out[$key] = isset($vacation[$key]) || isset($holidays[$key]) ? 0 : WorkSchedule::minutesFor($schedule, $d->dayOfWeek);
+        }
+
+        return $out;
+    }
 
     /** @return array{since: ?string, worked_minutes: int, expected_minutes: int, entries_balance: int, adjustments_minutes: int, balance_minutes: int} */
     public function summary(Hotel $hotel, User $user, ?WorkSchedule $schedule): array
@@ -41,12 +60,12 @@ class TimeBank
                     ->where('punched_at', '>=', $start->utc())->where('punched_at', '<', $today->utc())
                     ->orderBy('punched_at')->get()
                     ->groupBy(fn ($e) => CarbonImmutable::instance($e->punched_at)->setTimezone(TimeClock::TZ)->toDateString());
-                $covered = $this->vacationDays($hotel, $user, $start, $today->subDay());
+                $perDay = $this->expectedByDay($hotel, $user, $schedule, $start, $today->subDay());
 
                 for ($d = $start; $d < $today; $d = $d->addDay()) {
                     $key = $d->toDateString();
                     $worked += $this->clock->workedMinutes($byDay->get($key, collect()));
-                    $expected += isset($covered[$key]) ? 0 : WorkSchedule::minutesFor($schedule, $d->dayOfWeek);
+                    $expected += $perDay[$key];
                 }
             }
         }
@@ -75,13 +94,13 @@ class TimeBank
         $byDay  = TimeEntry::where('hotel_id', $hotel->id)->where('user_id', $user->id)
             ->whereBetween('punched_at', [$first->utc(), $last->utc()])->orderBy('punched_at')->get()
             ->groupBy(fn ($e) => CarbonImmutable::instance($e->punched_at)->setTimezone(TimeClock::TZ)->toDateString());
-        $covered = $this->vacationDays($hotel, $user, $first, $last);
+        $perDay = $this->expectedByDay($hotel, $user, $schedule, $first, $last);
 
         $worked = $expected = $daysWorked = $absent = 0;
         for ($d = $first; $d <= $last; $d = $d->addDay()) {
             $key  = $d->toDateString();
             $mins = $this->clock->workedMinutes($byDay->get($key, collect()));
-            $exp  = isset($covered[$key]) ? 0 : WorkSchedule::minutesFor($schedule, $d->dayOfWeek);
+            $exp  = $perDay[$key];
             $worked   += $mins;
             $expected += $exp;
             if ($mins > 0) {

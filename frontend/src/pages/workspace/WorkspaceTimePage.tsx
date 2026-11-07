@@ -77,13 +77,14 @@ function Timesheet({ slug, userUuid, canAdjust }: { slug: string; userUuid?: str
 
       {isLoading ? <Spinner /> : (
         <ul className="divide-y divide-gray-50">
-          {data?.days.filter((d) => d.entries.length || d.expected_minutes).map((d) => {
+          {data?.days.filter((d) => d.entries.length || d.expected_minutes || d.holiday).map((d) => {
             const day = new Date(d.date + 'T12:00:00')
             return (
               <li key={d.date} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 text-sm">
                 <span className="w-16 font-medium text-gray-900">{String(day.getDate()).padStart(2, '0')} <span className="text-xs font-normal uppercase text-gray-400">{WEEKDAY[d.weekday]}</span></span>
                 <span className="min-w-0 flex-1 text-gray-600">
-                  <EntryChips slug={slug} entries={d.entries} />
+                  {d.holiday && <Pill tone="gray">{d.holiday}</Pill>}{' '}
+                  {(!d.holiday || d.entries.length > 0) && <EntryChips slug={slug} entries={d.entries} />}
                 </span>
                 <span className="font-medium tabular-nums text-gray-900">{fmtMinutes(d.worked_minutes)}</span>
               </li>

@@ -29,7 +29,8 @@ afterEach(fn () => Carbon::setTestNow());
 it('uses the default 8h Monday-to-Friday journey when nobody has a schedule', function () {
     Sanctum::actingAs($this->worker);
     $this->getJson("{$this->base}/time/today")->assertOk()->assertJsonPath('data.daily_minutes', 480);
-    $this->getJson("{$this->base}/time/timesheet?month=2026-11")->assertOk()->assertJsonPath('data.expected_minutes', 2400);
+    // 2 a 6/11: 5 dias úteis, menos Finados (2/11)
+    $this->getJson("{$this->base}/time/timesheet?month=2026-11")->assertOk()->assertJsonPath('data.expected_minutes', 4 * 480);
 });
 
 it('applies the assigned schedule to the clock and the timesheet', function () {
@@ -41,8 +42,8 @@ it('applies the assigned schedule to the clock and the timesheet', function () {
 
     Sanctum::actingAs($this->worker);
     $this->getJson("{$this->base}/time/today")->assertJsonPath('data.daily_minutes', 360);
-    // 2 a 6 de novembro: 5 dias de 6h (1º/11 é domingo e o sábado ainda não chegou)
-    $this->getJson("{$this->base}/time/timesheet?month=2026-11")->assertJsonPath('data.expected_minutes', 1800);
+    // 2 a 6 de novembro: 5 dias de 6h menos Finados (2/11); 1º/11 é domingo e o sábado ainda não chegou
+    $this->getJson("{$this->base}/time/timesheet?month=2026-11")->assertJsonPath('data.expected_minutes', 1440);
 
     // removendo a jornada, a pessoa volta ao padrão
     Sanctum::actingAs($this->rh);

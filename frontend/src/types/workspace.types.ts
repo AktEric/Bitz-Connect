@@ -243,6 +243,7 @@ export interface TimesheetDay {
   weekday: number
   worked_minutes: number
   expected_minutes: number
+  holiday?: string | null
   entries: TimeEntryItem[]
 }
 
