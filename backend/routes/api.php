@@ -272,6 +272,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/schedules/assign',       [WorkScheduleController::class, 'assign']);
         Route::patch('/schedules/{uuid}',       [WorkScheduleController::class, 'update']);
         Route::delete('/schedules/{uuid}',      [WorkScheduleController::class, 'destroy']);
+        Route::get('/dashboard',                [WorkspaceController::class, 'dashboard']);
         Route::get('/security',                 [WorkspaceController::class, 'security']);
         Route::put('/security',                 [WorkspaceController::class, 'updateSecurity']);
         Route::get('/audit/export',             [WorkspaceController::class, 'auditExport']);

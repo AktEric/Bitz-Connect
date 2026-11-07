@@ -47,7 +47,7 @@ class WorkspaceController extends Controller
         return $this->success('Empresas carregadas com sucesso.', $data);
     }
 
-    private const ACCESS_ROLES = ['owner', 'hr', 'finance', 'manager', 'employee'];
+    private const ACCESS_ROLES = ['owner', 'hr', 'finance', 'director', 'manager', 'employee'];
 
     /** GET /workspaces/{hotel:slug}/roles — pessoas e papéis de acesso (dono e RH). */
     public function roles(Request $request, Hotel $hotel): JsonResponse
@@ -104,7 +104,17 @@ class WorkspaceController extends Controller
     private function privilegedMembers(Hotel $hotel)
     {
         return HotelUser::with('user')->where('hotel_id', $hotel->id)->where('status', 'approved')->get()
-            ->filter(fn (HotelUser $hu) => $hu->user && in_array($this->access->accessRole($hu, $hotel), ['owner', 'hr', 'finance'], true));
+            ->filter(fn (HotelUser $hu) => $hu->user && in_array($this->access->accessRole($hu, $hotel), ['owner', 'hr', 'finance', 'director'], true));
+    }
+
+    /** GET /workspaces/{hotel:slug}/dashboard — números agregados da empresa (dono, RH e diretoria). */
+    public function dashboard(Request $request, Hotel $hotel, \App\Domain\Workspace\Services\DashboardService $dashboard): JsonResponse
+    {
+        if (! $this->access->canSeeDashboard($this->access->membership($request->user(), $hotel))) {
+            return $this->forbidden('Somente o dono, o RH e a diretoria veem o painel.');
+        }
+
+        return $this->success('Painel carregado com sucesso.', $dashboard->build($hotel));
     }
 
     /** GET /workspaces/{hotel:slug}/security — política de segurança da empresa (dono e RH). */
@@ -231,8 +241,9 @@ class WorkspaceController extends Controller
                 'access_role'  => $this->access->accessRole($membership, $hotel),
                 'is_manager'   => $isManager,
                 'two_factor'   => $user->hasTwoFactor(),
+                'can_see_dashboard' => $this->access->canSeeDashboard($membership),
                 'needs_two_factor' => (bool) ($hotel->security_settings['require_2fa'] ?? false) && ! $user->hasTwoFactor()
-                    && in_array($this->access->accessRole($membership, $hotel), ['owner', 'hr', 'finance'], true),
+                    && in_array($this->access->accessRole($membership, $hotel), ['owner', 'hr', 'finance', 'director'], true),
                 'team_size'    => count($this->access->reportIds($user, $hotel)),
                 'areas_headed' => \App\Models\Department::where('hotel_id', $hotel->id)->where('head_id', $user->id)->orderBy('name')->pluck('name')->all(),
                 'can_post'     => $isAdmin || $isManager,

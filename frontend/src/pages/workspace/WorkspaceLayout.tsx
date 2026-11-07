@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, ArrowLeftRight, LogOut, Globe, CheckCircle2, type LucideIcon,
+  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, ArrowLeftRight, LogOut, Globe, CheckCircle2, type LucideIcon,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import { useAuth } from '@/hooks/useAuth'
@@ -73,6 +73,9 @@ export default function WorkspaceLayout() {
     },
     { title: 'Empresa', items: [{ to: 'equipe', label: 'Pessoas', Icon: Users }] },
   ]
+  if (info.me.can_see_dashboard) {
+    groups.splice(groups.length - 1, 0, { title: 'Diretoria', items: [{ to: 'painel', label: 'Painel da diretoria', Icon: LayoutDashboard }] })
+  }
   if (info.me.is_admin) {
     groups[groups.length - 1].items.push({ to: 'configuracoes', label: 'Papéis e estrutura', Icon: Settings2 })
     groups[groups.length - 1].items.push({ to: 'auditoria', label: 'Auditoria', Icon: ScrollText })

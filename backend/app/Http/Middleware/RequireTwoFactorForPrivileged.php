@@ -28,7 +28,7 @@ class RequireTwoFactorForPrivileged
         }
 
         $member = $this->access->membership($user, $hotel);
-        if (! $member || ! in_array($this->access->accessRole($member, $hotel), ['owner', 'hr', 'finance'], true)) {
+        if (! $member || ! in_array($this->access->accessRole($member, $hotel), ['owner', 'hr', 'finance', 'director'], true)) {
             return $next($request);
         }
 

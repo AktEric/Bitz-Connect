@@ -22,6 +22,7 @@ export interface WorkspaceInfo {
     access_role?: 'owner' | 'hr' | 'finance' | 'manager' | 'employee'
     is_manager: boolean
     two_factor?: boolean
+    can_see_dashboard?: boolean
     needs_two_factor?: boolean
     team_size?: number
     areas_headed?: string[]
@@ -278,7 +279,7 @@ export interface TimeAdjustment {
   person: WorkspacePerson | null
 }
 
-export type AccessRole = 'owner' | 'hr' | 'finance' | 'manager' | 'employee'
+export type AccessRole = 'owner' | 'hr' | 'finance' | 'director' | 'manager' | 'employee'
 
 export interface RoleRow {
   user: { uuid: string; name: string; avatar_url: string | null; job_title: string | null }
@@ -492,4 +493,19 @@ export interface AckPanel {
   total: number
   readers: { person: { uuid: string; name: string; avatar_url: string | null; job_title: string | null }; acked_at: string }[]
   pending: { uuid: string; name: string; avatar_url: string | null; job_title: string | null; department?: string | null }[]
+}
+
+export interface DashboardData {
+  generated_at: string
+  min_group: number
+  people: { headcount: number; hires_90d: number; birthdays_month: number; avg_tenure_years: number | null }
+  today: { present: number; working_now: number; on_vacation: number; holiday: string | null }
+  time: {
+    bank_to_receive_minutes: number; bank_to_compensate_minutes: number; people_with_heavy_debt: number
+    outside_fence_7d: number; outside_network_7d: number; new_devices_7d: number; pending_devices: number; pending_adjustments: number
+  }
+  requests: { pending: number; pending_by_type: Record<string, number>; decided_90d: number; avg_decision_hours: number | null; approval_rate: number | null }
+  engagement: { posts_30d: number; reactions_30d: number; comments_30d: number; upcoming_events: number; recent_acks: { title: string; confirmed: number; total: number }[] }
+  security: { two_factor_adoption: number | null; privileged_without_2fa: number; require_2fa: boolean }
+  departments: { name: string; headcount: number; bank_minutes: number | null }[]
 }

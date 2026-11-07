@@ -13,10 +13,11 @@ const ROLE_INFO: Record<AccessRole, { label: string; hint: string }> = {
   owner: { label: 'Dono', hint: 'Controle total, inclusive papéis de acesso.' },
   hr: { label: 'RH', hint: 'Pessoas, aprovações, mural, metas, ponto e holerites.' },
   finance: { label: 'Financeiro', hint: 'Anexa e consulta holerites e recebimentos de todos.' },
+  director: { label: 'Diretoria', hint: 'Painel com os números da empresa (somente leitura, sem dados individuais).' },
   manager: { label: 'Gestor', hint: 'Vê e aprova a própria equipe.' },
   employee: { label: 'Colaborador', hint: 'Acessa apenas os próprios dados.' },
 }
-const ROLE_ORDER: AccessRole[] = ['owner', 'hr', 'finance', 'manager', 'employee']
+const ROLE_ORDER: AccessRole[] = ['owner', 'hr', 'finance', 'director', 'manager', 'employee']
 
 function RolesSection({ slug }: { slug: string }) {
   const qc = useQueryClient()

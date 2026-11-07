@@ -37,6 +37,12 @@ class WorkspaceAccess
         return $this->accessRole($membership) === 'owner';
     }
 
+    /** Painel da diretoria (números agregados): dono, RH e diretoria. */
+    public function canSeeDashboard(?HotelUser $membership): bool
+    {
+        return in_array($this->accessRole($membership), ['owner', 'hr', 'director'], true);
+    }
+
     /** Pode anexar/consultar holerites de todos: dono, RH e financeiro. */
     public function canHandlePayslips(?HotelUser $membership): bool
     {
