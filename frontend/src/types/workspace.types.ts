@@ -116,8 +116,9 @@ export interface FeedComment {
   author: WorkspacePerson | null
 }
 
-export type RequestType = 'vacation' | 'document' | 'reimbursement' | 'schedule' | 'other'
-export type RequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled'
+export type RequestType = 'vacation' | 'document' | 'reimbursement' | 'schedule' | 'other' | 'ticket'
+export type RequestStatus = 'pending' | 'in_progress' | 'resolved' | 'approved' | 'rejected' | 'cancelled'
+export type TicketCategory = 'time' | 'payroll' | 'benefits' | 'documents' | 'other'
 
 export interface WorkspaceRequest {
   uuid: string
@@ -134,6 +135,11 @@ export interface WorkspaceRequest {
   requester: WorkspacePerson | null
   created_at: string
   is_mine: boolean
+  category?: TicketCategory | null
+  assigned_to?: WorkspacePerson | null
+  due_at?: string | null
+  first_response_at?: string | null
+  overdue?: boolean
   comments?: { uuid: number; body: string; created_at: string; author: WorkspacePerson | null }[]
 }
 

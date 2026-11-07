@@ -145,6 +145,8 @@ const workspaceService = {
   createRequest: (slug: string, body: Record<string, unknown>) => post<WorkspaceRequest>(`${w(slug)}/requests`, body),
   decideRequest: (slug: string, uuid: string, decision: 'approved' | 'rejected', note?: string) =>
     post<WorkspaceRequest>(`${w(slug)}/requests/${uuid}/decision`, { decision, note }),
+  assignRequest: (slug: string, uuid: string) => post<WorkspaceRequest>(`${w(slug)}/requests/${uuid}/assign`),
+  resolveRequest: (slug: string, uuid: string, note: string) => post<WorkspaceRequest>(`${w(slug)}/requests/${uuid}/resolve`, { note }),
   cancelRequest: (slug: string, uuid: string) => post<WorkspaceRequest>(`${w(slug)}/requests/${uuid}/cancel`),
   commentRequest: (slug: string, uuid: string, body: string) => post<unknown>(`${w(slug)}/requests/${uuid}/comments`, { body }),
 

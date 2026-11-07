@@ -70,7 +70,9 @@ class WorkspaceSearchController extends WorkspaceBaseController
         // Solicitações: as minhas, as da minha equipe (gestor/chefe) ou todas (RH)
         $requests = $this->like(WorkspaceRequest::with('requester')->where('hotel_id', $hotel->id), 'title', $term);
         if (! $isAdmin) {
-            $requests->whereIn('requester_id', array_merge([$meId], $this->access->reportIds($request->user(), $hotel)));
+            // chamados ao RH são confidenciais: o gestor só vê os próprios
+            $requests->where(fn ($q) => $q->where('requester_id', $meId)
+                ->orWhere(fn ($q2) => $q2->where('type', '!=', 'ticket')->whereIn('requester_id', $this->access->reportIds($request->user(), $hotel))));
         }
         $requests = $requests->orderByDesc('created_at')->limit(self::LIMIT)->get()
             ->map(fn ($r) => ['uuid' => $r->uuid, 'title' => $r->title, 'status' => $r->status, 'type' => $r->type, 'requester' => $r->requester?->name])->values();

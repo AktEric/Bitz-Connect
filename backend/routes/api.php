@@ -331,6 +331,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/requests',                     [WorkspaceRequestController::class, 'store']);
         Route::get('/requests/{uuid}',               [WorkspaceRequestController::class, 'show']);
         Route::post('/requests/{uuid}/decision',     [WorkspaceRequestController::class, 'decide']);
+        Route::post('/requests/{uuid}/assign',       [WorkspaceRequestController::class, 'assign']);
+        Route::post('/requests/{uuid}/resolve',      [WorkspaceRequestController::class, 'resolve']);
         Route::post('/requests/{uuid}/cancel',       [WorkspaceRequestController::class, 'cancel']);
         Route::post('/requests/{uuid}/comments',     [WorkspaceRequestController::class, 'comment']);
 

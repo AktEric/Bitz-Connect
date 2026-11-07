@@ -222,10 +222,10 @@ class WorkspaceController extends Controller
         $isManager = $this->access->isManager($user, $hotel);
 
         // Solicitações que dependem de mim: admin vê todas as pendentes; gestor, as da equipe.
-        $reviewQuery = WorkspaceRequest::where('hotel_id', $hotel->id)->where('status', 'pending')
+        $reviewQuery = WorkspaceRequest::where('hotel_id', $hotel->id)->whereIn('status', $isAdmin ? ['pending', 'in_progress'] : ['pending'])
             ->where('requester_id', '!=', $user->id);
         if (! $isAdmin) {
-            $reviewQuery->whereIn('requester_id', $this->access->reportIds($user, $hotel) ?: [0]);
+            $reviewQuery->where('type', '!=', 'ticket')->whereIn('requester_id', $this->access->reportIds($user, $hotel) ?: [0]);
         }
 
         return $this->success('Workspace carregado com sucesso.', [
@@ -259,7 +259,7 @@ class WorkspaceController extends Controller
                 'members'            => HotelUser::where('hotel_id', $hotel->id)->where('status', 'approved')->count(),
                 'requests_to_review' => ($isAdmin || $isManager) ? $reviewQuery->count() : 0,
                 'my_open_requests'   => WorkspaceRequest::where('hotel_id', $hotel->id)
-                    ->where('requester_id', $user->id)->where('status', 'pending')->count(),
+                    ->where('requester_id', $user->id)->whereIn('status', ['pending', 'in_progress'])->count(),
                 'new_payslips'       => Payslip::where('hotel_id', $hotel->id)
                     ->where('user_id', $user->id)->whereNull('first_viewed_at')->count(),
                 // Comunicados do mural que exigem confirmação de leitura e ainda não confirmei
