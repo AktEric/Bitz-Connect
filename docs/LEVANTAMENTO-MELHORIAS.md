@@ -375,3 +375,9 @@ Entregue na branch `feature/workspace-social`:
 - **CI:** branch `fix/ci-deps` corrige dependências incompatíveis do `main` (vitest/@vitest/ui, TypeScript 7 × typescript-eslint, imports de tipos) e usa Node 22.
 
 Pendente: pesquisa de clima recorrente, grupos por área no mural, painel visual dos chamados, matriz de permissões editável, sessão por cookie httpOnly, antivírus/miniaturas de mídia, tempo real (Reverb).
+
+## Atualização — pesquisa de clima e grupos do mural
+- **Pesquisa de clima anônima** (eNPS + afirmações 1–5): respostas sem ligação com a pessoa, mínimo de 5 respostas, setores pequenos suprimidos.
+- **Perguntas editáveis** ao abrir cada pesquisa (até 8; no máximo uma de indicação 0–10). Pesquisas antigas usam as perguntas padrão.
+- **Comparação e evolução**: o resultado compara com a pesquisa anterior (por texto idêntico da pergunta) e mostra o histórico do eNPS.
+- **Grupos por área no mural**: filtro Tudo / Empresa toda / cada setor. RH e dono veem todos os setores; os demais, só o próprio. Publicar num grupo usa o seletor de público já existente.

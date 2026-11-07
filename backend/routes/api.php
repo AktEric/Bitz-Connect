@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\Api\V1\WorkspaceSearchController;
 use App\Http\Controllers\Api\V1\AccountSecurityController;
 use App\Http\Controllers\Api\V1\AreaController;
+use App\Http\Controllers\Api\V1\ClimateController;
 use App\Http\Controllers\Api\V1\PersonController;
 use App\Http\Controllers\Api\V1\WorkspaceJobController;
 use App\Http\Controllers\Api\V1\PrivacyController;
@@ -230,6 +231,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/invites/{token}/accept',      [CompanyInviteController::class, 'accept']);
 
     Route::prefix('workspaces/{hotel:slug}')->middleware('workspace.2fa')->group(function () {
+
+        // Pesquisa de clima (anônima)
+        Route::get('/climate',                       [ClimateController::class, 'index']);
+        Route::post('/climate',                      [ClimateController::class, 'store']);
+        Route::post('/climate/{uuid}/close',         [ClimateController::class, 'close']);
+        Route::post('/climate/{uuid}/answer',        [ClimateController::class, 'answer']);
+        Route::get('/climate/{uuid}/results',        [ClimateController::class, 'results']);
 
         // Vagas
         Route::get('/jobs',                              [WorkspaceJobController::class, 'index']);

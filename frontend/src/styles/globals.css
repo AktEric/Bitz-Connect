@@ -148,3 +148,13 @@
 .dark .to-white { --tw-gradient-to: #181b24 var(--tw-gradient-to-position); }
 .dark .via-white { --tw-gradient-stops: var(--tw-gradient-from), #131620 var(--tw-gradient-via-position), var(--tw-gradient-to); }
 .dark .to-fuchsia-50 { --tw-gradient-to: #181326 var(--tw-gradient-to-position); }
+
+/* Tema escuro: cartões de aniversário e reconhecimento (gradientes e vidro claros) */
+.dark .from-amber-50 { --tw-gradient-from: rgb(245 158 11 / 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgb(24 27 36 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.dark .from-pink-50 { --tw-gradient-from: rgb(236 72 153 / 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgb(24 27 36 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.dark .to-violet-50 { --tw-gradient-to: rgb(124 58 237 / 0.16) var(--tw-gradient-to-position); }
+.dark .to-amber-50 { --tw-gradient-to: rgb(245 158 11 / 0.14) var(--tw-gradient-to-position); }
+.dark .via-white { --tw-gradient-stops: var(--tw-gradient-from), #181b24 var(--tw-gradient-via-position), var(--tw-gradient-to); }
+.dark .bg-white\/70 { background-color: rgb(255 255 255 / 0.05); }
+.dark .border-pink-100 { border-color: rgb(236 72 153 / 0.3); }
+.dark .text-amber-700 { color: #fcd34d; }
