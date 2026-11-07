@@ -199,12 +199,13 @@ function ReviewAdjustments({ slug }: { slug: string }) {
   const qc = useQueryClient()
   const { data } = useQuery({ queryKey: ['ws', slug, 'time', 'adj', 'review'], queryFn: () => workspaceService.timeAdjustments(slug, 'review') })
   const [error, setError] = useState('')
+  const [notes, setNotes] = useState<Record<string, string>>({})
   if (!data?.length) return null
 
   const decide = async (uuid: string, decision: 'approved' | 'rejected') => {
     setError('')
     try {
-      await workspaceService.decideAdjustment(slug, uuid, decision)
+      await workspaceService.decideAdjustment(slug, uuid, decision, notes[uuid]?.trim())
       await qc.invalidateQueries({ queryKey: ['ws', slug, 'time'] })
     } catch (e) {
       setError(errMsg(e))
@@ -222,8 +223,16 @@ function ReviewAdjustments({ slug }: { slug: string }) {
               <b className="text-gray-900">{a.person?.name}</b> · {TYPE_LABEL[a.type]} em {new Date(a.requested_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' })}
               <span className="block text-xs text-gray-500">{a.reason}</span>
             </span>
-            <button type="button" className={btnGhost} onClick={() => decide(a.uuid, 'rejected')}>Recusar</button>
-            <button type="button" className={btnPrimary} onClick={() => decide(a.uuid, 'approved')}>Aprovar</button>
+            <input
+              className={inputCls + ' sm:max-w-xs'}
+              placeholder="Justificativa (obrigatória)"
+              aria-label="Justificativa da decisão"
+              maxLength={255}
+              value={notes[a.uuid] ?? ''}
+              onChange={(e) => setNotes((n) => ({ ...n, [a.uuid]: e.target.value }))}
+            />
+            <button type="button" className={btnGhost} disabled={(notes[a.uuid]?.trim().length ?? 0) < 5} onClick={() => decide(a.uuid, 'rejected')}>Recusar</button>
+            <button type="button" className={btnPrimary} disabled={(notes[a.uuid]?.trim().length ?? 0) < 5} onClick={() => decide(a.uuid, 'approved')}>Aprovar</button>
           </li>
         ))}
       </ul>

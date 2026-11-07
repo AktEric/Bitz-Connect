@@ -6,6 +6,7 @@ use App\Domain\Workspace\Services\TimeClock;
 use App\Domain\Workspace\Services\CalendarService;
 use App\Domain\Workspace\Services\PunchRules;
 use App\Domain\Workspace\Services\TimeBank;
+use App\Domain\Workspace\Services\PunchCompliance;
 use App\Domain\Workspace\Services\TimeEntryRecorder;
 use App\Domain\Workspace\Services\TimeClosingService;
 use App\Domain\Workspace\Services\WorkspaceAccess;
@@ -38,6 +39,7 @@ class TimeClockController extends WorkspaceBaseController
         private readonly TimeBank $bank,
         private readonly CalendarService $calendar,
         private readonly TimeEntryRecorder $recorder,
+        private readonly PunchCompliance $compliance,
     ) {
         parent::__construct($access, $notifications);
     }
@@ -265,7 +267,7 @@ class TimeClockController extends WorkspaceBaseController
             ? \App\Support\ImageSanitizer::store($request->file('photo'), "punch-photos/{$hotel->id}", 'local')
             : null;
 
-        $this->recorder->record([
+        $entry = $this->recorder->record([
             'uuid'       => (string) Str::uuid(),
             'hotel_id'   => $hotel->id,
             'user_id'    => $user->id,
@@ -286,6 +288,14 @@ class TimeClockController extends WorkspaceBaseController
             'outside_network' => $outsideNet,
             'new_device'    => $newDevice,
         ]);
+
+        // Normas da CLT (intervalo, jornada, hora extra): o ponto fica registrado e o gestor é avisado.
+        $daily  = $this->bank->expectedByDay($hotel, $user, $this->scheduleFor($hotel, $user), $now->startOfDay(), $now->startOfDay())[$now->toDateString()] ?? 0;
+        $issues = $this->compliance->evaluate($type, $this->dayEntries($hotel, $user, $now), $now, $daily);
+        if ($issues) {
+            $this->compliance->notify($hotel, $user, $issues, $this->link($hotel, 'ponto'));
+            AuditLog::record($request, $hotel, 'time.punch_flagged', $user, ['entry' => $entry->uuid, 'issues' => $issues]);
+        }
 
         return $this->created('Ponto registrado.', $this->todayPayload($hotel, $user));
     }
@@ -514,13 +524,13 @@ class TimeClockController extends WorkspaceBaseController
         if (! $membership || $adjustment->hotel_id !== $hotel->id) {
             return $this->forbidden('Sem permissão.');
         }
-        $data = $request->validate([
-            'decision' => ['required', 'in:approved,rejected'],
-            'note'     => ['nullable', 'string', 'max:255'],
-        ]);
         if (! $this->access->canManagePerson($request->user(), $membership, $hotel, $adjustment->user)) {
             return $this->forbidden('Sem permissão para decidir este ajuste.');
         }
+        $data = $request->validate([
+            'decision' => ['required', 'in:approved,rejected'],
+            'note'     => ['required', 'string', 'min:5', 'max:255'], // justificativa obrigatória
+        ]);
         if ($adjustment->status !== 'pending') {
             return $this->error('Este pedido já foi analisado.', [], 422);
         }
@@ -533,14 +543,14 @@ class TimeClockController extends WorkspaceBaseController
             'status'      => $data['decision'],
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
-            'review_note' => $data['note'] ?? null,
+            'review_note' => $data['note'],
         ]);
-        AuditLog::record($request, $hotel, 'time.adjustment_decided', $adjustment->user, ['decision' => $data['decision']]);
+        AuditLog::record($request, $hotel, 'time.adjustment_decided', $adjustment->user, ['decision' => $data['decision'], 'justification' => $data['note']]);
 
         $this->notifications->workspaceNotice(
             $adjustment->user, $request->user(), 'workspace_request_decision',
             $data['decision'] === 'approved' ? 'Ajuste de ponto aprovado' : 'Ajuste de ponto recusado',
-            $adjustment->reason, $this->link($hotel, 'ponto'),
+            $data['note'], $this->link($hotel, 'ponto'),
         );
 
         if ($data['decision'] === 'approved') {

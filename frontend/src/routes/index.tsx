@@ -64,6 +64,7 @@ const WorkspaceAdminPage = lazy(() => import('@/pages/workspace/WorkspaceAdminPa
 const WorkspaceCalendarPage = lazy(() => import('@/pages/workspace/WorkspaceCalendarPage'))
 const WorkspaceSecurityPage = lazy(() => import('@/pages/workspace/WorkspaceSecurityPage'))
 const WorkspaceAuditPage = lazy(() => import('@/pages/workspace/WorkspaceAuditPage'))
+const WorkspaceReportsPage = lazy(() => import('@/pages/workspace/WorkspaceReportsPage'))
 const WorkspaceDashboardPage = lazy(() => import('@/pages/workspace/WorkspaceDashboardPage'))
 const WorkspaceOnboardingPage = lazy(() => import('@/pages/workspace/WorkspaceOnboardingPage'))
 const WorkspaceTimePage = lazy(() => import('@/pages/workspace/WorkspaceTimePage'))
@@ -114,6 +115,7 @@ export default function AppRoutes() {
             <Route path="calendario" element={<WorkspaceCalendarPage />} />
             <Route path="seguranca" element={<WorkspaceSecurityPage />} />
             <Route path="auditoria" element={<WorkspaceAuditPage />} />
+            <Route path="relatorios" element={<WorkspaceReportsPage />} />
             <Route path="painel" element={<WorkspaceDashboardPage />} />
             <Route path="comecar" element={<WorkspaceOnboardingPage />} />
             <Route path="equipe" element={<WorkspaceTeamPage />} />

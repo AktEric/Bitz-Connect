@@ -249,6 +249,9 @@ export interface TimeReceipt {
   hash: string | null
 }
 
+export interface ReportItem { key: string; title: string; description: string; monthly: boolean }
+export interface ReportData { key: string; title: string; month: string | null; generated_at: string; columns: string[]; rows: (string | number)[][] }
+
 export interface IntegrityResult { ok: boolean; checked: number; first_broken_nsr: number | null; reason: string | null }
 
 export interface TimeToday {
