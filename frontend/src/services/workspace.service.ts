@@ -6,7 +6,7 @@ import type {
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults,
+  CalendarPayload, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -98,14 +98,17 @@ const workspaceService = {
 
   // Mural
   feed: (slug: string, page = 1) => get<Paged<FeedPost>>(`${w(slug)}/feed`, { page }),
-  createPost: (slug: string, input: { body: string; pinned?: boolean; department_uuid?: string | null; photos?: Blob[] }) => {
+  createPost: (slug: string, input: { body: string; pinned?: boolean; requires_ack?: boolean; department_uuid?: string | null; photos?: Blob[] }) => {
     const form = new FormData()
     form.append('body', input.body)
     if (input.pinned) form.append('pinned', '1')
+    if (input.requires_ack) form.append('requires_ack', '1')
     if (input.department_uuid) form.append('department_uuid', input.department_uuid)
     input.photos?.forEach((b, i) => form.append('photos[]', b, `foto-${i + 1}.jpg`))
     return api.post<ApiResponse<FeedPost>>(`${w(slug)}/feed`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.data)
   },
+  ackPost: (slug: string, uuid: string) => post<{ acked_at: string }>(`${w(slug)}/feed/${uuid}/ack`),
+  ackPanel: (slug: string, uuid: string) => get<AckPanel>(`${w(slug)}/feed/${uuid}/acks`),
   reactPost: (slug: string, uuid: string, reaction: ReactionType | null) =>
     post<{ reactions: Record<ReactionType, number>; my_reaction: ReactionType | null; likes_count: number }>(`${w(slug)}/feed/${uuid}/react`, { reaction }),
   deletePost: (slug: string, uuid: string) => del(`${w(slug)}/feed/${uuid}`),

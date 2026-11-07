@@ -58,7 +58,7 @@ export default function WorkspaceLayout() {
       items: [
         { to: '', label: 'Início', Icon: Home, end: true },
         { to: 'ponto', label: 'Ponto', Icon: Clock },
-        { to: 'mural', label: 'Mural', Icon: Newspaper },
+        { to: 'mural', label: 'Mural', Icon: Newspaper, badge: c.pending_acks },
         { to: 'calendario', label: 'Calendário', Icon: CalendarDays },
       ],
     },

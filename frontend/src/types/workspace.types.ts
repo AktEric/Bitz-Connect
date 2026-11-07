@@ -31,7 +31,7 @@ export interface WorkspaceInfo {
     department: string | null
     manager: WorkspacePerson | null
   }
-  counts: { members: number; requests_to_review: number; my_open_requests: number; new_payslips: number }
+  counts: { members: number; requests_to_review: number; my_open_requests: number; new_payslips: number; pending_acks?: number }
 }
 
 export interface WorkspaceMember {
@@ -88,6 +88,11 @@ export interface FeedPost {
   mentions: Record<string, string>
   reactions: Record<ReactionType, number>
   my_reaction: ReactionType | null
+  requires_ack: boolean
+  acked_at: string | null
+  /** Só para o autor e o RH. */
+  ack_count: number | null
+  ack_total: number | null
   pinned: boolean
   created_at: string
   author: WorkspacePerson | null
@@ -481,4 +486,10 @@ export interface SearchResults {
   posts: { uuid: string; excerpt: string; author: string | null; created_at: string | null }[]
   events: { uuid: string; title: string; kind: 'event' | 'holiday'; date: string }[]
   requests: { uuid: string; title: string; status: string; type: string; requester: string | null }[]
+}
+
+export interface AckPanel {
+  total: number
+  readers: { person: { uuid: string; name: string; avatar_url: string | null; job_title: string | null }; acked_at: string }[]
+  pending: { uuid: string; name: string; avatar_url: string | null; job_title: string | null; department?: string | null }[]
 }

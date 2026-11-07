@@ -284,6 +284,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/feed',                         [WorkspaceFeedController::class, 'store']);
         Route::delete('/feed/{post}',                [WorkspaceFeedController::class, 'destroy']);
         Route::post('/feed/{post}/pin',              [WorkspaceFeedController::class, 'pin']);
+        Route::post('/feed/{post}/ack',              [WorkspaceFeedController::class, 'ack']);
+        Route::get('/feed/{post}/acks',              [WorkspaceFeedController::class, 'acks']);
         Route::post('/feed/{post}/react',            [WorkspaceFeedController::class, 'react']);
         Route::post('/feed/{post}/like',             [WorkspaceFeedController::class, 'like']);
         Route::get('/feed/{post}/comments',          [WorkspaceFeedController::class, 'comments']);

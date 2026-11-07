@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ImagePlus, MessageCircle, Pin, Trash2, X } from 'lucide-react'
+import { BadgeCheck, ImagePlus, MessageCircle, Pin, Trash2, X } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
 import type { FeedPost } from '@/types/workspace.types'
-import { Empty, PageHeader, Panel, Pill, Spinner, btnGhost, btnPrimary, errMsg, timeAgo, useWs } from './ui'
+import { Empty, Modal, PageHeader, Panel, Pill, Spinner, btnGhost, btnPrimary, errMsg, fmtDate, timeAgo, useWs } from './ui'
 import { MentionField, MentionText, applyMentions, type Mention } from './MentionField'
 import PhotoGrid from './PhotoGrid'
 import ReactionBar from './ReactionBar'
@@ -52,10 +52,39 @@ function Comments({ slug, post }: { slug: string; post: FeedPost }) {
   )
 }
 
+function AckPanelModal({ slug, post, onClose }: { slug: string; post: FeedPost; onClose: () => void }) {
+  const { data, isLoading } = useQuery({ queryKey: ['ws', slug, 'ack-panel', post.uuid], queryFn: () => workspaceService.ackPanel(slug, post.uuid) })
+  return (
+    <Modal title="Confirmações de leitura" onClose={onClose}>
+      {isLoading || !data ? <Spinner /> : (
+        <div className="space-y-4 text-sm">
+          <p className="text-gray-600"><b className="text-gray-900">{data.readers.length}</b> de {data.total} confirmaram.</p>
+          <div>
+            <h3 className="mb-1 font-semibold text-amber-700">Faltam ({data.pending.length})</h3>
+            {data.pending.length === 0 ? <p className="text-gray-400">Todos confirmaram.</p> : (
+              <ul className="divide-y divide-gray-50">{data.pending.map((p) => (
+                <li key={p.uuid} className="flex items-center gap-2 py-1.5"><Avatar src={p.avatar_url} name={p.name} size="xs" /> <span className="text-gray-900">{p.name}</span> <span className="text-xs text-gray-400">{p.department ?? p.job_title}</span></li>
+              ))}</ul>
+            )}
+          </div>
+          <div>
+            <h3 className="mb-1 font-semibold text-emerald-700">Leram ({data.readers.length})</h3>
+            <ul className="divide-y divide-gray-50">{data.readers.map((r) => (
+              <li key={r.person.uuid} className="flex items-center gap-2 py-1.5"><Avatar src={r.person.avatar_url} name={r.person.name} size="xs" /> <span className="text-gray-900">{r.person.name}</span> <span className="ml-auto text-xs text-gray-400">{fmtDate(r.acked_at)}</span></li>
+            ))}</ul>
+          </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
 function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdmin: boolean }) {
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
-  const refresh = () => qc.invalidateQueries({ queryKey: ['ws', slug, 'feed'] })
+  const [panel, setPanel] = useState(false)
+  const refresh = () => { void qc.invalidateQueries({ queryKey: ['ws', slug, 'feed'] }); void qc.invalidateQueries({ queryKey: ['workspace', slug] }) }
+  const ack = useMutation({ mutationFn: () => workspaceService.ackPost(slug, post.uuid), onSuccess: refresh })
   const pin = useMutation({ mutationFn: () => workspaceService.pinPost(slug, post.uuid), onSuccess: refresh })
   const del = useMutation({ mutationFn: () => workspaceService.deletePost(slug, post.uuid), onSuccess: refresh })
 
@@ -73,6 +102,25 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
           </div>
           {post.body && <MentionText text={post.body} names={post.mentions} className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-700" />}
           <PhotoGrid media={post.media ?? []} />
+          {post.requires_ack && (
+            <div className={`mt-3 flex flex-wrap items-center gap-3 rounded-xl px-3 py-2 text-sm ${post.acked_at || post.ack_total !== null ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-900'}`}>
+              <BadgeCheck className="h-4 w-4 flex-shrink-0" />
+              {post.ack_total !== null ? (
+                <>
+                  <span className="min-w-0 flex-1">Comunicado com confirmação de leitura: <b>{post.ack_count} de {post.ack_total}</b> confirmaram.</span>
+                  <button type="button" className="font-semibold underline" onClick={() => setPanel(true)}>Ver quem falta</button>
+                </>
+              ) : post.acked_at ? (
+                <span>Leitura confirmada em {fmtDate(post.acked_at)}.</span>
+              ) : (
+                <>
+                  <span className="min-w-0 flex-1">Comunicado oficial: confirme que leu.</span>
+                  <button type="button" className={btnPrimary} disabled={ack.isPending} onClick={() => ack.mutate()}>{ack.isPending ? 'Confirmando…' : 'Li e estou ciente'}</button>
+                </>
+              )}
+            </div>
+          )}
+          {panel && <AckPanelModal slug={slug} post={post} onClose={() => setPanel(false)} />}
           <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-500">
             <ReactionBar slug={slug} post={post} />
             <button type="button" onClick={() => setOpen((o) => !o)} className="flex items-center gap-1 hover:text-gray-700">
@@ -101,6 +149,7 @@ export default function WorkspaceFeedPage() {
   const [mentions, setMentions] = useState<Mention[]>([])
   const [dept, setDept] = useState('')
   const [pinned, setPinned] = useState(false)
+  const [requiresAck, setRequiresAck] = useState(false)
   const [photos, setPhotos] = useState<Draft[]>([])
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
@@ -124,12 +173,12 @@ export default function WorkspaceFeedPage() {
 
   const reset = () => {
     photos.forEach((p) => URL.revokeObjectURL(p.preview))
-    setBody(''); setMentions([]); setPinned(false); setDept(''); setPhotos([]); setError('')
+    setBody(''); setMentions([]); setPinned(false); setRequiresAck(false); setDept(''); setPhotos([]); setError('')
   }
 
   const publish = useMutation({
     mutationFn: () => workspaceService.createPost(slug, {
-      body: applyMentions(body.trim(), mentions), pinned, department_uuid: dept || null, photos: photos.map((p) => p.blob),
+      body: applyMentions(body.trim(), mentions), pinned, requires_ack: requiresAck, department_uuid: dept || null, photos: photos.map((p) => p.blob),
     }),
     onSuccess: () => { reset(); qc.invalidateQueries({ queryKey: ['ws', slug, 'feed'] }) },
     onError: (e) => setError(errMsg(e)),
@@ -202,6 +251,7 @@ export default function WorkspaceFeedPage() {
               <option value="">Toda a empresa</option>
               {departments?.map((d) => <option key={d.uuid} value={d.uuid}>{d.name}</option>)}
             </select>
+            <label className="flex items-center gap-1.5 text-sm text-gray-600"><input type="checkbox" checked={requiresAck} onChange={(e) => setRequiresAck(e.target.checked)} /> Exigir confirmação de leitura</label>
             {info.me.is_admin && (
               <label className="flex items-center gap-1.5 text-sm text-gray-600"><input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} /> Fixar no topo</label>
             )}

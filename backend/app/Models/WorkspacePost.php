@@ -11,12 +11,12 @@ class WorkspacePost extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['uuid','hotel_id','author_id','department_id','body','pinned'];
+    protected $fillable = ['uuid','hotel_id','author_id','department_id','body','pinned','requires_ack'];
 
     protected $table = 'workspace_posts';
     protected function casts(): array
     {
-        return ['pinned' => 'boolean'];
+        return ['pinned' => 'boolean', 'requires_ack' => 'boolean'];
     }
 
     public function author(): BelongsTo
@@ -32,6 +32,11 @@ class WorkspacePost extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(WorkspacePostComment::class);
+    }
+
+    public function acks(): HasMany
+    {
+        return $this->hasMany(WorkspacePostAck::class);
     }
 
     public function media(): HasMany

@@ -49,7 +49,9 @@ class CourseController extends Controller
         $unlocked   = $isOwner || $isEnrolled;
 
         // Bloqueia conteúdo das aulas para quem não tem acesso.
-        $course->lessons->each(fn (CourseLesson $l) => $l->locked = ! $unlocked);
+        foreach ($course->lessons as $lesson) {
+            $lesson->locked = ! $unlocked; // (each() pararia na 1ª aula quando o callback devolve false)
+        }
         $course->setAttribute('is_enrolled', $isEnrolled);
         $course->setAttribute('is_owner', $isOwner);
 

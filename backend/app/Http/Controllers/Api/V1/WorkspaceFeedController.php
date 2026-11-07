@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Hotel;
 use App\Models\HotelUser;
 use App\Models\WorkspacePost;
+use App\Models\WorkspacePostAck;
 use App\Models\WorkspacePostComment;
 use App\Models\WorkspacePostLike;
 use App\Models\WorkspacePostMedia;
@@ -129,7 +130,33 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'comments_count' => (int) ($p->comments_count ?? 0),
             'liked_by_me'    => $mine !== null,
             'can_delete'     => $isAdmin || $p->author_id === $meId,
+            'requires_ack'   => (bool) $p->requires_ack,
+            'acked_at'       => $p->getAttribute('ack_mine_at'),
+            'ack_count'      => $p->requires_ack && ($isAdmin || $p->author_id === $meId) ? (int) $p->getAttribute('ack_count') : null,
+            'ack_total'      => $p->requires_ack && ($isAdmin || $p->author_id === $meId) ? $this->audienceQuery($p)->count() : null,
         ];
+    }
+
+    /** Pessoas que precisam confirmar a leitura: o público da publicação (empresa toda ou o setor), menos o autor. */
+    private function audienceQuery(WorkspacePost $p): \Illuminate\Database\Eloquent\Builder
+    {
+        return HotelUser::where('hotel_id', $p->hotel_id)->where('status', 'approved')->where('user_id', '!=', $p->author_id)
+            ->when($p->department_id, fn ($q) => $q->where('department_id', $p->department_id));
+    }
+
+    /** Anexa às publicações a minha confirmação e a contagem total (só serve a quem vai ver o painel). */
+    private function attachAcks(\Illuminate\Support\Collection $posts, int $meId): void
+    {
+        $ids = $posts->where('requires_ack', true)->pluck('id');
+        if ($ids->isEmpty()) {
+            return;
+        }
+        $counts = WorkspacePostAck::whereIn('workspace_post_id', $ids)->select('workspace_post_id', DB::raw('count(*) as c'))->groupBy('workspace_post_id')->pluck('c', 'workspace_post_id');
+        $mine   = WorkspacePostAck::whereIn('workspace_post_id', $ids)->where('user_id', $meId)->pluck('acked_at', 'workspace_post_id');
+        foreach ($posts as $p) {
+            $p->setAttribute('ack_count', (int) ($counts[$p->id] ?? 0));
+            $p->setAttribute('ack_mine_at', isset($mine[$p->id]) ? \Illuminate\Support\Carbon::parse($mine[$p->id])->toISOString() : null);
+        }
     }
 
     /** @return array{0: array<int, array<string,int>>, 1: array<int,string>} reações por publicação e a minha */
@@ -164,6 +191,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
         $posts = $page->getCollection();
 
         [$byPost, $mine] = $this->reactionData($posts->pluck('id'), $meId);
+        $this->attachAcks($posts, $meId);
         $names = $this->mentionNames($hotel, $posts->flatMap(fn ($p) => $this->mentionUuids($p->body))->unique()->values()->all());
 
         return $this->success('Mural carregado com sucesso.', [
@@ -185,6 +213,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'body'            => ['nullable', 'string', 'max:3000'],
             'pinned'          => ['sometimes', 'boolean'],
             'department_uuid' => ['nullable', 'uuid'],
+            'requires_ack'    => ['sometimes', 'boolean'],
             'photos'          => ['nullable', 'array', 'max:' . self::MAX_PHOTOS],
             'photos.*'        => ['file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
@@ -210,6 +239,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
                 'department_id' => $deptId,
                 'body'          => $body,
                 'pinned'        => $this->access->isAdmin($m) && ($data['pinned'] ?? false),
+                'requires_ack'  => (bool) ($data['requires_ack'] ?? false),
             ]);
             foreach (array_values($request->file('photos', [])) as $i => $file) {
                 WorkspacePostMedia::create([
@@ -223,6 +253,19 @@ class WorkspaceFeedController extends WorkspaceBaseController
             return $post;
         });
         $post->load(['author', 'department', 'media']);
+
+        // Comunicado com confirmação de leitura: avisa todo o público (fila de notificações; poucos registros por comunicado).
+        if ($post->requires_ack) {
+            foreach ($this->audienceQuery($post)->with('user')->get() as $hu) {
+                if (! $hu->user) {
+                    continue;
+                }
+                $this->notifications->workspaceNotice(
+                    $hu->user, $request->user(), 'workspace_ack_required', 'Comunicado: confirme a leitura',
+                    Str::limit($this->plainText($body) ?: 'Comunicado com fotos', 100), $this->link($hotel, 'mural'),
+                );
+            }
+        }
 
         $this->notifyMentions($request, $hotel, $body, $deptId, 'em uma publicação');
         $names = $this->mentionNames($hotel, $this->mentionUuids($body));
@@ -264,6 +307,44 @@ class WorkspaceFeedController extends WorkspaceBaseController
         $p->update(['pinned' => ! $p->pinned]);
 
         return $this->success('Publicação atualizada com sucesso.', ['pinned' => $p->pinned]);
+    }
+
+    /** POST /feed/{post}/ack — "li e estou ciente" (idempotente; guarda data e IP). */
+    public function ack(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? $this->visible(WorkspacePost::query(), $hotel, $m)->where('uuid', $post)->where('requires_ack', true)->first() : null;
+        if (! $p) {
+            return $this->notFound('Comunicado não encontrado.');
+        }
+
+        $ack = WorkspacePostAck::firstOrCreate(
+            ['workspace_post_id' => $p->id, 'user_id' => $request->user()->id],
+            ['acked_at' => now(), 'ip' => $request->ip()],
+        );
+
+        return $this->success('Leitura confirmada.', ['acked_at' => $ack->acked_at?->toISOString()]);
+    }
+
+    /** GET /feed/{post}/acks — quem já confirmou e quem falta (autor ou RH). */
+    public function acks(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? WorkspacePost::where('hotel_id', $hotel->id)->where('uuid', $post)->where('requires_ack', true)->first() : null;
+        if (! $p || ($p->author_id !== $request->user()->id && ! $this->access->isAdmin($m))) {
+            return $this->notFound('Comunicado não encontrado.');
+        }
+
+        $acked   = WorkspacePostAck::with('user')->where('workspace_post_id', $p->id)->orderBy('acked_at')->get()->keyBy('user_id');
+        $members = $this->audienceQuery($p)->with(['user', 'department'])->get();
+
+        return $this->success('Confirmações carregadas.', [
+            'total'   => $members->count(),
+            'readers' => $members->filter(fn ($hu) => $acked->has($hu->user_id))->map(fn ($hu) => [
+                'person' => $this->access->person($hu->user, $hu), 'acked_at' => $acked[$hu->user_id]->acked_at?->toISOString(),
+            ])->sortBy('acked_at')->values(),
+            'pending' => $members->reject(fn ($hu) => $acked->has($hu->user_id))->map(fn ($hu) => $this->access->person($hu->user, $hu) + ['department' => $hu->department?->name])->values(),
+        ]);
     }
 
     /** GET /workspace-media/{uuid}?expires=&signature= — entrega a foto (rota pública, mas só com URL assinada e válida). */

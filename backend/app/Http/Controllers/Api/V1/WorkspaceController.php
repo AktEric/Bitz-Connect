@@ -248,6 +248,13 @@ class WorkspaceController extends Controller
                     ->where('requester_id', $user->id)->where('status', 'pending')->count(),
                 'new_payslips'       => Payslip::where('hotel_id', $hotel->id)
                     ->where('user_id', $user->id)->whereNull('first_viewed_at')->count(),
+                // Comunicados do mural que exigem confirmação de leitura e ainda não confirmei
+                'pending_acks'       => \App\Models\WorkspacePost::where('hotel_id', $hotel->id)->where('requires_ack', true)
+                    ->where('author_id', '!=', $user->id)
+                    ->where(fn ($q) => $q->whereNull('department_id')->when($membership->department_id, fn ($q2) => $q2->orWhere('department_id', $membership->department_id)))
+                    ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('workspace_post_acks')
+                        ->whereColumn('workspace_post_acks.workspace_post_id', 'workspace_posts.id')->where('workspace_post_acks.user_id', $user->id))
+                    ->count(),
             ],
         ]);
     }
