@@ -121,6 +121,7 @@ export default function AppRoutes() {
             <Route path="auditoria" element={<WorkspaceAuditPage />} />
             <Route path="vagas" element={<WorkspaceJobsPage />} />
             <Route path="perfil" element={<WorkspaceProfilePage />} />
+            <Route path="pessoas/:uuid" element={<WorkspaceProfilePage />} />
             <Route path="relatorios" element={<WorkspaceReportsPage />} />
             <Route path="painel" element={<WorkspaceDashboardPage />} />
             <Route path="comecar" element={<WorkspaceOnboardingPage />} />
