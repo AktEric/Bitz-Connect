@@ -458,3 +458,19 @@ export interface CompanySecurity {
   privileged_without_2fa: ({ uuid: string; name: string; avatar_url: string | null; job_title: string | null } | null)[]
   can_edit: boolean
 }
+
+export interface AuditItem {
+  action: string
+  actor: { uuid: string; name: string; avatar_url: string | null } | null
+  target: { uuid: string; name: string; avatar_url: string | null } | null
+  meta: Record<string, unknown> | null
+  ip: string | null
+  created_at: string
+}
+
+export interface AuditPage {
+  items: AuditItem[]
+  page: number
+  last_page: number
+  actions: string[]
+}

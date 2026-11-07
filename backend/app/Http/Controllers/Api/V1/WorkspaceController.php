@@ -164,6 +164,32 @@ class WorkspaceController extends Controller
             ])->values(),
             'page'      => $page->currentPage(),
             'last_page' => $page->lastPage(),
+            'actions'   => AuditLog::where('hotel_id', $hotel->id)->distinct()->orderBy('action')->pluck('action'),
+        ]);
+    }
+
+    /** GET /workspaces/{hotel:slug}/audit/export — CSV das últimas 5000 ações (dono e RH). A própria exportação é registrada. */
+    public function auditExport(Request $request, Hotel $hotel): \Illuminate\Http\Response|JsonResponse
+    {
+        $m = $this->access->membership($request->user(), $hotel);
+        if (! $this->access->isAdmin($m)) {
+            return $this->forbidden('Somente o dono ou o RH exportam a auditoria.');
+        }
+
+        $esc = fn ($v) => '"' . str_replace('"', '""', (string) $v) . '"';
+        $lines = [implode(';', ['Data/hora (Brasília)', 'Ação', 'Quem fez', 'Sobre quem', 'IP', 'Detalhes'])];
+        AuditLog::with(['actor', 'target'])->where('hotel_id', $hotel->id)->orderByDesc('id')->limit(5000)->get()->each(function ($l) use (&$lines, $esc) {
+            $lines[] = implode(';', [
+                $esc($l->created_at?->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s')), $esc($l->action),
+                $esc($l->actor?->name), $esc($l->target?->name), $esc($l->ip), $esc($l->meta ? json_encode($l->meta, JSON_UNESCAPED_UNICODE) : ''),
+            ]);
+        });
+        AuditLog::record($request, $hotel, 'audit.exported');
+
+        return response("\xEF\xBB\xBF" . implode("\r\n", $lines) . "\r\n", 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="auditoria.csv"',
+            'Cache-Control'       => 'private, no-store',
         ]);
     }
 

@@ -6,7 +6,7 @@ import type {
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity,
+  CalendarPayload, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -171,6 +171,18 @@ const workspaceService = {
   // Segurança da empresa (exigir 2FA para dono, RH e financeiro)
   security: (slug: string) => get<CompanySecurity>(`${w(slug)}/security`),
   saveSecurity: (slug: string, require_2fa: boolean) => api.put<ApiResponse<{ require_2fa: boolean }>>(`${w(slug)}/security`, { require_2fa }).then((r) => r.data.data),
+
+  // Auditoria
+  audit: (slug: string, params: { page?: number; action?: string }) => get<AuditPage>(`${w(slug)}/audit`, params),
+  async exportAudit(slug: string): Promise<void> {
+    const res = await api.get(`${w(slug)}/audit/export`, { responseType: 'blob' })
+    const url = URL.createObjectURL(res.data as Blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'auditoria.csv'
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  },
 
   // Metas
   goals: (slug: string, params: { scope?: string; status?: string; user?: string }) => get<Goal[]>(`${w(slug)}/goals`, params),
