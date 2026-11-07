@@ -68,3 +68,23 @@ it('publishes a video with a private signed URL and rejects other file types', f
     // a URL assinada entrega o vídeo
     $this->get($media['url'])->assertOk();
 });
+
+it('lets anyone recognize a colleague, publishes it on the feed, notifies them and limits spam', function () {
+    Sanctum::actingAs($this->person);
+    $this->postJson("{$this->base}/kudos", ['to_uuid' => $this->person->uuid, 'badge' => 'thanks', 'message' => 'Obrigado por tudo'])->assertUnprocessable(); // não vale a si mesmo
+    $this->postJson("{$this->base}/kudos", ['to_uuid' => $this->rh->uuid, 'badge' => 'nope', 'message' => 'Obrigado por tudo'])->assertUnprocessable();
+
+    $item = $this->postJson("{$this->base}/kudos", ['to_uuid' => $this->rh->uuid, 'badge' => 'teamwork', 'message' => 'Ajudou muito no fechamento'])->assertCreated()->json('data');
+    expect($item['kind'])->toBe('kudos')->and($item['badge'])->toBe('teamwork')->and($item['subject']['name'])->toBe($this->rh->name)->and($item['author']['name'])->toBe($this->person->name);
+    expect(\App\Models\Notification::where('user_id', $this->rh->id)->where('type', 'workspace_kudos')->count())->toBe(1);
+
+    Sanctum::actingAs($this->shy);
+    expect($this->getJson("{$this->base}/feed")->json('data.items.0.kind'))->toBe('kudos');
+
+    // o autor e o RH apagam; limite de 5 por dia
+    Sanctum::actingAs($this->person);
+    foreach (range(1, 4) as $i) {
+        $this->postJson("{$this->base}/kudos", ['to_uuid' => $this->rh->uuid, 'badge' => 'service', 'message' => "Mensagem número {$i}"])->assertCreated();
+    }
+    $this->postJson("{$this->base}/kudos", ['to_uuid' => $this->rh->uuid, 'badge' => 'service', 'message' => 'Mais um elogio'])->assertStatus(429);
+});

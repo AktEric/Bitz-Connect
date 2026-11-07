@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\AuditLog;
 use App\Models\Hotel;
 use App\Models\HotelUser;
 use App\Models\WorkspacePost;
@@ -24,6 +25,8 @@ class WorkspaceFeedController extends WorkspaceBaseController
 {
     public const REACTIONS = ['like', 'love', 'celebrate', 'clap'];
     public const MAX_PHOTOS = 6;
+    public const BADGES = ['teamwork', 'innovation', 'service', 'leadership', 'dedication', 'thanks'];
+    private const KUDOS_PER_DAY = 5;
     /** Menção no texto: @[Nome](uuid). O nome exibido vem sempre do servidor. */
     private const MENTION_RE = '/@\[([^\]\n]{1,80})\]\(([0-9a-fA-F-]{36})\)/';
 
@@ -121,6 +124,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'body'           => $p->body,
             'pinned'         => $p->pinned,
             'kind'           => $p->kind ?? 'post',
+            'badge'          => $p->badge,
             'subject'        => $p->subject_id ? $this->access->person($p->subject) : null,
             'comments_preview' => $p->getAttribute('preview') ?? [],
             'created_at'     => $p->created_at?->toISOString(),
@@ -224,6 +228,38 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'last_page' => $page->lastPage(),
             'can_post'  => $this->canPost($hotel, $m, $request),
         ]);
+    }
+
+    /** POST /workspaces/{slug}/kudos  { to_uuid, badge, message } — qualquer pessoa reconhece um colega; vira publicação no mural. */
+    public function kudos(Request $request, Hotel $hotel): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        if (! $m) {
+            return $this->forbidden('Você não faz parte desta empresa.');
+        }
+        $data = $request->validate([
+            'to_uuid' => ['required', 'uuid'],
+            'badge'   => ['required', 'in:' . implode(',', self::BADGES)],
+            'message' => ['required', 'string', 'min:5', 'max:500'],
+        ]);
+        $to = $this->access->memberByUuid($hotel, $data['to_uuid']);
+        if (! $to || $to->user_id === $request->user()->id) {
+            return $this->error('Escolha um colega da empresa (não vale você mesmo).', ['to_uuid' => ['Colega inválido.']], 422);
+        }
+        $today = WorkspacePost::where('hotel_id', $hotel->id)->where('author_id', $request->user()->id)->where('kind', 'kudos')->where('created_at', '>=', now()->startOfDay())->count();
+        if ($today >= self::KUDOS_PER_DAY) {
+            return $this->error('Você já fez ' . self::KUDOS_PER_DAY . ' reconhecimentos hoje. Volte amanhã!', [], 429);
+        }
+
+        $post = WorkspacePost::create([
+            'uuid' => (string) Str::uuid(), 'hotel_id' => $hotel->id, 'author_id' => $request->user()->id,
+            'kind' => 'kudos', 'subject_id' => $to->user_id, 'badge' => $data['badge'], 'body' => trim($data['message']), 'pinned' => false,
+        ]);
+        $this->notifications->workspaceNotice($to->user, $request->user(), 'workspace_kudos', "{$request->user()->name} reconheceu você", Str::limit(trim($data['message']), 100), $this->link($hotel, 'mural'));
+        AuditLog::record($request, $hotel, 'kudos.given', $to->user, ['badge' => $data['badge']]);
+        $post->load(['author', 'department', 'media', 'subject']);
+
+        return $this->created('Reconhecimento publicado.', $this->format($post, $request->user()->id, $this->access->isAdmin($m)));
     }
 
     public function store(Request $request, Hotel $hotel): JsonResponse

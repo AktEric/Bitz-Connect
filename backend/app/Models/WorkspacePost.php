@@ -11,7 +11,7 @@ class WorkspacePost extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['uuid','hotel_id','author_id','department_id','body','pinned','requires_ack','kind','subject_id','subject_date'];
+    protected $fillable = ['uuid','hotel_id','author_id','department_id','body','pinned','requires_ack','kind','subject_id','subject_date','badge'];
 
     protected $table = 'workspace_posts';
     protected function casts(): array

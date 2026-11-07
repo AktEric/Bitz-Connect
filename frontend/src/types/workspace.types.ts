@@ -85,7 +85,8 @@ export interface FeedMedia {
 
 export interface FeedPost {
   uuid: string
-  kind: 'post' | 'birthday'
+  kind: 'post' | 'birthday' | 'kudos'
+  badge?: string | null
   subject: WorkspacePerson | null
   comments_preview: FeedComment[]
   body: string

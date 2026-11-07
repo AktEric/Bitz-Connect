@@ -7,6 +7,7 @@ import type { FeedComment, FeedPost } from '@/types/workspace.types'
 import { Empty, Modal, PageHeader, Panel, Pill, Spinner, btnGhost, btnPrimary, errMsg, fmtDate, timeAgo, useWs } from './ui'
 import { MentionField, MentionText, applyMentions, type Mention } from './MentionField'
 import PhotoGrid from './PhotoGrid'
+import KudosModal, { BADGES } from './KudosModal'
 import ReactionBar from './ReactionBar'
 import { resizeImage } from './imageUtils'
 
@@ -93,7 +94,17 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
   const del = useMutation({ mutationFn: () => workspaceService.deletePost(slug, post.uuid), onSuccess: refresh })
 
   return (
-    <Panel className={post.kind === 'birthday' ? 'border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50' : undefined}>
+    <Panel className={post.kind === 'birthday' ? 'border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50' : post.kind === 'kudos' ? 'border-amber-100 bg-gradient-to-br from-amber-50 via-white to-violet-50' : undefined}>
+      {post.kind === 'kudos' && post.subject && (
+        <div className="mb-3 flex items-center gap-3 rounded-2xl bg-white/70 p-3">
+          <span className="text-3xl" aria-hidden>{BADGES[post.badge ?? '']?.emoji ?? '⭐'}</span>
+          <div className="min-w-0">
+            <p className="text-sm text-gray-900"><b>{post.author?.name}</b> reconheceu <b>{post.subject.name}</b></p>
+            <p className="text-xs font-medium text-amber-700">{BADGES[post.badge ?? '']?.label ?? 'Reconhecimento'}</p>
+          </div>
+          <Avatar src={post.subject.avatar_url} name={post.subject.name ?? '?'} size="lg" className="ml-auto" />
+        </div>
+      )}
       {post.kind === 'birthday' && post.subject && (
         <div className="mb-3 flex flex-col items-center gap-2 rounded-2xl bg-white/70 py-5 text-center">
           <Cake className="h-5 w-5 text-pink-500" />
@@ -103,7 +114,7 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
         </div>
       )}
       <div className="flex items-start gap-3">
-        {post.kind !== 'birthday' && <Avatar src={post.author?.avatar_url} name={post.author?.name ?? '?'} size="md" />}
+        {post.kind !== 'birthday' && post.kind !== 'kudos' && <Avatar src={post.author?.avatar_url} name={post.author?.name ?? '?'} size="md" />}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2">
             <span className="font-semibold text-gray-900">{post.author?.name ?? 'Ex-colaborador'}</span>
@@ -165,6 +176,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
   const [requiresAck, setRequiresAck] = useState(false)
   const [photos, setPhotos] = useState<Draft[]>([])
   const [video, setVideo] = useState<File | null>(null)
+  const [kudos, setKudos] = useState(false)
   const videoRef = useRef<HTMLInputElement>(null)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
@@ -233,6 +245,11 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
   return (
     <div>
       {!compact && <PageHeader title="Mural" subtitle="Novidades, fotos e comunicados da empresa." />}
+
+      <div className="mb-3 flex justify-end">
+        <button type="button" className={btnGhost} onClick={() => setKudos(true)}>🌟 Reconhecer um colega</button>
+      </div>
+      {kudos && <KudosModal slug={slug} onClose={() => setKudos(false)} />}
 
       {info.me.can_post && (
         <Panel className="mb-4">

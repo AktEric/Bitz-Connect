@@ -317,6 +317,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Mural
         Route::get('/feed',                          [WorkspaceFeedController::class, 'index']);
         Route::post('/feed',                         [WorkspaceFeedController::class, 'store']);
+        Route::post('/kudos',                        [WorkspaceFeedController::class, 'kudos']);
         Route::delete('/feed/{post}',                [WorkspaceFeedController::class, 'destroy']);
         Route::post('/feed/{post}/pin',              [WorkspaceFeedController::class, 'pin']);
         Route::post('/feed/{post}/ack',              [WorkspaceFeedController::class, 'ack']);

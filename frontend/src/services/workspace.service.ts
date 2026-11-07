@@ -62,6 +62,7 @@ const workspaceService = {
   personCard: (slug: string, uuid: string) => get<PersonCard>(`${w(slug)}/people/${uuid}/profile`),
   personRecord: (slug: string, uuid: string) => get<PersonRecord>(`${w(slug)}/people/${uuid}/record`),
   savePersonRecord: (slug: string, uuid: string, body: Partial<PersonRecord>) => api.put<ApiResponse<PersonRecord>>(`${w(slug)}/people/${uuid}/record`, body).then((r) => r.data.data),
+  giveKudos: (slug: string, body: { to_uuid: string; badge: string; message: string }) => post<FeedPost>(`${w(slug)}/kudos`, body),
   jobs: (slug: string) => get<{ items: JobItem[]; can_create: boolean }>(`${w(slug)}/jobs`),
   createJob: (slug: string, body: Record<string, unknown>) => post<JobItem>(`${w(slug)}/jobs`, body),
   updateJob: (slug: string, uuid: string, body: Record<string, unknown>) => patch<JobItem>(`${w(slug)}/jobs/${uuid}`, body),
