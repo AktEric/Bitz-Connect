@@ -35,10 +35,10 @@ export default function WorkspaceHomePage() {
 
   const actions = [
     { to: 'solicitacoes', label: 'Pedir férias', Icon: Plane, tone: 'bg-sky-50 text-sky-600' },
-    { to: 'ponto', label: 'Meu espelho de ponto', Icon: Clock, tone: 'bg-violet-50 text-violet-600' },
+    { to: 'ponto', label: 'Meu ponto', Icon: Clock, tone: 'bg-violet-50 text-violet-600' },
     { to: 'recebimentos', label: 'Meu holerite', Icon: Wallet, tone: 'bg-emerald-50 text-emerald-600', badge: c.new_payslips },
     { to: 'metas', label: 'Minhas metas', Icon: Target, tone: 'bg-amber-50 text-amber-600' },
-    { to: 'desenvolvimento', label: 'Meu desenvolvimento', Icon: GraduationCap, tone: 'bg-pink-50 text-pink-600' },
+    { to: 'desenvolvimento', label: 'Desenvolvimento', Icon: GraduationCap, tone: 'bg-pink-50 text-pink-600' },
     { to: 'equipe', label: 'Pessoas', Icon: CalendarDays, tone: 'bg-slate-100 text-slate-600' },
   ]
 
@@ -53,11 +53,11 @@ export default function WorkspaceHomePage() {
 
       <div className="grid gap-5 xl:grid-cols-3">
         <div className="space-y-5 xl:col-span-2">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {actions.map(({ to, label, Icon, tone, badge }) => (
               <Link key={to + label} to={to} className="group relative flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                 <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${tone}`}><Icon className="h-5 w-5" /></span>
-                <span className="text-sm font-medium text-gray-800">{label}</span>
+                <span className="min-w-0 break-words text-sm font-medium leading-tight text-gray-800">{label}</span>
                 {!!badge && <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-violet-600" />}
               </Link>
             ))}

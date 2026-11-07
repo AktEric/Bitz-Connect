@@ -64,6 +64,8 @@ const WorkspaceAdminPage = lazy(() => import('@/pages/workspace/WorkspaceAdminPa
 const WorkspaceCalendarPage = lazy(() => import('@/pages/workspace/WorkspaceCalendarPage'))
 const WorkspaceSecurityPage = lazy(() => import('@/pages/workspace/WorkspaceSecurityPage'))
 const WorkspaceAuditPage = lazy(() => import('@/pages/workspace/WorkspaceAuditPage'))
+const WorkspaceJobsPage = lazy(() => import('@/pages/workspace/WorkspaceJobsPage'))
+const PublicJobPage = lazy(() => import('@/pages/workspace/PublicJobPage'))
 const WorkspaceProfilePage = lazy(() => import('@/pages/workspace/WorkspaceProfilePage'))
 const WorkspaceReportsPage = lazy(() => import('@/pages/workspace/WorkspaceReportsPage'))
 const WorkspaceDashboardPage = lazy(() => import('@/pages/workspace/WorkspaceDashboardPage'))
@@ -105,6 +107,7 @@ export default function AppRoutes() {
 
         {/* Convite por link (página pública) */}
         <Route path="/convite/:token" element={<InviteAcceptPage />} />
+        <Route path="/vagas/:token" element={<PublicJobPage />} />
 
         {/* Workspace (intranet + RH): casca própria, fora do AppLayout da rede profissional */}
         <Route element={<WorkspaceRoute />}>
@@ -116,6 +119,7 @@ export default function AppRoutes() {
             <Route path="calendario" element={<WorkspaceCalendarPage />} />
             <Route path="seguranca" element={<WorkspaceSecurityPage />} />
             <Route path="auditoria" element={<WorkspaceAuditPage />} />
+            <Route path="vagas" element={<WorkspaceJobsPage />} />
             <Route path="perfil" element={<WorkspaceProfilePage />} />
             <Route path="relatorios" element={<WorkspaceReportsPage />} />
             <Route path="painel" element={<WorkspaceDashboardPage />} />

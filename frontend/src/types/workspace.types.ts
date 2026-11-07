@@ -561,3 +561,12 @@ export interface PersonRecord {
   bank: string | null; agency: string | null; account: string | null; account_type: string | null; pix: string | null
   can_edit: boolean
 }
+
+export interface JobItem {
+  uuid: string; title: string; description: string; requirements: string | null; location: string | null
+  contract_type: string | null; contact: string | null; department: string | null; department_uuid: string | null
+  status: 'open' | 'closed'; public: boolean; closes_on: string | null; created_at: string
+  author: WorkspacePerson | null; applied: boolean; can_edit: boolean; applications_count: number | null; share_url: string | null
+}
+export interface JobApplicationItem { uuid: string; status: 'new' | 'reviewing' | 'rejected' | 'hired'; message: string | null; created_at: string; person: WorkspacePerson | null; department: string | null }
+export interface PublicJob { title: string; description: string; requirements: string | null; location: string | null; contract_type: string | null; contact: string | null; department: string | null; company: string | null; closes_on: string | null }

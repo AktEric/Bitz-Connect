@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\WorkspaceSearchController;
 use App\Http\Controllers\Api\V1\AccountSecurityController;
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\PersonController;
+use App\Http\Controllers\Api\V1\WorkspaceJobController;
 use App\Http\Controllers\Api\V1\PrivacyController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\OnboardingController;
@@ -78,6 +79,7 @@ Route::get('/hotels/{hotel}',                  [HotelController::class, 'show'])
 
 // Convite para a empresa — pré-visualização pública (por token, com rate limit)
 Route::get('/invites/{token}', [CompanyInviteController::class, 'preview'])->middleware('throttle:30,1');
+Route::get('/public/jobs/{token}', [WorkspaceJobController::class, 'publicShow'])->middleware('throttle:60,1');
 
 // Assinatura do calendário (Google/Outlook/Apple): pública, protegida por segredo pessoal e rate limit
 Route::get('/calendar-feed/{token}.ics', [CalendarController::class, 'feed'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1');
@@ -228,6 +230,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/invites/{token}/accept',      [CompanyInviteController::class, 'accept']);
 
     Route::prefix('workspaces/{hotel:slug}')->middleware('workspace.2fa')->group(function () {
+
+        // Vagas
+        Route::get('/jobs',                              [WorkspaceJobController::class, 'index']);
+        Route::post('/jobs',                             [WorkspaceJobController::class, 'store']);
+        Route::patch('/jobs/{uuid}',                     [WorkspaceJobController::class, 'update']);
+        Route::delete('/jobs/{uuid}',                    [WorkspaceJobController::class, 'destroy']);
+        Route::post('/jobs/{uuid}/apply',                [WorkspaceJobController::class, 'apply']);
+        Route::delete('/jobs/{uuid}/apply',              [WorkspaceJobController::class, 'withdraw']);
+        Route::get('/jobs/{uuid}/applications',          [WorkspaceJobController::class, 'applications']);
+        Route::patch('/jobs/{uuid}/applications/{app}',  [WorkspaceJobController::class, 'setApplicationStatus']);
 
         // Perfil e ficha
         Route::get('/me/profile',                [PersonController::class, 'mine']);

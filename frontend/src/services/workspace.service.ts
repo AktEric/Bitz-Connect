@@ -6,7 +6,7 @@ import type {
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult, PersonCard, PersonProfileFields, MyProfile, PersonRecord,
+  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult, PersonCard, PersonProfileFields, MyProfile, PersonRecord, JobItem, JobApplicationItem, PublicJob,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -62,6 +62,15 @@ const workspaceService = {
   personCard: (slug: string, uuid: string) => get<PersonCard>(`${w(slug)}/people/${uuid}/profile`),
   personRecord: (slug: string, uuid: string) => get<PersonRecord>(`${w(slug)}/people/${uuid}/record`),
   savePersonRecord: (slug: string, uuid: string, body: Partial<PersonRecord>) => api.put<ApiResponse<PersonRecord>>(`${w(slug)}/people/${uuid}/record`, body).then((r) => r.data.data),
+  jobs: (slug: string) => get<{ items: JobItem[]; can_create: boolean }>(`${w(slug)}/jobs`),
+  createJob: (slug: string, body: Record<string, unknown>) => post<JobItem>(`${w(slug)}/jobs`, body),
+  updateJob: (slug: string, uuid: string, body: Record<string, unknown>) => patch<JobItem>(`${w(slug)}/jobs/${uuid}`, body),
+  deleteJob: (slug: string, uuid: string) => del(`${w(slug)}/jobs/${uuid}`),
+  applyJob: (slug: string, uuid: string, message?: string) => post<{ applied: boolean }>(`${w(slug)}/jobs/${uuid}/apply`, { message }),
+  withdrawJob: (slug: string, uuid: string) => del(`${w(slug)}/jobs/${uuid}/apply`),
+  jobApplications: (slug: string, uuid: string) => get<JobApplicationItem[]>(`${w(slug)}/jobs/${uuid}/applications`),
+  setJobApplication: (slug: string, uuid: string, app: string, status: JobApplicationItem['status']) => patch<unknown>(`${w(slug)}/jobs/${uuid}/applications/${app}`, { status }),
+  publicJob: (token: string) => api.get<ApiResponse<PublicJob>>(`/public/jobs/${token}`).then((r) => r.data.data),
   reports: (slug: string) => get<ReportItem[]>(`${w(slug)}/reports`),
   report: (slug: string, key: string, month: string) => get<ReportData>(`${w(slug)}/reports/${key}`, month ? { month } : undefined),
   timeIntegrity: (slug: string) => get<IntegrityResult>(`${w(slug)}/time/integrity`),
