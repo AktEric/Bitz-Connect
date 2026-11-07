@@ -35,12 +35,14 @@ class Hotel extends Model implements Subscribable
         'phone',
         'contact_email',
         'followers_count',
+        'time_settings',
     ];
 
     protected function casts(): array
     {
         return [
             'deleted_at' => 'datetime',
+            'time_settings' => 'array',
         ];
     }
 

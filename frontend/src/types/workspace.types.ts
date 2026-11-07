@@ -188,6 +188,7 @@ export interface Paged<T> {
 
 // ── Ponto ────────────────────────────────────────────────────
 export type TimeType = 'in' | 'break_start' | 'break_end' | 'out'
+export type PunchMode = 'off' | 'optional' | 'required'
 export type TimeState = 'out' | 'working' | 'break'
 
 export interface TimeEntryItem {
@@ -197,6 +198,11 @@ export interface TimeEntryItem {
   source: 'web' | 'mobile' | 'manual'
   note: string | null
   local_time?: string
+  lat?: number | null
+  lng?: number | null
+  accuracy_m?: number | null
+  has_photo?: boolean
+  outside_fence?: boolean
 }
 
 export interface TimeToday {
@@ -205,6 +211,7 @@ export interface TimeToday {
   worked_minutes: number
   daily_minutes: number
   server_time: string
+  requirements?: { geo: PunchMode; photo: PunchMode; fence: boolean }
   entries: TimeEntryItem[]
 }
 
@@ -321,4 +328,10 @@ export interface ClosingItem {
 
 export interface ClosingDetail extends Omit<ClosingItem, 'people'> {
   rows: ClosingRow[]
+}
+
+export interface PunchSettings {
+  geo: PunchMode
+  photo: PunchMode
+  fence: { lat: number; lng: number; radius_m: number; block: boolean } | null
 }

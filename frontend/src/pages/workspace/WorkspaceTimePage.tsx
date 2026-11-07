@@ -6,6 +6,7 @@ import workspaceService from '@/services/workspace.service'
 import { useTimeBankTeam, useTimeTeam, useTimesheet } from '@/hooks/useWorkspace'
 import BankCard from './BankCard'
 import ClosingView from './ClosingView'
+import EntryChips from './EntryChips'
 import { Avatar } from '@/components/ui/Avatar'
 import type { TimeState, TimeType } from '@/types/workspace.types'
 import ClockCard from './ClockCard'
@@ -82,7 +83,7 @@ function Timesheet({ slug, userUuid, canAdjust }: { slug: string; userUuid?: str
               <li key={d.date} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 text-sm">
                 <span className="w-16 font-medium text-gray-900">{String(day.getDate()).padStart(2, '0')} <span className="text-xs font-normal uppercase text-gray-400">{WEEKDAY[d.weekday]}</span></span>
                 <span className="min-w-0 flex-1 text-gray-600">
-                  {d.entries.length ? d.entries.map((e) => `${e.local_time} ${TYPE_LABEL[e.type].split(' ')[0].toLowerCase()}${e.source === 'manual' ? '*' : ''}`).join(' · ') : <span className="text-gray-300">Sem marcações</span>}
+                  <EntryChips slug={slug} entries={d.entries} />
                 </span>
                 <span className="font-medium tabular-nums text-gray-900">{fmtMinutes(d.worked_minutes)}</span>
               </li>

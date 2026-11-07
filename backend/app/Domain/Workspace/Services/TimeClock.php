@@ -60,6 +60,11 @@ class TimeClock
             'punched_at' => $e->punched_at->toIso8601String(),
             'source'     => $e->source,
             'note'       => $e->note,
+            'lat'        => $e->lat,
+            'lng'        => $e->lng,
+            'accuracy_m' => $e->accuracy_m,
+            'has_photo'  => $e->photo_path !== null,
+            'outside_fence' => (bool) $e->outside_fence,
         ];
     }
 }

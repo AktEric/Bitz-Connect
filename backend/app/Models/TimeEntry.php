@@ -10,11 +10,11 @@ class TimeEntry extends Model
 {
     public const TYPES = ['in', 'break_start', 'break_end', 'out'];
 
-    protected $fillable = ['uuid', 'hotel_id', 'user_id', 'type', 'punched_at', 'source', 'note', 'created_by', 'ip'];
+    protected $fillable = ['uuid', 'hotel_id', 'user_id', 'type', 'punched_at', 'source', 'note', 'created_by', 'ip', 'lat', 'lng', 'accuracy_m', 'photo_path', 'outside_fence'];
 
     protected function casts(): array
     {
-        return ['punched_at' => 'datetime'];
+        return ['punched_at' => 'datetime', 'lat' => 'float', 'lng' => 'float', 'outside_fence' => 'boolean'];
     }
 
     public function user(): BelongsTo

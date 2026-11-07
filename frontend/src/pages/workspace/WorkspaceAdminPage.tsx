@@ -5,6 +5,7 @@ import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
 import type { AccessRole } from '@/types/workspace.types'
 import WorkspaceSchedulesSection from './WorkspaceSchedulesSection'
+import PunchSettingsSection from './PunchSettingsSection'
 import { Empty, PageHeader, Panel, Pill, Spinner, btnPrimary, errMsg, inputCls, useWs } from './ui'
 
 const ROLE_INFO: Record<AccessRole, { label: string; hint: string }> = {
@@ -155,6 +156,7 @@ export default function WorkspaceAdminPage() {
       <PageHeader title="Papéis e estrutura" subtitle="Defina quem pode o quê, as jornadas de trabalho e os setores da empresa." />
       <RolesSection slug={slug} />
       <WorkspaceSchedulesSection slug={slug} />
+      <PunchSettingsSection slug={slug} />
       <TemplateSection slug={slug} />
     </>
   )

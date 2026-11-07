@@ -5,6 +5,21 @@ import { cn } from '@/utils/cn'
 import type { TimeType } from '@/types/workspace.types'
 import { ACTION_LABEL, TYPE_LABEL, fmtClock, fmtMinutes } from './timeUtils'
 import { errMsg } from './ui'
+import CameraModal from './CameraModal'
+
+type Geo = { lat: number; lng: number; accuracy: number }
+
+/** Pega a posição do aparelho; em modo opcional falha em silêncio (null). */
+function getPosition(required: boolean): Promise<Geo | null> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return required ? reject(new Error('Este aparelho não oferece localização.')) : resolve(null)
+    navigator.geolocation.getCurrentPosition(
+      (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
+      () => (required ? reject(new Error('Esta empresa exige a localização para marcar o ponto. Permita o acesso à localização no navegador e tente de novo.')) : resolve(null)),
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 30_000 },
+    )
+  })
+}
 
 const ICON: Record<TimeType, typeof LogIn> = { in: LogIn, break_start: Coffee, break_end: Play, out: LogOut }
 
@@ -20,6 +35,8 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
   const punch = usePunch(slug)
   const [now, setNow] = useState(() => new Date())
   const [error, setError] = useState<string | null>(null)
+  const [askPhoto, setAskPhoto] = useState<TimeType | null>(null)
+  const [locating, setLocating] = useState(false)
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -41,9 +58,23 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
   const dayOff = !!data && data.daily_minutes === 0
   const pct = data && data.daily_minutes > 0 ? Math.min(100, (live / data.daily_minutes) * 100) : 0
 
+  const req = data?.requirements
+
+  const send = async (type: TimeType, photo: Blob | null) => {
+    setError(null)
+    let geo: Geo | null = null
+    if (req && req.geo !== 'off') {
+      setLocating(true)
+      try { geo = await getPosition(req.geo === 'required') } catch (e) { setError((e as Error).message); setLocating(false); return }
+      setLocating(false)
+    }
+    punch.mutate({ type, geo, photo }, { onError: (e) => setError(errMsg(e)) })
+  }
+
   const doPunch = (type: TimeType) => {
     setError(null)
-    punch.mutate(type, { onError: (e) => setError(errMsg(e)) })
+    if (req && req.photo !== 'off') setAskPhoto(type)
+    else void send(type, null)
   }
 
   return (
@@ -96,7 +127,16 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
           )
         })}
       </div>
+      {locating && <p className="mt-3 text-xs text-violet-100">Obtendo sua localização…</p>}
       {error && <p className="mt-3 rounded-xl bg-red-500/20 px-3 py-2 text-xs text-white" role="alert">{error}</p>}
+      {askPhoto && (
+        <CameraModal
+          required={req?.photo === 'required'}
+          onCancel={() => setAskPhoto(null)}
+          onSkip={() => { const t = askPhoto; setAskPhoto(null); void send(t, null) }}
+          onCapture={(blob) => { const t = askPhoto; setAskPhoto(null); void send(t, blob) }}
+        />
+      )}
 
       {!compact && !!data?.entries.length && (
         <ol className="mt-5 flex flex-wrap gap-x-5 gap-y-1 border-t border-white/15 pt-3 text-xs text-violet-100">

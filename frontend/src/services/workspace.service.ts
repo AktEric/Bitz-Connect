@@ -4,7 +4,7 @@ import type {
   DevelopmentItem, DevelopmentPlan, FeedComment, FeedPost, Goal, GoalSummaryRow, InvitePreview,
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
-  RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail,
+  RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -29,7 +29,20 @@ const workspaceService = {
 
   // Ponto
   timeToday: (slug: string) => get<TimeToday>(`${w(slug)}/time/today`),
-  punch: (slug: string, type?: TimeType) => post<TimeToday>(`${w(slug)}/time/punch`, { type, source: 'web' }),
+  punch: (slug: string, opts: { type?: TimeType; geo?: { lat: number; lng: number; accuracy: number } | null; photo?: Blob | null } = {}) => {
+    const base = { type: opts.type, source: 'web', lat: opts.geo?.lat, lng: opts.geo?.lng, accuracy: opts.geo?.accuracy }
+    if (!opts.photo) return post<TimeToday>(`${w(slug)}/time/punch`, base)
+    const form = new FormData()
+    for (const [k, v] of Object.entries(base)) if (v !== undefined && v !== null) form.append(k, String(v))
+    form.append('photo', opts.photo, 'ponto.jpg')
+    return api.post<ApiResponse<TimeToday>>(`${w(slug)}/time/punch`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.data)
+  },
+  timeSettings: (slug: string) => get<PunchSettings>(`${w(slug)}/time/settings`),
+  saveTimeSettings: (slug: string, body: PunchSettings) => api.put<ApiResponse<PunchSettings>>(`${w(slug)}/time/settings`, body).then((r) => r.data.data),
+  async entryPhotoUrl(slug: string, uuid: string): Promise<string> {
+    const res = await api.get(`${w(slug)}/time/entries/${uuid}/photo`, { responseType: 'blob' })
+    return URL.createObjectURL(res.data as Blob)
+  },
   timesheet: (slug: string, params: { month?: string; user?: string }) => get<Timesheet>(`${w(slug)}/time/timesheet`, params),
   timeClosings: (slug: string) => get<ClosingItem[]>(`${w(slug)}/time/closings`),
   timeClosing: (slug: string, month: string) => get<ClosingDetail>(`${w(slug)}/time/closings/${month}`),

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Workspace\Services\TimeClock;
+use App\Domain\Workspace\Services\PunchRules;
 use App\Domain\Workspace\Services\TimeClosingService;
 use App\Domain\Workspace\Services\WorkspaceAccess;
 use App\Models\AuditLog;
@@ -16,7 +17,9 @@ use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /** Ponto eletrônico do Workspace. */
 class TimeClockController extends WorkspaceBaseController
@@ -26,6 +29,7 @@ class TimeClockController extends WorkspaceBaseController
         NotificationService $notifications,
         private readonly TimeClock $clock,
         private readonly TimeClosingService $closing,
+        private readonly PunchRules $rules,
     ) {
         parent::__construct($access, $notifications);
     }
@@ -71,8 +75,30 @@ class TimeClockController extends WorkspaceBaseController
             'worked_minutes' => $this->clock->workedMinutes($entries, $now),
             'daily_minutes'  => WorkSchedule::minutesFor($this->scheduleFor($hotel, $user), $now->dayOfWeek),
             'server_time'    => $now->toIso8601String(),
+            'requirements'   => $this->rules->requirements($hotel),
             'entries'        => $entries->map(fn ($e) => $this->clock->format($e))->values(),
         ];
+    }
+
+    /** GET /workspaces/{slug}/time/entries/{uuid}/photo — foto da marcação (dono da marcação, gestor ou RH). */
+    public function photo(Request $request, Hotel $hotel, string $uuid): StreamedResponse|JsonResponse
+    {
+        $me    = $this->membership($request, $hotel);
+        $entry = $me ? TimeEntry::with('user')->where('hotel_id', $hotel->id)->where('uuid', $uuid)->first() : null;
+        if (! $entry || ! $entry->photo_path || ! Storage::disk('local')->exists($entry->photo_path)) {
+            return $this->notFound('Foto não encontrada.');
+        }
+        if ($entry->user_id !== $request->user()->id) {
+            if (! $this->access->canViewPerson($request->user(), $me, $hotel, $entry->user)) {
+                return $this->notFound('Foto não encontrada.');
+            }
+            AuditLog::record($request, $hotel, 'time.photo_viewed', $entry->user);
+        }
+
+        return Storage::disk('local')->response($entry->photo_path, null, [
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control'          => 'private, no-store',
+        ]);
     }
 
     /** POST /workspaces/{slug}/time/punch  { type?: break_start|break_end|out|in } */
@@ -85,6 +111,10 @@ class TimeClockController extends WorkspaceBaseController
         $data = $request->validate([
             'type'   => ['nullable', 'string', 'in:' . implode(',', TimeEntry::TYPES)],
             'source' => ['nullable', 'string', 'in:web,mobile'],
+            'lat'      => ['nullable', 'numeric', 'between:-90,90'],
+            'lng'      => ['nullable', 'numeric', 'between:-180,180'],
+            'accuracy' => ['nullable', 'numeric', 'min:0', 'max:100000'],
+            'photo'    => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:3072'],
         ]);
 
         $user    = $request->user();
@@ -101,6 +131,28 @@ class TimeClockController extends WorkspaceBaseController
             return $this->error('Marcação repetida. Aguarde alguns segundos.', [], 429);
         }
 
+        $rules   = $this->rules->settings($hotel);
+        $hasGeo  = isset($data['lat'], $data['lng']);
+        if ($rules['geo'] === 'required' && ! $hasGeo) {
+            return $this->error('Esta empresa exige a localização para marcar o ponto. Permita o acesso à localização no navegador.', [], 422);
+        }
+        if ($rules['photo'] === 'required' && ! $request->hasFile('photo')) {
+            return $this->error('Esta empresa exige uma foto para marcar o ponto.', [], 422);
+        }
+
+        $outside = false;
+        if ($hasGeo && $rules['fence']) {
+            $distance = $this->rules->distanceMeters((float) $data['lat'], (float) $data['lng'], $rules['fence']['lat'], $rules['fence']['lng']);
+            $outside  = $distance > $rules['fence']['radius_m'];
+            if ($outside && $rules['fence']['block']) {
+                return $this->error('Você está fora do local de trabalho. Aproxime-se para marcar o ponto.', [], 422);
+            }
+        }
+
+        $photoPath = $request->hasFile('photo') && $rules['photo'] !== 'off'
+            ? $request->file('photo')->store("punch-photos/{$hotel->id}", 'local')
+            : null;
+
         TimeEntry::create([
             'uuid'       => (string) Str::uuid(),
             'hotel_id'   => $hotel->id,
@@ -109,6 +161,11 @@ class TimeClockController extends WorkspaceBaseController
             'punched_at' => $now->utc(),
             'source'     => $data['source'] ?? 'web',
             'ip'         => $request->ip(),
+            'lat'        => $rules['geo'] === 'off' ? null : ($data['lat'] ?? null),
+            'lng'        => $rules['geo'] === 'off' ? null : ($data['lng'] ?? null),
+            'accuracy_m' => $rules['geo'] === 'off' || ! isset($data['accuracy']) ? null : (int) round($data['accuracy']),
+            'photo_path' => $photoPath,
+            'outside_fence' => $outside,
         ]);
 
         return $this->created('Ponto registrado.', $this->todayPayload($hotel, $user));

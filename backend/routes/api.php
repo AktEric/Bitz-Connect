@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\CompanyInviteController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\Api\V1\TimeBankController;
 use App\Http\Controllers\Api\V1\TimeClosingController;
+use App\Http\Controllers\Api\V1\TimeSettingsController;
 use App\Http\Controllers\Api\V1\TimeClockController;
 use App\Http\Controllers\Api\V1\WorkScheduleController;
 use App\Http\Controllers\Api\V1\WorkspaceFeedController;
@@ -209,6 +210,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/time/punch',     [TimeClockController::class, 'punch']);
         Route::get('/time/timesheet',  [TimeClockController::class, 'timesheet']);
         Route::get('/time/team',       [TimeClockController::class, 'team']);
+        Route::get('/time/settings',                       [TimeSettingsController::class, 'show']);
+        Route::put('/time/settings',                       [TimeSettingsController::class, 'update']);
+        Route::get('/time/entries/{uuid}/photo',           [TimeClockController::class, 'photo']);
         Route::get('/time/closings',                       [TimeClosingController::class, 'index']);
         Route::post('/time/closings',                      [TimeClosingController::class, 'store']);
         Route::get('/time/closings/{month}',               [TimeClosingController::class, 'show']);
