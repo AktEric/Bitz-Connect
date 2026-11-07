@@ -2,9 +2,12 @@
 
 namespace App\Domain\Workspace\Services;
 
+use App\Models\Delegation;
+use App\Models\Department;
 use App\Models\Hotel;
 use App\Models\HotelUser;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 
 /**
  * Regras de acesso do Workspace (intranet da empresa).
@@ -65,31 +68,105 @@ class WorkspaceAccess
             ->get()->pluck('user')->filter();
     }
 
-    /** @return int[] ids dos usuários cujo gestor direto é $manager nesta empresa */
+    /** Substituições ativas hoje em que $user é o substituto: ids de quem ele está cobrindo. */
+    private function coveredIds(User $user, Hotel $hotel): array
+    {
+        $today = CarbonImmutable::now('America/Sao_Paulo')->toDateString();
+
+        return Delegation::where('hotel_id', $hotel->id)->where('to_user_id', $user->id)
+            ->whereDate('starts_on', '<=', $today)->whereDate('ends_on', '>=', $today)
+            ->pluck('from_user_id')->all();
+    }
+
+    /**
+     * Ids das pessoas que $manager enxerga e pode gerir nesta empresa (nunca inclui ele mesmo):
+     *  - equipe direta e TODA a árvore abaixo (gestor de gestores);
+     *  - todos os membros das áreas (setores) que ele chefia, e as equipes de cada um;
+     *  - o alcance de quem ele está substituindo hoje.
+     *
+     * @return int[]
+     */
     public function reportIds(User $manager, Hotel $hotel): array
     {
-        return HotelUser::where('hotel_id', $hotel->id)
-            ->where('manager_id', $manager->id)
-            ->where('status', 'approved')
-            ->pluck('user_id')
-            ->all();
+        // Memoizado na REQUISIÇÃO atual (não no serviço): controllers podem sobreviver a várias requisições (testes, Octane).
+        $bag = request()->attributes;
+        $key = 'ws_scope:' . $hotel->id . ':' . $manager->id;
+        if ($bag->has($key)) {
+            return $bag->get($key);
+        }
+
+        $rows = HotelUser::where('hotel_id', $hotel->id)->where('status', 'approved')
+            ->get(['user_id', 'manager_id', 'department_id']);
+        $childrenOf = $rows->filter(fn ($r) => $r->manager_id)->groupBy('manager_id')->map(fn ($g) => $g->pluck('user_id')->all());
+
+        $roots   = array_merge([$manager->id], $this->coveredIds($manager, $hotel));
+        $headed  = Department::where('hotel_id', $hotel->id)->whereIn('head_id', $roots)->pluck('id')->all();
+        $seeds   = $roots;
+        foreach ($rows as $r) {
+            if ($r->department_id && in_array($r->department_id, $headed, true)) {
+                $seeds[] = $r->user_id;
+            }
+        }
+
+        $seen  = [];
+        $queue = array_unique($seeds);
+        $depth = 0;
+        while ($queue && $depth++ < 12) {
+            $next = [];
+            foreach ($queue as $id) {
+                if (isset($seen[$id])) {
+                    continue;
+                }
+                $seen[$id] = true;
+                foreach ($childrenOf->get($id, []) as $child) {
+                    $next[] = $child;
+                }
+            }
+            $queue = $next;
+        }
+
+        $result = array_values(array_diff(array_keys($seen), $roots));
+
+        $bag->set($key, $result);
+
+        return $result;
     }
 
     public function isManager(User $user, Hotel $hotel): bool
     {
-        return HotelUser::where('hotel_id', $hotel->id)
-            ->where('manager_id', $user->id)
-            ->where('status', 'approved')
-            ->exists();
+        return $this->reportIds($user, $hotel) !== [];
     }
 
     public function isManagerOf(User $manager, Hotel $hotel, User $employee): bool
     {
-        return HotelUser::where('hotel_id', $hotel->id)
-            ->where('user_id', $employee->id)
-            ->where('manager_id', $manager->id)
-            ->where('status', 'approved')
-            ->exists();
+        return in_array($employee->id, $this->reportIds($manager, $hotel), true);
+    }
+
+    /**
+     * Quem analisa pedidos de $member: gestor direto (e quem o substitui hoje); sem gestor, o chefe da área
+     * (e substitutos); sem nenhum dos dois, dono/RH. Nunca a própria pessoa.
+     *
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    public function reviewersFor(HotelUser $member, Hotel $hotel)
+    {
+        $base = $member->manager_id ? [$member->manager_id] : [];
+        if (! $base && $member->department_id) {
+            $head = Department::where('id', $member->department_id)->value('head_id');
+            $base = $head ? [$head] : [];
+        }
+
+        if ($base) {
+            $today   = CarbonImmutable::now('America/Sao_Paulo')->toDateString();
+            $delegates = Delegation::where('hotel_id', $hotel->id)->whereIn('from_user_id', $base)
+                ->whereDate('starts_on', '<=', $today)->whereDate('ends_on', '>=', $today)->pluck('to_user_id')->all();
+            $users = User::whereIn('id', array_unique(array_merge($base, $delegates)))->where('id', '!=', $member->user_id)->get();
+            if ($users->isNotEmpty()) {
+                return $users;
+            }
+        }
+
+        return $this->adminUsers($hotel)->reject(fn ($u) => $u->id === $member->user_id)->values();
     }
 
     /** Pode ver dados de gestão (metas, PDI, solicitações) de $target: o próprio, o gestor dele ou um admin. */

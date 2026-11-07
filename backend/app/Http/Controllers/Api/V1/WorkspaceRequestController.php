@@ -124,9 +124,7 @@ class WorkspaceRequestController extends WorkspaceBaseController
         $r->load(['requester', 'decider']);
 
         // Avisa quem vai analisar: gestor direto; sem gestor, os admins (RH).
-        $reviewers = $m->manager_id
-            ? collect([$m->manager])->filter()
-            : $this->access->adminUsers($hotel);
+        $reviewers = $this->access->reviewersFor($m, $hotel);
         foreach ($reviewers->filter() as $reviewer) {
             $this->notifications->workspaceNotice(
                 $reviewer, $request->user(), 'workspace_request',

@@ -4,7 +4,7 @@ import type {
   DevelopmentItem, DevelopmentPlan, FeedComment, FeedPost, Goal, GoalSummaryRow, InvitePreview,
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
-  RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings,
+  RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -133,6 +133,12 @@ const workspaceService = {
   updateSchedule: (slug: string, uuid: string, body: { name: string; week_minutes: Record<string, number> }) => patch<WorkSchedule>(`${w(slug)}/schedules/${uuid}`, body),
   deleteSchedule: (slug: string, uuid: string) => del(`${w(slug)}/schedules/${uuid}`),
   assignSchedule: (slug: string, user_uuid: string, schedule_uuid: string | null) => patch<{ user_uuid: string; schedule_uuid: string | null }>(`${w(slug)}/schedules/assign`, { user_uuid, schedule_uuid }),
+
+  // Áreas, chefias e substituições
+  areas: (slug: string) => get<AreasPayload>(`${w(slug)}/areas`),
+  setAreaHead: (slug: string, area: string, head_uuid: string | null) => patch<unknown>(`${w(slug)}/areas/${area}`, { head_uuid }),
+  delegate: (slug: string, body: { from_user_uuid: string; to_user_uuid: string; starts_on: string; ends_on: string }) => post<DelegationItem>(`${w(slug)}/delegations`, body),
+  undelegate: (slug: string, uuid: string) => del(`${w(slug)}/delegations/${uuid}`),
 
   // Metas
   goals: (slug: string, params: { scope?: string; status?: string; user?: string }) => get<Goal[]>(`${w(slug)}/goals`, params),

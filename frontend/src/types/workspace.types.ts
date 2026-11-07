@@ -21,6 +21,8 @@ export interface WorkspaceInfo {
     is_admin: boolean
     access_role?: 'owner' | 'hr' | 'finance' | 'manager' | 'employee'
     is_manager: boolean
+    team_size?: number
+    areas_headed?: string[]
     can_post: boolean
     job_title: string | null
     hired_at: string | null
@@ -334,4 +336,28 @@ export interface PunchSettings {
   geo: PunchMode
   photo: PunchMode
   fence: { lat: number; lng: number; radius_m: number; block: boolean } | null
+}
+
+export interface AreaPerson { uuid: string; name: string; avatar_url: string | null; job_title: string | null }
+
+export interface AreaItem {
+  uuid: string
+  name: string
+  members_count: number
+  head: AreaPerson | null
+}
+
+export interface DelegationItem {
+  uuid: string
+  from: AreaPerson | null
+  to: AreaPerson | null
+  starts_on: string
+  ends_on: string
+  active: boolean
+}
+
+export interface AreasPayload {
+  areas: AreaItem[]
+  delegations: DelegationItem[]
+  people: AreaPerson[]
 }

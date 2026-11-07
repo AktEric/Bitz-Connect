@@ -49,6 +49,19 @@ prometer ao cliente conformidade legal do ponto (§5.4) sem validação. O plano
 
 Verificação: 154 testes de backend passando, 9 de front, type-check e shellcheck limpos.
 
+### Dia 2 — Gestor por área (feito)
+
+| Item | Status | O que foi feito / como foi verificado |
+|------|--------|---------------------------------------|
+| Chefe de área | **Feito e testado** | Cada setor pode ter um chefe, que enxerga e aprova solicitações, ponto, metas e PDI de todo o setor |
+| Hierarquia | **Feito e testado** | Gestor de gestores enxerga toda a árvore abaixo (até 12 níveis, sem laço); quem está fora da árvore/área continua barrado |
+| Substituição | **Feito e testado** | Substituto ganha o alcance do gestor só no período (início/fim por data); fora do período perde o acesso |
+| Roteamento de pedidos | **Feito e testado** | Pedido de quem não tem gestor vai para o chefe da área; sem chefe, para dono/RH; substitutos também são avisados |
+| Tela | **Feito** | Seção "Áreas e chefias" em Papéis e estrutura (chefe por área e substituições) |
+| Auditoria | **Feito** | Troca de chefe e criação/remoção de substituição ficam no log |
+
+Não coberto ainda: papéis personalizados com matriz de permissões (P1 da §8.3), escopo por unidade/filial e a tela de "minhas substituições" para o próprio gestor (a API já permite).
+
 ---
 
 ## 2. Como ler as prioridades

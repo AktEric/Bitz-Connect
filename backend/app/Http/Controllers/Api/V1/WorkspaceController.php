@@ -166,6 +166,8 @@ class WorkspaceController extends Controller
                 'is_admin'     => $isAdmin,
                 'access_role'  => $this->access->accessRole($membership, $hotel),
                 'is_manager'   => $isManager,
+                'team_size'    => count($this->access->reportIds($user, $hotel)),
+                'areas_headed' => \App\Models\Department::where('hotel_id', $hotel->id)->where('head_id', $user->id)->orderBy('name')->pluck('name')->all(),
                 'can_post'     => $isAdmin || $isManager,
                 'job_title'    => $membership->job_title,
                 'hired_at'     => $membership->hired_at?->toDateString(),

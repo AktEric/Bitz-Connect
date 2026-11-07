@@ -348,9 +348,7 @@ class TimeClockController extends WorkspaceBaseController
         ]);
 
         $m = $this->membership($request, $hotel);
-        $reviewers = $m->manager_id
-            ? collect([$m->manager])->filter()
-            : $this->access->adminUsers($hotel)->reject(fn ($u) => $u->id === $request->user()->id);
+        $reviewers = $this->access->reviewersFor($m, $hotel);
         foreach ($reviewers->filter() as $reviewer) {
             $this->notifications->workspaceNotice(
                 $reviewer, $request->user(), 'workspace_request',

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Department extends Model
 {
-    protected $fillable = ['uuid', 'hotel_id', 'name'];
+    protected $fillable = ['uuid', 'hotel_id', 'name', 'head_id'];
 
     public function getRouteKeyName(): string
     {
@@ -21,6 +21,12 @@ class Department extends Model
     public function hotel(): BelongsTo
     {
         return $this->belongsTo(Hotel::class);
+    }
+
+    /** Chefe da área. */
+    public function head(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'head_id');
     }
 
     /** Vínculos (hotel_users) alocados neste setor. */

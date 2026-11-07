@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ChatGroupController;
 use App\Http\Controllers\Api\V1\CompanyDirectoryController;
 use App\Http\Controllers\Api\V1\CompanyInviteController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
+use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\TimeBankController;
 use App\Http\Controllers\Api\V1\TimeClosingController;
 use App\Http\Controllers\Api\V1\TimeSettingsController;
@@ -229,6 +230,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/invites',                  [CompanyInviteController::class, 'index']);
         Route::post('/invites',                 [CompanyInviteController::class, 'store']);
         Route::delete('/invites/{invite}',      [CompanyInviteController::class, 'destroy']);
+        Route::get('/areas',                    [AreaController::class, 'index']);
+        Route::patch('/areas/{uuid}',           [AreaController::class, 'setHead']);
+        Route::post('/delegations',             [AreaController::class, 'delegate']);
+        Route::delete('/delegations/{uuid}',    [AreaController::class, 'undelegate']);
         Route::get('/schedules',                [WorkScheduleController::class, 'index']);
         Route::post('/schedules',               [WorkScheduleController::class, 'store']);
         Route::patch('/schedules/assign',       [WorkScheduleController::class, 'assign']);
