@@ -29,4 +29,16 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T php php a
 docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T php php artisan route:cache
 docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T php php artisan storage:link || true
 
+echo "==> Reiniciando fila e agendador para carregar o código novo"
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T php php artisan queue:restart || true
+docker compose --env-file .env.prod -f docker-compose.prod.yml restart queue scheduler
+
+DOMAIN_NAME="$(grep '^DOMAIN=' .env.prod | cut -d= -f2)"
+echo "==> Verificando saúde (https://$DOMAIN_NAME/up)"
+for i in 1 2 3 4 5 6; do
+  if curl -fsS "https://$DOMAIN_NAME/up" > /dev/null 2>&1; then echo "    OK"; break; fi
+  [ "$i" = 6 ] && echo "    AVISO: /up não respondeu; confira os logs (docker compose logs php caddy)" >&2
+  sleep 5
+done
+
 echo "==> Pronto! Confira em https://$(grep DOMAIN .env.prod | cut -d= -f2)"

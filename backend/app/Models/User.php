@@ -37,7 +37,6 @@ class User extends Authenticatable implements Subscribable
         'state',
         'website',
         'social_links',
-        'role',
     ];
 
     /**

@@ -27,6 +27,10 @@ class DevWorkspaceSeeder extends Seeder
 
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Seeder de demonstração não pode rodar em produção.');
+        }
+
         $owner = User::where('email', 'eric@inovacao.local')->first();
         $hotel = $owner
             ? Hotel::whereHas('hotelUsers', fn ($q) => $q->where('user_id', $owner->id))->where('name', 'Inovação')->first()

@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Pest)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hotelconnect
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: hotelconnect_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U hotelconnect"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: hotelconnect_test
+      DB_USERNAME: hotelconnect
+      DB_PASSWORD: secret
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_pgsql, pgsql, bcmath, gd, zip, redis, exif, pcntl
+          coverage: none
+      - name: Extensão unaccent (busca)
+        run: |
+          PGPASSWORD=secret psql -h 127.0.0.1 -U hotelconnect -d hotelconnect_test -c "CREATE EXTENSION IF NOT EXISTS unaccent" || true
+      - uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: cp .env.example .env && php artisan key:generate
+      - run: php artisan test --compact
+      - name: Auditoria de dependências (composer)
+        run: composer audit --no-interaction
+        continue-on-error: true
+
+  frontend:
+    name: Frontend (tipos, testes, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit -p tsconfig.app.json
+      - run: npm test
+      - run: npx vite build
+      - name: Auditoria de dependências (npm)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
+  infra:
+    name: Infra (Caddy e Compose)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar Caddyfile
+        run: docker run --rm -e DOMAIN=exemplo.com.br -v "$PWD/docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
+      - name: Validar docker-compose de produção
+        run: docker compose -f docker-compose.prod.yml --env-file .env.prod.example config -q
+      - name: Shellcheck dos scripts de backup e deploy
+        run: |
+          sudo apt-get install -y shellcheck >/dev/null
+          shellcheck -s sh scripts/backup/*.sh
+          bash -n deploy.sh

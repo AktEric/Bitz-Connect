@@ -77,7 +77,7 @@ class StoryController extends Controller
                 return $this->forbidden('A publicação de stories é exclusiva do ConnectHotel PRO - Empresa.');
             }
 
-            $imagePath = $request->hasFile('image') ? $request->file('image')->store('story-images', 'public') : null;
+            $imagePath = $request->hasFile('image') ? \App\Support\ImageSanitizer::store($request->file('image'), 'story-images', 'public') : null;
             $dto = CreateStoryDTO::fromArray($data, $job->id, null, $imagePath);
         } else {
             $mentorship = Mentorship::where('uuid', $data['mentorship_uuid'])->firstOrFail();
@@ -89,7 +89,7 @@ class StoryController extends Controller
                 return $this->forbidden('A publicação de stories é exclusiva do ConnectHotel PRO - Consultor.');
             }
 
-            $imagePath = $request->hasFile('image') ? $request->file('image')->store('story-images', 'public') : null;
+            $imagePath = $request->hasFile('image') ? \App\Support\ImageSanitizer::store($request->file('image'), 'story-images', 'public') : null;
             $dto = CreateStoryDTO::fromArray($data, null, $mentorship->id, $imagePath);
         }
 

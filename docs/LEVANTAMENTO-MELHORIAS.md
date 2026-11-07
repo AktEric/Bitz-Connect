@@ -31,6 +31,26 @@ prometer ao cliente conformidade legal do ponto (§5.4) sem validação. O plano
 
 ---
 
+## 1.1 Status — Dia 1 executado (07/11/2026)
+
+| Item | Status | O que foi feito / como foi verificado |
+|------|--------|---------------------------------------|
+| S1/A1 fila, agendador, e-mail | **Feito** | `queue` e `scheduler` no `docker-compose.prod.yml`; mailpit removido do prod; exemplos de SMTP real. Compose validado (`config -q`). **Falta você:** contratar o SMTP e preencher `backend/.env`; configurar SPF/DKIM/DMARC |
+| S2/A2 backup e restauração | **Feito e testado** | Serviço `backup` (diário, criptografia AES-256, retenção); `verify-restore.sh` executado de verdade: 53 tabelas, 8 usuários, 62 migrações, saída OK. O teste achou e corrigiu um defeito real (índices de busca não voltavam ao restaurar — migração 000062). **Falta você:** sincronizar `./backups` para fora do servidor |
+| A3 saúde | **Feito** | `/up` exposto pelo Caddy; `deploy.sh` verifica `/up` e reinicia fila/agendador |
+| S3 cabeçalhos | **Feito e testado** | HSTS, CSP, nosniff, frame-ancestors, Referrer/Permissions-Policy no Caddy (validado com `caddy validate`) e no nginx local (navegando Workspace/Ponto/Mural/Configurações: 0 violações de CSP) |
+| S4 CORS | **Feito e testado** | `config/cors.php`: só `APP_URL`/`CORS_ALLOWED_ORIGINS` (+ localhost fora de produção); origem estranha não recebe `Allow-Origin` |
+| S6 `role` | **Feito e testado** | Fora do `$fillable`; seeder da conta de plataforma atribui explicitamente |
+| S7 limite da API | **Feito** | `throttleApi` com 300/min por usuário (ou IP) |
+| S16 IP real | **Feito** | `TRUSTED_PROXIES` configurável (atrás de Cloudflare/LB) |
+| S17 seeders | **Feito e testado** | Seeders de demonstração abortam em produção; **o seeder admin tinha `admin@admin.com`/`admin`** — em produção agora exige `ADMIN_EMAIL`/`ADMIN_PASSWORD` (12+ caracteres) |
+| S5 mídia | **Parcial** | EXIF/GPS/comentários removidos de todos os uploads de imagem (JPEG preserva só a orientação; PNG/WebP limpos), com testes. **Falta (Dia 2):** mídia do Workspace em disco privado e antivírus |
+| S15 CI | **Feito** | GitHub Actions (Pest, tipos, testes e build do front, Caddy/compose/shellcheck) + `composer/npm audit` + Dependabot. Ainda não rodou no GitHub (só roda após o push do workflow) |
+
+Verificação: 154 testes de backend passando, 9 de front, type-check e shellcheck limpos.
+
+---
+
 ## 2. Como ler as prioridades
 
 - **P0** = antes da venda (2 dias). **P1** = primeiros 30 dias. **P2** = 60–90 dias.

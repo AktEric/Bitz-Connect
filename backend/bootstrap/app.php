@@ -13,6 +13,20 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands([__DIR__ . '/../app/Console/Commands'])
     ->withMiddleware(function (Middleware $middleware) {
+        // Atrás de CDN/balanceador (Cloudflare, ALB…): TRUSTED_PROXIES="*" ou lista de IPs/CIDRs separados por vírgula.
+        // Sem isso o IP gravado no ponto e nos logs seria o do proxy.
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(
+                at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)),
+                headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR
+                    | \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST
+                    | \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT
+                    | \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO,
+            );
+        }
+
+        $middleware->throttleApi();
+
         $middleware->api(prepend: [
             \App\Http\Middleware\ForceJsonResponse::class,
         ]);

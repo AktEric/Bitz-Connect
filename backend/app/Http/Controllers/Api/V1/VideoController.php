@@ -71,7 +71,7 @@ class VideoController extends Controller
 
         $videoPath     = $request->file('video')->store('videos', 'public');
         $thumbnailPath = $request->hasFile('thumbnail')
-            ? $request->file('thumbnail')->store('video-thumbnails', 'public')
+            ? \App\Support\ImageSanitizer::store($request->file('thumbnail'), 'video-thumbnails', 'public')
             : null;
 
         $dto = CreateVideoDTO::fromArray(

@@ -150,7 +150,7 @@ class TimeClockController extends WorkspaceBaseController
         }
 
         $photoPath = $request->hasFile('photo') && $rules['photo'] !== 'off'
-            ? $request->file('photo')->store("punch-photos/{$hotel->id}", 'local')
+            ? \App\Support\ImageSanitizer::store($request->file('photo'), "punch-photos/{$hotel->id}", 'local')
             : null;
 
         TimeEntry::create([

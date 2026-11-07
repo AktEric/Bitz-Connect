@@ -6,6 +6,26 @@
 		max_size 205MB
 	}
 
+	# Cabeçalhos de segurança (ver docs/LEVANTAMENTO-MELHORIAS.md, S3).
+	# Câmera e localização liberadas só para o próprio site (ponto com foto/GPS).
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(self), camera=(self), microphone=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy "same-origin-allow-popups"
+		Content-Security-Policy "default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: https://*.googleusercontent.com; font-src 'self' data:; connect-src 'self' https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# Saúde da aplicação (monitor externo: UptimeRobot/BetterStack apontam para https://DOMINIO/up)
+	@health path /up
+	handle @health {
+		root * /var/www/html/public
+		php_fastcgi php:9000
+	}
+
 	# API Laravel — tudo em /api vai pro PHP-FPM via fastcgi
 	@api path /api/*
 	handle @api {
@@ -13,17 +33,22 @@
 		php_fastcgi php:9000
 	}
 
-	# Storage — arquivos públicos do Laravel (storage:link)
+	# Storage — arquivos públicos do Laravel (storage:link). Nunca executar nada daqui.
 	@storage path /storage/*
 	handle @storage {
 		root * /var/www/html/public
 		file_server
 		header Cache-Control "public, max-age=604800, immutable"
+		header Content-Security-Policy "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'; sandbox"
 	}
 
 	# Frontend — build estático do Vite, SPA fallback pro index.html
 	handle {
 		root * /srv/frontend
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@html not path /assets/*
+		header @html Cache-Control "no-cache"
 		try_files {path} /index.html
 		file_server
 	}

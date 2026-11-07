@@ -81,6 +81,10 @@ class DemoDataSeeder extends Seeder
 
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Seeder de demonstração não pode rodar em produção.');
+        }
+
         $this->media = new DemoMedia();
 
         if (! $this->media->ffmpegAvailable()) {

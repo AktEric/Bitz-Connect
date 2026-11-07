@@ -1,3 +1,27 @@
+# Produção. Serviços: caddy (HTTPS + estático + proxy), php (API), queue (filas), scheduler (agendador),
+# postgres, redis e backup (cópia diária). E-mail sai por SMTP real configurado em backend/.env (sem mailpit).
+x-php: &php
+  image: hotelconnect-php-prod
+  build:
+    context: ./backend
+    dockerfile: ../docker/php/Dockerfile.prod
+  restart: unless-stopped
+  env_file:
+    - ./backend/.env
+  environment:
+    - APP_ENV=production
+    - APP_DEBUG=false
+  volumes:
+    - ./backend/storage:/var/www/html/storage
+    - ./backend/bootstrap/cache:/var/www/html/bootstrap/cache
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  networks:
+    - hotelconnect
+
 services:
   caddy:
     image: caddy:2-alpine
@@ -20,26 +44,20 @@ services:
       - hotelconnect
 
   php:
-    build:
-      context: ./backend
-      dockerfile: ../docker/php/Dockerfile.prod
+    <<: *php
     container_name: hotelconnect_php
-    restart: unless-stopped
-    env_file:
-      - ./backend/.env
-    environment:
-      - APP_ENV=production
-      - APP_DEBUG=false
-    volumes:
-      - ./backend/storage:/var/www/html/storage
-      - ./backend/bootstrap/cache:/var/www/html/bootstrap/cache
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - hotelconnect
+
+  # Processa filas (e-mails, notificações). Sem este serviço nada que vai para a fila é entregue.
+  queue:
+    <<: *php
+    container_name: hotelconnect_queue
+    command: php artisan queue:work --sleep=3 --tries=3 --timeout=90 --max-time=3600
+
+  # Rotinas agendadas (limpeza de tokens expirados, filas falhas…).
+  scheduler:
+    <<: *php
+    container_name: hotelconnect_scheduler
+    command: php artisan schedule:work
 
   postgres:
     image: postgres:16-alpine
@@ -63,6 +81,7 @@ services:
     image: redis:7-alpine
     container_name: hotelconnect_redis
     restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data_prod:/data
     healthcheck:
@@ -73,10 +92,29 @@ services:
     networks:
       - hotelconnect
 
-  mailpit:
-    image: axllent/mailpit:latest
-    container_name: hotelconnect_mailpit
+  # Cópia diária do banco e dos arquivos (ver scripts/backup/README.md). Os arquivos ficam em ./backups:
+  # sincronize essa pasta com um local FORA desta máquina (S3/Backblaze/outro servidor).
+  backup:
+    image: postgres:16-alpine
+    container_name: hotelconnect_backup
     restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: ${DB_USERNAME:-hotelconnect}
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: ${DB_DATABASE:-hotelconnect}
+      STORAGE_DIR: /storage/app
+      BACKUP_DIR: /backups
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+    volumes:
+      - ./scripts/backup:/scripts:ro
+      - ./backups:/backups
+      - ./backend/storage:/storage:ro
+    command: ["sh", "-c", "while true; do sh /scripts/backup.sh || echo '[backup] FALHOU'; sleep ${BACKUP_INTERVAL_SECONDS:-86400}; done"]
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - hotelconnect
 
@@ -88,4 +126,3 @@ volumes:
 
 networks:
   hotelconnect:
-    driver: bridge
