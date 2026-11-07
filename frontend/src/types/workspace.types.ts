@@ -509,3 +509,11 @@ export interface DashboardData {
   security: { two_factor_adoption: number | null; privileged_without_2fa: number; require_2fa: boolean }
   departments: { name: string; headcount: number; bank_minutes: number | null }[]
 }
+
+export interface OnboardingData {
+  steps: { key: string; title: string; hint: string; to: string; cta: string; done: boolean }[]
+  done: number
+  total: number
+  percent: number
+  dismissed: boolean
+}

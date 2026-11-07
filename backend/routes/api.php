@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\Api\V1\WorkspaceSearchController;
 use App\Http\Controllers\Api\V1\AccountSecurityController;
 use App\Http\Controllers\Api\V1\AreaController;
+use App\Http\Controllers\Api\V1\OnboardingController;
 use App\Http\Controllers\Api\V1\CalendarController;
 use App\Http\Controllers\Api\V1\TimeBankController;
 use App\Http\Controllers\Api\V1\TimeClosingController;
@@ -273,6 +274,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/schedules/{uuid}',       [WorkScheduleController::class, 'update']);
         Route::delete('/schedules/{uuid}',      [WorkScheduleController::class, 'destroy']);
         Route::get('/dashboard',                [WorkspaceController::class, 'dashboard']);
+        Route::get('/onboarding',               [OnboardingController::class, 'show']);
+        Route::post('/onboarding/dismiss',      [OnboardingController::class, 'dismiss']);
         Route::get('/security',                 [WorkspaceController::class, 'security']);
         Route::put('/security',                 [WorkspaceController::class, 'updateSecurity']);
         Route::get('/audit/export',             [WorkspaceController::class, 'auditExport']);

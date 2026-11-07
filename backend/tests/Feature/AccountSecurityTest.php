@@ -138,24 +138,35 @@ it('lets the owner require two-factor for privileged profiles and blocks them un
     HotelUser::create(['hotel_id' => $hotel->id, 'user_id' => $emp->id, 'role' => 'employee', 'status' => 'approved']);
     $base = "/api/v1/workspaces/{$hotel->slug}";
 
+    // um segundo perfil privilegiado (RH) que ainda não ativou o 2FA
+    $hr = secUser();
+    HotelUser::create(['hotel_id' => $hotel->id, 'user_id' => $hr->id, 'role' => 'employee', 'access_role' => 'hr', 'status' => 'approved']);
+
     $ownerToken = secLogin($this, $owner)->assertOk()->json('data.token');
     $empToken   = secLogin($this, $emp)->assertOk()->json('data.token');
+    $hrToken    = secLogin($this, $hr)->assertOk()->json('data.token');
 
     secAs($this, $empToken)->putJson("{$base}/security", ['require_2fa' => true])->assertForbidden();
-    secAs($this, $ownerToken)->putJson("{$base}/security", ['require_2fa' => true])->assertOk();
 
-    // dono sem 2FA: abre o Workspace (com o aviso) e a política, mas o resto é bloqueado
-    $show = secAs($this, $ownerToken)->getJson($base)->assertOk();
+    // o dono não pode se trancar para fora: precisa ativar o dele antes de exigir da empresa
+    secAs($this, $ownerToken)->putJson("{$base}/security", ['require_2fa' => true])->assertStatus(422);
+    $ownerSecret = secAs($this, $ownerToken)->postJson('/api/v1/auth/2fa/setup')->json('data.secret');
+    secAs($this, $ownerToken)->postJson('/api/v1/auth/2fa/enable', ['code' => Totp::code($ownerSecret, Totp::step())])->assertOk();
+    secAs($this, $ownerToken)->putJson("{$base}/security", ['require_2fa' => true])->assertOk();
+    secAs($this, $ownerToken)->getJson("{$base}/feed")->assertOk(); // dono com 2FA segue normal
+
+    // RH sem 2FA: abre o Workspace (com o aviso) e a política, mas o resto é bloqueado
+    $show = secAs($this, $hrToken)->getJson($base)->assertOk();
     expect($show->json('data.me.needs_two_factor'))->toBeTrue();
-    secAs($this, $ownerToken)->getJson("{$base}/security")->assertOk()->assertJsonPath('data.privileged_without_2fa.0.uuid', $owner->uuid);
-    secAs($this, $ownerToken)->getJson("{$base}/feed")->assertForbidden()->assertJsonPath('code', 'two_factor_required');
+    secAs($this, $hrToken)->getJson("{$base}/security")->assertOk()->assertJsonPath('data.privileged_without_2fa.0.uuid', $hr->uuid);
+    secAs($this, $hrToken)->getJson("{$base}/feed")->assertForbidden()->assertJsonPath('code', 'two_factor_required');
 
     // colaborador comum não é afetado
     secAs($this, $empToken)->getJson("{$base}/feed")->assertOk();
 
     // depois de ativar, o acesso volta
-    $secret = secAs($this, $ownerToken)->postJson('/api/v1/auth/2fa/setup')->json('data.secret');
-    secAs($this, $ownerToken)->postJson('/api/v1/auth/2fa/enable', ['code' => Totp::code($secret, Totp::step())])->assertOk();
-    secAs($this, $ownerToken)->getJson("{$base}/feed")->assertOk();
-    expect(secAs($this, $ownerToken)->getJson($base)->json('data.me.needs_two_factor'))->toBeFalse();
+    $secret = secAs($this, $hrToken)->postJson('/api/v1/auth/2fa/setup')->json('data.secret');
+    secAs($this, $hrToken)->postJson('/api/v1/auth/2fa/enable', ['code' => Totp::code($secret, Totp::step())])->assertOk();
+    secAs($this, $hrToken)->getJson("{$base}/feed")->assertOk();
+    expect(secAs($this, $hrToken)->getJson($base)->json('data.me.needs_two_factor'))->toBeFalse();
 });

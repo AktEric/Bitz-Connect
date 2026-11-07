@@ -6,7 +6,7 @@ import type {
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData,
+  CalendarPayload, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -174,6 +174,10 @@ const workspaceService = {
   // Segurança da empresa (exigir 2FA para dono, RH e financeiro)
   security: (slug: string) => get<CompanySecurity>(`${w(slug)}/security`),
   saveSecurity: (slug: string, require_2fa: boolean) => api.put<ApiResponse<{ require_2fa: boolean }>>(`${w(slug)}/security`, { require_2fa }).then((r) => r.data.data),
+
+  // Primeiros passos da implantação
+  onboarding: (slug: string) => get<OnboardingData>(`${w(slug)}/onboarding`),
+  dismissOnboarding: (slug: string) => post<unknown>(`${w(slug)}/onboarding/dismiss`),
 
   // Painel da diretoria
   dashboard: (slug: string) => get<DashboardData>(`${w(slug)}/dashboard`),

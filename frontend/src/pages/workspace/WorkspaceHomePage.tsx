@@ -4,6 +4,7 @@ import { CalendarDays, ClipboardList, GraduationCap, Newspaper, Plane, Target, W
 import workspaceService from '@/services/workspace.service'
 import { useAuth } from '@/hooks/useAuth'
 import HomeCalendarCard from './HomeCalendarCard'
+import OnboardingCard from './OnboardingCard'
 import { useTimeBank, useTimeTeam, useTimesheet } from '@/hooks/useWorkspace'
 import { Avatar } from '@/components/ui/Avatar'
 import ClockCard from './ClockCard'
@@ -95,6 +96,7 @@ export default function WorkspaceHomePage() {
         </div>
 
         <div className="space-y-5">
+          <OnboardingCard slug={slug} enabled={info.me.is_admin} />
           {lead && (
             <Panel className="border-violet-100 bg-violet-50/40">
               <h2 className="mb-3 font-semibold text-gray-900">Para você, gestor</h2>

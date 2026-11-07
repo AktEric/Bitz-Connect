@@ -143,6 +143,9 @@ class WorkspaceController extends Controller
             return $this->forbidden('Somente o dono altera a política de segurança.');
         }
         $data = $request->validate(['require_2fa' => ['required', 'boolean']]);
+        if ($data['require_2fa'] && ! $request->user()->hasTwoFactor()) {
+            return $this->error('Ative a sua verificação em duas etapas antes de exigi-la da empresa; senão você mesmo ficaria sem acesso.', ['require_2fa' => ['Ative primeiro o seu 2FA.']], 422);
+        }
         $hotel->forceFill(['security_settings' => array_merge($hotel->security_settings ?? [], ['require_2fa' => (bool) $data['require_2fa']])])->save();
         \App\Models\AuditLog::record($request, $hotel, 'security.policy_changed', null, ['require_2fa' => (bool) $data['require_2fa']]);
 

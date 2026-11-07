@@ -94,6 +94,7 @@ it('lets the owner give the director role and treats it as privileged for two-fa
     Sanctum::actingAs($this->rh);
     $this->patchJson("{$this->base}/roles/{$person->uuid}", ['access_role' => 'director'])->assertOk()->assertJsonPath('data.access_role', 'director');
 
+    $this->rh->forceFill(['two_factor_secret' => 'JBSWY3DPEHPK3PXP', 'two_factor_confirmed_at' => now()])->save(); // o dono precisa do próprio 2FA para exigir da empresa
     $this->putJson("{$this->base}/security", ['require_2fa' => true])->assertOk();
     $this->getJson("{$this->base}/security")->assertOk()->assertJsonPath('data.privileged_total', 2); // dono + diretoria
 });
