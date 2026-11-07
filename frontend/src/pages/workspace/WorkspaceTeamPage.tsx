@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Link2, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
+import PersonCardModal from './PersonCardModal'
 import type { WorkspaceMember } from '@/types/workspace.types'
 import { Empty, Modal, PageHeader, Panel, Pill, Spinner, Tabs, btnGhost, btnPrimary, errMsg, fmtDate, inputCls, labelCls, useWs } from './ui'
 
@@ -161,6 +162,7 @@ export default function WorkspaceTeamPage() {
   const [q, setQ] = useState(params.get('q') ?? '')
   const [dept, setDept] = useState('')
   const [editing, setEditing] = useState<WorkspaceMember | null>(null)
+  const [card, setCard] = useState<string | null>(null)
 
   const { data: members, isLoading } = useQuery({ queryKey: ['ws', slug, 'members'], queryFn: () => workspaceService.members(slug) })
   const departments = useMemo(() => [...new Set((members ?? []).map((m) => m.department?.name).filter(Boolean) as string[])].sort(), [members])
@@ -195,7 +197,7 @@ export default function WorkspaceTeamPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {filtered.map((m) => (
                 <Panel key={m.uuid} className="flex items-start gap-3 !p-3">
-                  <Avatar src={m.avatar_url} name={m.name} size="lg" />
+                  <button type="button" onClick={() => setCard(m.uuid)} aria-label={`Ver perfil de ${m.name}`}><Avatar src={m.avatar_url} name={m.name} size="lg" /></button>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-gray-900">{m.name} {m.role === 'admin' && <Pill tone="violet">RH/Gestão</Pill>}</p>
                     <p className="truncate text-sm text-gray-600">{m.job_title ?? 'Cargo não informado'}</p>
@@ -212,6 +214,7 @@ export default function WorkspaceTeamPage() {
         </>
       )}
 
+      {card && <PersonCardModal slug={slug} uuid={card} isAdmin={info.me.is_admin} onClose={() => setCard(null)} />}
       {editing && members && <EditMemberModal slug={slug} member={editing} members={members} onClose={() => setEditing(null)} />}
     </div>
   )

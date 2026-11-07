@@ -34,6 +34,8 @@ class HotelUser extends Model
             'role'   => 'string', // 'admin' | 'employee'
             'hired_at' => 'date',
             'punch_consent_at' => 'datetime',
+            'private_data' => 'encrypted:array',
+            'profile' => 'array',
             'birth_date' => 'date',
             'birthday_visible' => 'boolean',
         ];

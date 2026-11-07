@@ -174,6 +174,7 @@ export default function WorkspaceLayout() {
                   <p className="truncate text-sm font-semibold text-gray-900">{user?.name}</p>
                   <p className="truncate text-xs text-gray-400">{roleLabel}</p>
                 </div>
+                <Link to={`/w/${slug}/perfil`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Users className="h-4 w-4" /> Meu perfil</Link>
                 <Link to={`/w/${slug}/seguranca`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ShieldCheck className="h-4 w-4" /> Segurança</Link>
                 <Link to="/w" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ArrowLeftRight className="h-4 w-4" /> Trocar de empresa</Link>
                 <Link to="/feed" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Globe className="h-4 w-4" /> Rede profissional</Link>

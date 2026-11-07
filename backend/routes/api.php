@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\Api\V1\WorkspaceSearchController;
 use App\Http\Controllers\Api\V1\AccountSecurityController;
 use App\Http\Controllers\Api\V1\AreaController;
+use App\Http\Controllers\Api\V1\PersonController;
 use App\Http\Controllers\Api\V1\PrivacyController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\OnboardingController;
@@ -227,6 +228,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/invites/{token}/accept',      [CompanyInviteController::class, 'accept']);
 
     Route::prefix('workspaces/{hotel:slug}')->middleware('workspace.2fa')->group(function () {
+
+        // Perfil e ficha
+        Route::get('/me/profile',                [PersonController::class, 'mine']);
+        Route::put('/me/profile',                [PersonController::class, 'updateMine']);
+        Route::get('/people/{uuid}/profile',     [PersonController::class, 'show']);
+        Route::get('/people/{uuid}/record',      [PersonController::class, 'record']);
+        Route::put('/people/{uuid}/record',      [PersonController::class, 'updateRecord']);
 
         // LGPD
         Route::get('/me/privacy',          [PrivacyController::class, 'status']);

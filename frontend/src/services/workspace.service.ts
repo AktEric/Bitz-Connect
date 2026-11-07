@@ -6,7 +6,7 @@ import type {
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult,
+  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult, PersonCard, PersonProfileFields, MyProfile, PersonRecord,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -57,6 +57,11 @@ const workspaceService = {
   givePunchConsent: (slug: string) => post<{ punch_consent_at: string }>(`${w(slug)}/me/privacy/consent`, {}),
   exportMyData: (slug: string) => get<Record<string, unknown>>(`${w(slug)}/me/export`),
   timeReceipt: (slug: string, uuid: string) => get<TimeReceipt>(`${w(slug)}/time/entries/${uuid}/receipt`),
+  myProfile: (slug: string) => get<MyProfile>(`${w(slug)}/me/profile`),
+  saveMyProfile: (slug: string, body: Partial<PersonProfileFields> & { birthday_visible?: boolean }) => api.put<ApiResponse<MyProfile>>(`${w(slug)}/me/profile`, body).then((r) => r.data.data),
+  personCard: (slug: string, uuid: string) => get<PersonCard>(`${w(slug)}/people/${uuid}/profile`),
+  personRecord: (slug: string, uuid: string) => get<PersonRecord>(`${w(slug)}/people/${uuid}/record`),
+  savePersonRecord: (slug: string, uuid: string, body: Partial<PersonRecord>) => api.put<ApiResponse<PersonRecord>>(`${w(slug)}/people/${uuid}/record`, body).then((r) => r.data.data),
   reports: (slug: string) => get<ReportItem[]>(`${w(slug)}/reports`),
   report: (slug: string, key: string, month: string) => get<ReportData>(`${w(slug)}/reports/${key}`, month ? { month } : undefined),
   timeIntegrity: (slug: string) => get<IntegrityResult>(`${w(slug)}/time/integrity`),
@@ -175,7 +180,7 @@ const workspaceService = {
   createCalendarEvent: (slug: string, body: CalendarEventInput) => post<{ uuid: string }>(`${w(slug)}/calendar/events`, body),
   deleteCalendarEvent: (slug: string, uuid: string) => del(`${w(slug)}/calendar/events/${uuid}`),
   rsvpEvent: (slug: string, uuid: string, status: RsvpStatus | null) => post<unknown>(`${w(slug)}/calendar/events/${uuid}/rsvp`, { status }),
-  updateMyBirthday: (slug: string, body: { birth_date: string | null; birthday_visible: boolean }) => patch<unknown>(`${w(slug)}/calendar/me`, body),
+  updateMyBirthday: (slug: string, body: { birthday_visible: boolean }) => patch<unknown>(`${w(slug)}/calendar/me`, body),
   icsLink: (slug: string) => get<{ url: string }>(`${w(slug)}/calendar/ics-link`),
   rotateIcsLink: (slug: string) => post<{ url: string }>(`${w(slug)}/calendar/ics-link`),
 

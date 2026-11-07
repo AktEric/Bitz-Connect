@@ -170,7 +170,7 @@ class CalendarController extends WorkspaceBaseController
         ]);
     }
 
-    /** PATCH /workspaces/{slug}/calendar/me  { birth_date: Y-m-d|null, birthday_visible: bool } — dado da própria pessoa. */
+    /** PATCH /workspaces/{slug}/calendar/me  { birthday_visible: bool } — a data de nascimento é cadastrada pelo RH; a pessoa só escolhe se aparece. */
     public function updateMyBirthday(Request $request, Hotel $hotel): JsonResponse
     {
         $m = $this->membership($request, $hotel);
@@ -178,13 +178,9 @@ class CalendarController extends WorkspaceBaseController
             return $this->forbidden('Você não faz parte desta empresa.');
         }
         $data = $request->validate([
-            'birth_date'       => ['nullable', 'date_format:Y-m-d', 'after:1920-01-01', 'before:today'],
             'birthday_visible' => ['sometimes', 'boolean'],
         ]);
         $changes = [];
-        if (array_key_exists('birth_date', $data)) {
-            $changes['birth_date'] = $data['birth_date'];
-        }
         if (array_key_exists('birthday_visible', $data)) {
             $changes['birthday_visible'] = $data['birthday_visible'];
         }

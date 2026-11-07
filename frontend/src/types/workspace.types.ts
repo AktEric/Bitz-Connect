@@ -541,3 +541,23 @@ export interface OnboardingData {
   percent: number
   dismissed: boolean
 }
+
+export interface PersonProfileFields {
+  bio: string | null; favorite_book: string | null; favorite_food: string | null; favorite_movie: string | null
+  hobbies: string | null; fun_fact: string | null; hometown: string | null
+}
+export interface PersonCard {
+  person: WorkspacePerson | null
+  department: string | null
+  hired_at: string | null
+  birthday: { day: number; month: number } | null
+  profile: PersonProfileFields
+}
+export interface MyProfile extends PersonCard { birthday_visible: boolean; has_birth_date: boolean; email: string }
+export interface PersonRecord {
+  birth_date: string | null; hired_at: string | null
+  phone: string | null; zip: string | null; street: string | null; number: string | null; complement: string | null; district: string | null; city: string | null; state: string | null
+  emergency_name: string | null; emergency_relation: string | null; emergency_phone: string | null
+  bank: string | null; agency: string | null; account: string | null; account_type: string | null; pix: string | null
+  can_edit: boolean
+}
