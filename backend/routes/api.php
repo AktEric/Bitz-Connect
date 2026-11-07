@@ -318,6 +318,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/feed',                          [WorkspaceFeedController::class, 'index']);
         Route::post('/feed',                         [WorkspaceFeedController::class, 'store']);
         Route::post('/kudos',                        [WorkspaceFeedController::class, 'kudos']);
+        Route::post('/polls',                        [WorkspaceFeedController::class, 'createPoll']);
+        Route::post('/feed/{post}/vote',             [WorkspaceFeedController::class, 'vote']);
         Route::delete('/feed/{post}',                [WorkspaceFeedController::class, 'destroy']);
         Route::post('/feed/{post}/pin',              [WorkspaceFeedController::class, 'pin']);
         Route::post('/feed/{post}/ack',              [WorkspaceFeedController::class, 'ack']);

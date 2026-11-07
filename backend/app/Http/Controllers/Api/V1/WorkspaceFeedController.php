@@ -9,6 +9,8 @@ use App\Models\WorkspacePost;
 use App\Models\WorkspacePostAck;
 use App\Models\WorkspacePostComment;
 use App\Models\WorkspacePostLike;
+use App\Models\WorkspacePollOption;
+use App\Models\WorkspacePollVote;
 use App\Models\WorkspacePostMedia;
 use App\Support\ImageSanitizer;
 use Illuminate\Database\Eloquent\Builder;
@@ -125,6 +127,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'pinned'         => $p->pinned,
             'kind'           => $p->kind ?? 'post',
             'badge'          => $p->badge,
+            'poll'           => ($p->kind ?? 'post') === 'poll' ? $this->pollPayload($p) : null,
             'subject'        => $p->subject_id ? $this->access->person($p->subject) : null,
             'comments_preview' => $p->getAttribute('preview') ?? [],
             'created_at'     => $p->created_at?->toISOString(),
@@ -228,6 +231,80 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'last_page' => $page->lastPage(),
             'can_post'  => $this->canPost($hotel, $m, $request),
         ]);
+    }
+
+    /** Enquete: opções com totais e o meu voto (quem votou em quê nunca é exposto). */
+    private function pollPayload(WorkspacePost $p): array
+    {
+        $counts = WorkspacePollVote::where('workspace_post_id', $p->id)->select('workspace_poll_option_id', DB::raw('count(*) as c'))->groupBy('workspace_poll_option_id')->pluck('c', 'workspace_poll_option_id');
+        $mine   = WorkspacePollVote::where('workspace_post_id', $p->id)->where('user_id', request()->user()->id)->value('workspace_poll_option_id');
+        $options = $p->pollOptions()->get();
+
+        return [
+            'options'   => $options->map(fn ($o) => ['uuid' => $o->uuid, 'label' => $o->label, 'votes' => (int) ($counts[$o->id] ?? 0)])->values(),
+            'total'     => (int) $counts->sum(),
+            'my_vote'   => $options->firstWhere('id', $mine)?->uuid,
+            'closes_on' => $p->poll_closes_on?->toDateString(),
+            'closed'    => $p->poll_closes_on !== null && $p->poll_closes_on->endOfDay()->isPast(),
+        ];
+    }
+
+    /** POST /workspaces/{slug}/polls  { question, options[], closes_on?, department_uuid? } — RH e gestores. */
+    public function createPoll(Request $request, Hotel $hotel): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        if (! $m || ! $this->canPost($hotel, $m, $request)) {
+            return $this->forbidden('Somente RH/gestores criam enquetes.');
+        }
+        $data = $request->validate([
+            'question'        => ['required', 'string', 'min:5', 'max:300'],
+            'options'         => ['required', 'array', 'min:2', 'max:6'],
+            'options.*'       => ['required', 'string', 'max:120', 'distinct'],
+            'closes_on'       => ['nullable', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'department_uuid' => ['nullable', 'uuid'],
+        ]);
+        $deptId = null;
+        if (! empty($data['department_uuid'])) {
+            $deptId = $hotel->departments()->where('uuid', $data['department_uuid'])->value('id');
+            if (! $deptId) {
+                return $this->error('Setor inválido.', ['department_uuid' => ['Setor não encontrado.']], 422);
+            }
+        }
+        $post = DB::transaction(function () use ($request, $hotel, $data, $deptId) {
+            $post = WorkspacePost::create([
+                'uuid' => (string) Str::uuid(), 'hotel_id' => $hotel->id, 'author_id' => $request->user()->id, 'department_id' => $deptId,
+                'kind' => 'poll', 'body' => trim($data['question']), 'pinned' => false, 'poll_closes_on' => $data['closes_on'] ?? null,
+            ]);
+            foreach (array_values($data['options']) as $i => $label) {
+                WorkspacePollOption::create(['uuid' => (string) Str::uuid(), 'workspace_post_id' => $post->id, 'label' => trim($label), 'position' => $i]);
+            }
+
+            return $post;
+        });
+        $post->load(['author', 'department', 'media', 'subject']);
+
+        return $this->created('Enquete publicada.', $this->format($post, $request->user()->id, $this->access->isAdmin($m)));
+    }
+
+    /** POST /workspaces/{slug}/feed/{post}/vote  { option_uuid } — um voto por pessoa; dá para trocar até encerrar. */
+    public function vote(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? $this->visible(WorkspacePost::query(), $hotel, $m)->where('uuid', $post)->where('kind', 'poll')->first() : null;
+        if (! $p) {
+            return $this->notFound('Enquete não encontrada.');
+        }
+        if ($p->poll_closes_on && $p->poll_closes_on->endOfDay()->isPast()) {
+            return $this->error('Esta enquete já foi encerrada.', [], 409);
+        }
+        $data = $request->validate(['option_uuid' => ['required', 'uuid']]);
+        $option = $p->pollOptions()->where('uuid', $data['option_uuid'])->first();
+        if (! $option) {
+            return $this->error('Opção inválida.', ['option_uuid' => ['Opção não encontrada.']], 422);
+        }
+        WorkspacePollVote::updateOrCreate(['workspace_post_id' => $p->id, 'user_id' => $request->user()->id], ['workspace_poll_option_id' => $option->id]);
+
+        return $this->success('Voto registrado.', $this->pollPayload($p));
     }
 
     /** POST /workspaces/{slug}/kudos  { to_uuid, badge, message } — qualquer pessoa reconhece um colega; vira publicação no mural. */

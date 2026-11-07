@@ -62,6 +62,8 @@ const workspaceService = {
   personCard: (slug: string, uuid: string) => get<PersonCard>(`${w(slug)}/people/${uuid}/profile`),
   personRecord: (slug: string, uuid: string) => get<PersonRecord>(`${w(slug)}/people/${uuid}/record`),
   savePersonRecord: (slug: string, uuid: string, body: Partial<PersonRecord>) => api.put<ApiResponse<PersonRecord>>(`${w(slug)}/people/${uuid}/record`, body).then((r) => r.data.data),
+  createPoll: (slug: string, body: { question: string; options: string[]; closes_on?: string | null; department_uuid?: string | null }) => post<FeedPost>(`${w(slug)}/polls`, body),
+  votePoll: (slug: string, uuid: string, option_uuid: string) => post<unknown>(`${w(slug)}/feed/${uuid}/vote`, { option_uuid }),
   giveKudos: (slug: string, body: { to_uuid: string; badge: string; message: string }) => post<FeedPost>(`${w(slug)}/kudos`, body),
   jobs: (slug: string) => get<{ items: JobItem[]; can_create: boolean }>(`${w(slug)}/jobs`),
   createJob: (slug: string, body: Record<string, unknown>) => post<JobItem>(`${w(slug)}/jobs`, body),

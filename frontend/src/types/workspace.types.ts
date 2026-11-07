@@ -85,7 +85,8 @@ export interface FeedMedia {
 
 export interface FeedPost {
   uuid: string
-  kind: 'post' | 'birthday' | 'kudos'
+  kind: 'post' | 'birthday' | 'kudos' | 'poll'
+  poll?: { options: { uuid: string; label: string; votes: number }[]; total: number; my_vote: string | null; closes_on: string | null; closed: boolean } | null
   badge?: string | null
   subject: WorkspacePerson | null
   comments_preview: FeedComment[]

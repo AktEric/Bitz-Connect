@@ -88,3 +88,30 @@ it('lets anyone recognize a colleague, publishes it on the feed, notifies them a
     }
     $this->postJson("{$this->base}/kudos", ['to_uuid' => $this->rh->uuid, 'badge' => 'service', 'message' => 'Mais um elogio'])->assertStatus(429);
 });
+
+it('lets RH run an anonymous poll: one vote per person, changeable until it closes', function () {
+    Sanctum::actingAs($this->person);
+    $this->postJson("{$this->base}/polls", ['question' => 'Almoço de sexta?', 'options' => ['Sim', 'Não']])->assertForbidden();
+
+    Sanctum::actingAs($this->rh);
+    $poll = $this->postJson("{$this->base}/polls", ['question' => 'Onde será a festa de fim de ano?', 'options' => ['Salão', 'Chácara', 'Salão'], 'closes_on' => '2026-11-12'])->assertUnprocessable();
+    $poll = $this->postJson("{$this->base}/polls", ['question' => 'Onde será a festa de fim de ano?', 'options' => ['Salão', 'Chácara'], 'closes_on' => '2026-11-12'])->assertCreated()->json('data');
+    expect($poll['kind'])->toBe('poll')->and($poll['poll']['total'])->toBe(0)->and($poll['poll']['options'])->toHaveCount(2);
+    [$a, $b] = array_column($poll['poll']['options'], 'uuid');
+
+    Sanctum::actingAs($this->person);
+    $this->postJson("{$this->base}/feed/{$poll['uuid']}/vote", ['option_uuid' => $a])->assertOk()->assertJsonPath('data.my_vote', $a);
+    $this->postJson("{$this->base}/feed/{$poll['uuid']}/vote", ['option_uuid' => $b])->assertOk();           // troca de voto
+    Sanctum::actingAs($this->shy);
+    $this->postJson("{$this->base}/feed/{$poll['uuid']}/vote", ['option_uuid' => $b])->assertOk();
+    $this->postJson("{$this->base}/feed/{$poll['uuid']}/vote", ['option_uuid' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'])->assertUnprocessable();
+
+    $feed = $this->getJson("{$this->base}/feed")->json('data.items.0.poll');
+    expect($feed['total'])->toBe(2)->and(collect($feed['options'])->pluck('votes', 'label')->all())->toBe(['Salão' => 0, 'Chácara' => 2]);
+    expect(json_encode($feed))->not->toContain('user');
+
+    // depois do prazo, não vota mais
+    Carbon::setTestNow('2026-11-13 12:00:00');
+    $this->postJson("{$this->base}/feed/{$poll['uuid']}/vote", ['option_uuid' => $a])->assertStatus(409);
+    expect($this->getJson("{$this->base}/feed")->json('data.items.0.poll.closed'))->toBeTrue();
+});

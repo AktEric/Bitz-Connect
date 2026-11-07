@@ -8,6 +8,7 @@ import { Empty, Modal, PageHeader, Panel, Pill, Spinner, btnGhost, btnPrimary, e
 import { MentionField, MentionText, applyMentions, type Mention } from './MentionField'
 import PhotoGrid from './PhotoGrid'
 import KudosModal, { BADGES } from './KudosModal'
+import { PollBlock, PollModal } from './PollParts'
 import ReactionBar from './ReactionBar'
 import { resizeImage } from './imageUtils'
 
@@ -124,6 +125,7 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
             {post.department && <Pill tone="blue">{post.department}</Pill>}
           </div>
           {post.body && <MentionText text={post.body} names={post.mentions} className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-700" />}
+          <PollBlock slug={slug} post={post} />
           <PhotoGrid media={(post.media ?? []).filter((m) => m.kind !== 'video')} />
           {(post.media ?? []).filter((m) => m.kind === 'video').map((m) => (
             <video key={m.uuid} src={m.url} controls preload="metadata" playsInline className="mt-3 max-h-[28rem] w-full rounded-2xl bg-black" />
@@ -177,6 +179,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
   const [photos, setPhotos] = useState<Draft[]>([])
   const [video, setVideo] = useState<File | null>(null)
   const [kudos, setKudos] = useState(false)
+  const [pollOpen, setPollOpen] = useState(false)
   const videoRef = useRef<HTMLInputElement>(null)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
@@ -246,10 +249,12 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
     <div>
       {!compact && <PageHeader title="Mural" subtitle="Novidades, fotos e comunicados da empresa." />}
 
-      <div className="mb-3 flex justify-end">
+      <div className="mb-3 flex justify-end gap-2">
+        {info.me.can_post && <button type="button" className={btnGhost} onClick={() => setPollOpen(true)}>📊 Criar enquete</button>}
         <button type="button" className={btnGhost} onClick={() => setKudos(true)}>🌟 Reconhecer um colega</button>
       </div>
       {kudos && <KudosModal slug={slug} onClose={() => setKudos(false)} />}
+      {pollOpen && <PollModal slug={slug} onClose={() => setPollOpen(false)} />}
 
       {info.me.can_post && (
         <Panel className="mb-4">

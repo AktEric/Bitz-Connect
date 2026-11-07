@@ -11,12 +11,12 @@ class WorkspacePost extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['uuid','hotel_id','author_id','department_id','body','pinned','requires_ack','kind','subject_id','subject_date','badge'];
+    protected $fillable = ['uuid','hotel_id','author_id','department_id','body','pinned','requires_ack','kind','subject_id','subject_date','badge','poll_closes_on'];
 
     protected $table = 'workspace_posts';
     protected function casts(): array
     {
-        return ['pinned' => 'boolean', 'requires_ack' => 'boolean'];
+        return ['pinned' => 'boolean', 'requires_ack' => 'boolean', 'poll_closes_on' => 'date'];
     }
 
     public function author(): BelongsTo
@@ -47,6 +47,11 @@ class WorkspacePost extends Model
     public function media(): HasMany
     {
         return $this->hasMany(WorkspacePostMedia::class)->orderBy('position');
+    }
+
+    public function pollOptions(): HasMany
+    {
+        return $this->hasMany(WorkspacePollOption::class)->orderBy('position');
     }
 
     public function likes(): HasMany
