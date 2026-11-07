@@ -374,3 +374,48 @@ export interface AreasPayload {
   delegations: DelegationItem[]
   people: AreaPerson[]
 }
+
+export type CalendarItemType = 'birthday' | 'anniversary' | 'holiday' | 'event' | 'vacation'
+export type RsvpStatus = 'going' | 'maybe' | 'no'
+
+export interface CalendarItem {
+  type: CalendarItemType
+  date: string
+  end_date: string | null
+  title: string
+  subtitle: string | null
+  person: { uuid: string; name: string; avatar_url: string | null; job_title: string | null } | null
+  all_day: boolean
+  time: string | null
+  hidden_from_team?: boolean
+  event: null | {
+    uuid: string
+    kind: 'event' | 'holiday'
+    description: string | null
+    location: string | null
+    department: string | null
+    can_edit: boolean
+    rsvp: { mine: RsvpStatus | null; going: number; maybe: number; no: number }
+  }
+}
+
+export interface CalendarPayload {
+  from: string
+  to: string
+  items: CalendarItem[]
+  can_create: boolean
+  can_holiday: boolean
+  me: { birth_date: string | null; birthday_visible: boolean }
+}
+
+export interface CalendarEventInput {
+  title: string
+  kind: 'event' | 'holiday'
+  starts_on: string
+  ends_on: string | null
+  starts_time: string | null
+  ends_time: string | null
+  location: string | null
+  description: string | null
+  department_uuid: string | null
+}

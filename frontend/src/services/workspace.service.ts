@@ -5,6 +5,7 @@ import type {
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
+  CalendarPayload, CalendarEventInput, RsvpStatus,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -148,6 +149,15 @@ const workspaceService = {
   setAreaHead: (slug: string, area: string, head_uuid: string | null) => patch<unknown>(`${w(slug)}/areas/${area}`, { head_uuid }),
   delegate: (slug: string, body: { from_user_uuid: string; to_user_uuid: string; starts_on: string; ends_on: string }) => post<DelegationItem>(`${w(slug)}/delegations`, body),
   undelegate: (slug: string, uuid: string) => del(`${w(slug)}/delegations/${uuid}`),
+
+  // Calendário
+  calendar: (slug: string, from: string, to: string) => get<CalendarPayload>(`${w(slug)}/calendar`, { from, to }),
+  createCalendarEvent: (slug: string, body: CalendarEventInput) => post<{ uuid: string }>(`${w(slug)}/calendar/events`, body),
+  deleteCalendarEvent: (slug: string, uuid: string) => del(`${w(slug)}/calendar/events/${uuid}`),
+  rsvpEvent: (slug: string, uuid: string, status: RsvpStatus | null) => post<unknown>(`${w(slug)}/calendar/events/${uuid}/rsvp`, { status }),
+  updateMyBirthday: (slug: string, body: { birth_date: string | null; birthday_visible: boolean }) => patch<unknown>(`${w(slug)}/calendar/me`, body),
+  icsLink: (slug: string) => get<{ url: string }>(`${w(slug)}/calendar/ics-link`),
+  rotateIcsLink: (slug: string) => post<{ url: string }>(`${w(slug)}/calendar/ics-link`),
 
   // Metas
   goals: (slug: string, params: { scope?: string; status?: string; user?: string }) => get<Goal[]>(`${w(slug)}/goals`, params),

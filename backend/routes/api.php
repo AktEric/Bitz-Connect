@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\CompanyDirectoryController;
 use App\Http\Controllers\Api\V1\CompanyInviteController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\Api\V1\AreaController;
+use App\Http\Controllers\Api\V1\CalendarController;
 use App\Http\Controllers\Api\V1\TimeBankController;
 use App\Http\Controllers\Api\V1\TimeClosingController;
 use App\Http\Controllers\Api\V1\TimeSettingsController;
@@ -70,6 +71,9 @@ Route::get('/hotels/{hotel}',                  [HotelController::class, 'show'])
 
 // Convite para a empresa — pré-visualização pública (por token, com rate limit)
 Route::get('/invites/{token}', [CompanyInviteController::class, 'preview'])->middleware('throttle:30,1');
+
+// Assinatura do calendário (Google/Outlook/Apple): pública, protegida por segredo pessoal e rate limit
+Route::get('/calendar-feed/{token}.ics', [CalendarController::class, 'feed'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1');
 
 // Fotos do mural do Workspace: privadas, entregues só com URL assinada (relativa) de curta duração
 Route::get('/workspace-media/{uuid}', [WorkspaceFeedController::class, 'media'])->name('workspace.media')->middleware(['signed:relative', 'throttle:120,1']);
@@ -233,6 +237,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/invites',                  [CompanyInviteController::class, 'index']);
         Route::post('/invites',                 [CompanyInviteController::class, 'store']);
         Route::delete('/invites/{invite}',      [CompanyInviteController::class, 'destroy']);
+        Route::get('/calendar',                          [CalendarController::class, 'index']);
+        Route::post('/calendar/events',                  [CalendarController::class, 'storeEvent']);
+        Route::patch('/calendar/events/{uuid}',          [CalendarController::class, 'updateEvent']);
+        Route::delete('/calendar/events/{uuid}',         [CalendarController::class, 'destroyEvent']);
+        Route::post('/calendar/events/{uuid}/rsvp',      [CalendarController::class, 'rsvp']);
+        Route::patch('/calendar/me',                     [CalendarController::class, 'updateMyBirthday']);
+        Route::patch('/calendar/birthdays/{uuid}',       [CalendarController::class, 'setBirthday']);
+        Route::get('/calendar/ics-link',                 [CalendarController::class, 'icsLink']);
+        Route::post('/calendar/ics-link',                [CalendarController::class, 'rotateIcsLink']);
         Route::get('/areas',                    [AreaController::class, 'index']);
         Route::patch('/areas/{uuid}',           [AreaController::class, 'setHead']);
         Route::post('/delegations',             [AreaController::class, 'delegate']);

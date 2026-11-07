@@ -69,6 +69,19 @@ Verificação: 154 testes de backend passando, 9 de front, type-check e shellche
 | M3 menções | **Feito e testado** | `@` abre sugestão de pessoas (teclado e mouse); menção em publicação e comentário avisa a pessoa; nome exibido vem do cadastro (não do texto); gente de fora da empresa ou de outro setor não é notificada |
 | Permissão | Mantida | Publicar continua para RH/gestores (colaborador reage e comenta). Liberar publicação para todos é uma decisão de produto |
 
+### Dia 2 — Aniversários e calendário (feito)
+
+| Item | Status | O que foi feito / como foi verificado |
+|------|--------|---------------------------------------|
+| C1 aniversários | **Feito e testado** | Data de nascimento por pessoa; **o ano é privado** (só a pessoa e o RH); dia/mês aparecem se ela permitir (opt-out); 29/02 vira 28/02 em ano não bissexto |
+| Tempo de casa | **Feito e testado** | A partir de `hired_at`, a partir de 1 ano ("5 anos de empresa") |
+| C3 calendário | **Feito e verificado** | Grade mensal com filtros, lista do dia, eventos (dia inteiro ou com horário, local, público por setor) e feriados da empresa; **feriados nacionais calculados** (inclui Carnaval, Sexta-feira Santa e Corpus Christi); **férias aprovadas** visíveis só para a pessoa, seu gestor/chefe e o RH. Verificado no navegador: criar evento, confirmar presença, remover |
+| RSVP | **Feito e testado** | Vou / Talvez / Não vou, com contagem; só quem vê o evento confirma |
+| C4 ICS | **Feito e testado** | Link pessoal de assinatura (Google/Outlook/Apple), protegido por segredo, com renovação que invalida o anterior; testado por requisição, **não** testado importando num cliente real |
+| Home | **Feito e verificado** | Card com aniversariantes, tempo de casa e próximos eventos; convite para a pessoa informar o aniversário |
+
+Pendente: aviso/publicação automática de parabéns (precisa de opt-in da empresa), feriados estaduais/municipais por localidade (hoje o RH cadastra como "feriado da empresa"), feriados alimentando banco de horas e fechamento (C5), cobertura/conflito de férias (C6) e edição de evento pela interface (a API já permite).
+
 Pendente do M1/S5: antivírus (ClamAV) nas fotos, miniaturas geradas no servidor (hoje só o redimensionamento no aparelho) e vídeo (M2).
 
 Não coberto ainda: papéis personalizados com matriz de permissões (P1 da §8.3), escopo por unidade/filial e a tela de "minhas substituições" para o próprio gestor (a API já permite).

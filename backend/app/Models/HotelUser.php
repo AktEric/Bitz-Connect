@@ -23,6 +23,8 @@ class HotelUser extends Model
         'hired_at',
         'manager_id',
         'work_schedule_id',
+        'birth_date',
+        'birthday_visible',
     ];
 
     protected function casts(): array
@@ -31,6 +33,8 @@ class HotelUser extends Model
             'status' => 'string', // 'pending' | 'approved' | 'rejected'
             'role'   => 'string', // 'admin' | 'employee'
             'hired_at' => 'date',
+            'birth_date' => 'date',
+            'birthday_visible' => 'boolean',
         ];
     }
 

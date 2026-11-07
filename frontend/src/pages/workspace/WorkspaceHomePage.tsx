@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, ClipboardList, GraduationCap, Newspaper, Plane, Target, Wallet, Clock, ChevronRight } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { useAuth } from '@/hooks/useAuth'
+import HomeCalendarCard from './HomeCalendarCard'
 import { useTimeBank, useTimeTeam, useTimesheet } from '@/hooks/useWorkspace'
 import { Avatar } from '@/components/ui/Avatar'
 import ClockCard from './ClockCard'
@@ -123,6 +124,8 @@ export default function WorkspaceHomePage() {
               </div>
             </div>
           </Panel>
+
+          <HomeCalendarCard slug={slug} />
 
           <Panel>
             <div className="mb-3 flex items-center justify-between">

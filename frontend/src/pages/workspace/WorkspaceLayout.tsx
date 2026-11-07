@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, ArrowLeftRight, LogOut, Globe, CheckCircle2, type LucideIcon,
+  Menu, X, Settings2, CalendarDays, ArrowLeftRight, LogOut, Globe, CheckCircle2, type LucideIcon,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import { useAuth } from '@/hooks/useAuth'
@@ -48,6 +48,7 @@ export default function WorkspaceLayout() {
         { to: '', label: 'Início', Icon: Home, end: true },
         { to: 'ponto', label: 'Ponto', Icon: Clock },
         { to: 'mural', label: 'Mural', Icon: Newspaper },
+        { to: 'calendario', label: 'Calendário', Icon: CalendarDays },
       ],
     },
     {
