@@ -88,9 +88,10 @@ class TimeBank
      *
      * @return array{worked_minutes: int, expected_minutes: int, days_worked: int, absent_days: int}
      */
-    public function monthStats(Hotel $hotel, User $user, ?WorkSchedule $schedule, CarbonImmutable $first): array
+    public function monthStats(Hotel $hotel, User $user, ?WorkSchedule $schedule, CarbonImmutable $first, ?CarbonImmutable $until = null): array
     {
-        $last   = $first->endOfMonth();
+        $last   = $until ?? $first->endOfMonth();
+        $today  = CarbonImmutable::now(TimeClock::TZ)->startOfDay();
         $byDay  = TimeEntry::where('hotel_id', $hotel->id)->where('user_id', $user->id)
             ->whereBetween('punched_at', [$first->utc(), $last->utc()])->orderBy('punched_at')->get()
             ->groupBy(fn ($e) => CarbonImmutable::instance($e->punched_at)->setTimezone(TimeClock::TZ)->toDateString());
@@ -105,7 +106,7 @@ class TimeBank
             $expected += $exp;
             if ($mins > 0) {
                 $daysWorked++;
-            } elseif ($exp > 0) {
+            } elseif ($exp > 0 && $d->lt($today)) { // só é falta um dia que já passou
                 $absent++;
             }
         }

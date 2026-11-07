@@ -126,8 +126,10 @@ class ReportController extends WorkspaceBaseController
 
     private function hours(Request $request, Hotel $hotel, CarbonImmutable $first): array
     {
-        $rows = $this->scoped($request, $hotel)->map(function (HotelUser $m) use ($hotel, $first) {
-            $s = $this->bank->monthStats($hotel, $m->user, $m->workSchedule, $first);
+        // no mês corrente, conta só até hoje (dias futuros não são falta nem horas esperadas)
+        $until = $first->endOfMonth()->min(CarbonImmutable::now(TimeClock::TZ)->endOfDay());
+        $rows = $this->scoped($request, $hotel)->map(function (HotelUser $m) use ($hotel, $first, $until) {
+            $s = $this->bank->monthStats($hotel, $m->user, $m->workSchedule, $first, $until);
             $diff = $s['worked_minutes'] - $s['expected_minutes'];
 
             return [$m->user?->name, $m->department?->name ?? '—', $s['days_worked'], $s['absent_days'], self::hm($s['expected_minutes']),

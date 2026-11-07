@@ -71,3 +71,13 @@ it('reports ticket response times for RH only', function () {
     Sanctum::actingAs($this->manager);
     $this->getJson("{$this->base}/reports/tickets")->assertForbidden();
 });
+
+it('does not count future days or today as absences in the monthly hours report', function () {
+    // hoje (fixo): terça 10/11/2026 às 12h UTC; a pessoa não bateu ponto
+    Sanctum::actingAs($this->rh);
+    $rows = collect($this->getJson("{$this->base}/reports/hours?month=2026-11")->assertOk()->json('data.rows'));
+    $mine = $rows->firstWhere(0, $this->mine->name);
+    // dias úteis de 2 a 9/11 já passaram (2 e 9 incluídos; 2/11 é feriado): faltas só até ontem, esperado só até hoje
+    expect($mine[3])->toBeLessThanOrEqual(6)->and($mine[3])->toBeGreaterThan(0);
+    expect((int) explode(':', $mine[4])[0])->toBeLessThanOrEqual(7 * 8);
+});
