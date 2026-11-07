@@ -27,7 +27,7 @@ export default function WorkspaceLayout() {
   const [chatOpen, setChatOpen] = useState(false)
   const [drawer, setDrawer] = useState(false)
   const [menu, setMenu] = useState(false)
-  const [dock, setDock] = useState<'min' | 'open' | 'wide'>(() => { try { const v = localStorage.getItem('chatDock'); return v === 'min' || v === 'wide' ? v : 'open' } catch { return 'open' } })
+  const [dock, setDock] = useState<'min' | 'open' | 'wide'>(() => { try { const v = localStorage.getItem('chatDock'); return v === 'open' || v === 'wide' ? v : 'min' } catch { return 'min' } })
   const changeDock = (d: 'min' | 'open' | 'wide') => { setDock(d); try { localStorage.setItem('chatDock', d) } catch { /* ignora */ } }
   const [themeNow, setThemeNow] = useState<Theme>(getTheme)
   const [searchOpen, setSearchOpen] = useState(false)

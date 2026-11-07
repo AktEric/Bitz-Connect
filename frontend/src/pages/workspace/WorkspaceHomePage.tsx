@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { CalendarDays, ClipboardList, GraduationCap, Plane, Target, Wallet, Clock, ChevronRight } from 'lucide-react'
+import { ClipboardList, Plane, Target, Wallet, Clock, ChevronRight } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { useAuth } from '@/hooks/useAuth'
 import HomeCalendarCard from './HomeCalendarCard'
@@ -33,42 +33,39 @@ export default function WorkspaceHomePage() {
   const firstName = (user?.name ?? '').split(' ')[0]
   const working = team?.filter((t) => t.state === 'working').length ?? 0
 
+  // só o que se faz com frequência; o resto está no menu lateral
   const actions = [
-    { to: 'solicitacoes', label: 'Pedir férias', Icon: Plane, tone: 'bg-sky-50 text-sky-600' },
-    { to: 'ponto', label: 'Meu ponto', Icon: Clock, tone: 'bg-violet-50 text-violet-600' },
-    { to: 'recebimentos', label: 'Meu holerite', Icon: Wallet, tone: 'bg-emerald-50 text-emerald-600', badge: c.new_payslips },
-    { to: 'metas', label: 'Minhas metas', Icon: Target, tone: 'bg-amber-50 text-amber-600' },
-    { to: 'desenvolvimento', label: 'Desenvolvimento', Icon: GraduationCap, tone: 'bg-pink-50 text-pink-600' },
-    { to: 'equipe', label: 'Pessoas', Icon: CalendarDays, tone: 'bg-slate-100 text-slate-600' },
+    { to: 'solicitacoes', label: 'Pedir férias', Icon: Plane, badge: 0 },
+    { to: 'recebimentos', label: 'Meu holerite', Icon: Wallet, badge: c.new_payslips },
+    { to: 'metas', label: 'Minhas metas', Icon: Target, badge: 0 },
   ]
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{greeting()}{firstName ? `, ${firstName}` : ''}</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {[info.me.job_title, info.me.department, info.hotel.name].filter(Boolean).join(' · ')}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{greeting()}{firstName ? `, ${firstName}` : ''}</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {[info.me.job_title, info.me.department, info.hotel.name].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+        <nav className="flex flex-wrap gap-2" aria-label="Atalhos">
+          {actions.map(({ to, label, Icon, badge }) => (
+            <Link key={to + label} to={to} className="relative inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:border-violet-300 hover:text-violet-700">
+              <Icon className="h-4 w-4" /> {label}
+              {!!badge && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-violet-600" />}
+            </Link>
+          ))}
+        </nav>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-3">
         <div className="space-y-5 xl:col-span-2">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {actions.map(({ to, label, Icon, tone, badge }) => (
-              <Link key={to + label} to={to} className="group relative flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${tone}`}><Icon className="h-5 w-5" /></span>
-                <span className="min-w-0 break-words text-sm font-medium leading-tight text-gray-800">{label}</span>
-                {!!badge && <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-violet-600" />}
-              </Link>
-            ))}
-          </div>
-
           <FeedStream compact />
         </div>
 
         <div className="space-y-5">
           <ClockCard slug={slug} compact />
-          <OnboardingCard slug={slug} enabled={info.me.is_admin} />
           {lead && (
             <Panel className="border-violet-100 bg-violet-50/40">
               <h2 className="mb-3 font-semibold text-gray-900">Para você, gestor</h2>
@@ -122,6 +119,8 @@ export default function WorkspaceHomePage() {
               </ul>
             )}
           </Panel>
+
+          <OnboardingCard slug={slug} enabled={info.me.is_admin} />
 
           {info.me.manager && (
             <Panel>
