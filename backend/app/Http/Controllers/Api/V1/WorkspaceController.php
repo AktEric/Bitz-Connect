@@ -46,6 +46,58 @@ class WorkspaceController extends Controller
         return $this->success('Empresas carregadas com sucesso.', $data);
     }
 
+    private const ACCESS_ROLES = ['owner', 'hr', 'finance', 'manager', 'employee'];
+
+    /** GET /workspaces/{hotel:slug}/roles — pessoas e papéis de acesso (dono e RH). */
+    public function roles(Request $request, Hotel $hotel): JsonResponse
+    {
+        $m = $this->access->membership($request->user(), $hotel);
+        if (! $this->access->isAdmin($m)) {
+            return $this->forbidden('Somente o dono ou o RH podem ver os papéis de acesso.');
+        }
+
+        $items = HotelUser::with('user')->where('hotel_id', $hotel->id)->where('status', 'approved')->get()
+            ->map(fn ($hu) => [
+                'user'        => $this->access->person($hu->user, $hu),
+                'email'       => $hu->user?->email,
+                'access_role' => $this->access->accessRole($hu, $hotel),
+            ])->sortBy(fn ($r) => $r['user']['name'])->values();
+
+        return $this->success('Papéis carregados com sucesso.', [
+            'items'    => $items,
+            'can_edit' => $this->access->isOwner($m),
+        ]);
+    }
+
+    /** PATCH /workspaces/{hotel:slug}/roles/{uuid} — define o papel de acesso (somente o dono). */
+    public function updateRole(Request $request, Hotel $hotel, string $uuid): JsonResponse
+    {
+        $m = $this->access->membership($request->user(), $hotel);
+        if (! $this->access->isOwner($m)) {
+            return $this->forbidden('Somente o dono pode alterar papéis de acesso.');
+        }
+
+        $data   = $request->validate(['access_role' => ['required', 'string', \Illuminate\Validation\Rule::in(self::ACCESS_ROLES)]]);
+        $target = $this->access->memberByUuid($hotel, $uuid);
+        if (! $target) {
+            return $this->notFound('Pessoa não encontrada.');
+        }
+
+        if ($this->access->isOwner($target) && $data['access_role'] !== 'owner') {
+            $owners = HotelUser::where('hotel_id', $hotel->id)->where('status', 'approved')->get()
+                ->filter(fn ($hu) => $this->access->isOwner($hu))->count();
+            if ($owners <= 1) {
+                return $this->error('A empresa precisa ter pelo menos um dono.', [], 422);
+            }
+        }
+
+        $target->update(['access_role' => $data['access_role']]);
+
+        return $this->success('Papel atualizado com sucesso.', [
+            'uuid' => $uuid, 'access_role' => $this->access->accessRole($target, $hotel),
+        ]);
+    }
+
     /** GET /workspaces/{hotel:slug} — dados da empresa + meu perfil + contadores. */
     public function show(Request $request, Hotel $hotel): JsonResponse
     {

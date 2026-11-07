@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, ArrowLeftRight, LogOut, Globe, CheckCircle2, type LucideIcon,
+  Menu, X, Settings2, ArrowLeftRight, LogOut, Globe, CheckCircle2, type LucideIcon,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import { useAuth } from '@/hooks/useAuth'
@@ -61,6 +61,9 @@ export default function WorkspaceLayout() {
     },
     { title: 'Empresa', items: [{ to: 'equipe', label: 'Pessoas', Icon: Users }] },
   ]
+  if (info.me.is_admin) {
+    groups[groups.length - 1].items.push({ to: 'configuracoes', label: 'Papéis e estrutura', Icon: Settings2 })
+  }
   if (lead) {
     groups.splice(2, 0, {
       title: 'Gestão',

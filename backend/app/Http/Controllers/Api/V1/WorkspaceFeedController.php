@@ -19,7 +19,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
     {
         $q->where('hotel_id', $hotel->id);
 
-        if ($m->role !== 'admin') {
+        if (! $this->access->isAdmin($m)) {
             $q->where(function (Builder $w) use ($m) {
                 $w->whereNull('department_id')->orWhere('author_id', $m->user_id);
                 if ($m->department_id) {
@@ -33,7 +33,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
 
     private function canPost(Hotel $hotel, HotelUser $m, Request $request): bool
     {
-        return $m->role === 'admin' || $this->access->isManager($request->user(), $hotel);
+        return $this->access->isAdmin($m) || $this->access->isManager($request->user(), $hotel);
     }
 
     private function format(WorkspacePost $p, int $meId, bool $isAdmin): array
@@ -67,7 +67,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
             ->orderByDesc('pinned')->orderByDesc('created_at')->orderByDesc('id');
 
         $page = $q->paginate(15);
-        $isAdmin = $m->role === 'admin';
+        $isAdmin = $this->access->isAdmin($m);
 
         return $this->success('Mural carregado com sucesso.', [
             'items'     => $page->getCollection()->map(fn ($p) => $this->format($p, $meId, $isAdmin))->values(),
@@ -105,11 +105,11 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'author_id'     => $request->user()->id,
             'department_id' => $deptId,
             'body'          => $data['body'],
-            'pinned'        => $m->role === 'admin' && ($data['pinned'] ?? false),
+            'pinned'        => $this->access->isAdmin($m) && ($data['pinned'] ?? false),
         ]);
         $post->load(['author', 'department']);
 
-        return $this->created('Publicação criada com sucesso.', $this->format($post, $request->user()->id, $m->role === 'admin'));
+        return $this->created('Publicação criada com sucesso.', $this->format($post, $request->user()->id, $this->access->isAdmin($m)));
     }
 
     public function destroy(Request $request, Hotel $hotel, string $post): JsonResponse
@@ -119,7 +119,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
         if (! $p) {
             return $this->notFound('Publicação não encontrada.');
         }
-        if ($m->role !== 'admin' && $p->author_id !== $request->user()->id) {
+        if (! $this->access->isAdmin($m) && $p->author_id !== $request->user()->id) {
             return $this->forbidden('Você não pode remover esta publicação.');
         }
         $p->delete();
@@ -130,7 +130,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
     public function pin(Request $request, Hotel $hotel, string $post): JsonResponse
     {
         $m = $this->membership($request, $hotel);
-        if (! $m || $m->role !== 'admin') {
+        if (! $m || ! $this->access->isAdmin($m)) {
             return $this->forbidden('Somente o RH pode fixar publicações.');
         }
         $p = WorkspacePost::where('hotel_id', $hotel->id)->where('uuid', $post)->first();

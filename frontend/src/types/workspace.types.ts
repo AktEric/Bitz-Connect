@@ -241,3 +241,18 @@ export interface TimeAdjustment {
   review_note: string | null
   person: WorkspacePerson | null
 }
+
+export type AccessRole = 'owner' | 'hr' | 'finance' | 'manager' | 'employee'
+
+export interface RoleRow {
+  user: { uuid: string; name: string; avatar_url: string | null; job_title: string | null }
+  email: string | null
+  access_role: AccessRole
+}
+
+export interface SegmentTemplate {
+  key: string
+  label: string
+  departments: string[]
+  job_titles: string[]
+}

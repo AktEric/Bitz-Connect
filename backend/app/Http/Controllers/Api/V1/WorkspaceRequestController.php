@@ -50,7 +50,7 @@ class WorkspaceRequestController extends WorkspaceBaseController
     {
         $q = WorkspaceRequest::where('hotel_id', $hotel->id)->where('requester_id', '!=', $request->user()->id);
 
-        if ($m->role !== 'admin') {
+        if (! $this->access->isAdmin($m)) {
             $q->whereIn('requester_id', $this->access->reportIds($request->user(), $hotel) ?: [0]);
         }
 
@@ -72,7 +72,7 @@ class WorkspaceRequestController extends WorkspaceBaseController
         $scope = $filters['scope'] ?? 'mine';
 
         if ($scope === 'all') {
-            if ($m->role !== 'admin') {
+            if (! $this->access->isAdmin($m)) {
                 return $this->forbidden('Somente o RH pode ver todas as solicitações.');
             }
             $q = WorkspaceRequest::where('hotel_id', $hotel->id);
@@ -125,8 +125,7 @@ class WorkspaceRequestController extends WorkspaceBaseController
         // Avisa quem vai analisar: gestor direto; sem gestor, os admins (RH).
         $reviewers = $m->manager_id
             ? collect([$m->manager])->filter()
-            : HotelUser::with('user')->where('hotel_id', $hotel->id)->where('role', 'admin')
-                ->where('status', 'approved')->get()->pluck('user');
+            : $this->access->adminUsers($hotel);
         foreach ($reviewers->filter() as $reviewer) {
             $this->notifications->workspaceNotice(
                 $reviewer, $request->user(), 'workspace_request',

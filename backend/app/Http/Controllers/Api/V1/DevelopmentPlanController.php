@@ -75,11 +75,11 @@ class DevelopmentPlanController extends WorkspaceBaseController
         $q = DevelopmentPlan::where('hotel_id', $hotel->id);
 
         if ($scope === 'all') {
-            if ($m->role !== 'admin') {
+            if (! $this->access->isAdmin($m)) {
                 return $this->forbidden('Somente o RH pode ver todos os PDIs.');
             }
         } elseif ($scope === 'team') {
-            $m->role === 'admin'
+            $this->access->isAdmin($m)
                 ? $q->where('user_id', '!=', $request->user()->id)
                 : $q->whereIn('user_id', $this->access->reportIds($request->user(), $hotel) ?: [0]);
         } else {

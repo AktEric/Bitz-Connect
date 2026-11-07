@@ -67,8 +67,8 @@ class GoalController extends WorkspaceBaseController
         $q = Goal::where('hotel_id', $hotel->id);
 
         return match ($scope) {
-            'all'  => $m->role === 'admin' ? $q : null,
-            'team' => $m->role === 'admin'
+            'all'  => $this->access->isAdmin($m) ? $q : null,
+            'team' => $this->access->isAdmin($m)
                 ? $q->where('owner_id', '!=', $request->user()->id)
                 : $q->whereIn('owner_id', $this->access->reportIds($request->user(), $hotel) ?: [0]),
             default => $q->where('owner_id', $request->user()->id),

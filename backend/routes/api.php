@@ -212,6 +212,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/invites',                  [CompanyInviteController::class, 'index']);
         Route::post('/invites',                 [CompanyInviteController::class, 'store']);
         Route::delete('/invites/{invite}',      [CompanyInviteController::class, 'destroy']);
+        Route::get('/roles',                    [WorkspaceController::class, 'roles']);
+        Route::patch('/roles/{uuid}',           [WorkspaceController::class, 'updateRole']);
         //WORKSPACE_ROUTES
         // Mural
         Route::get('/feed',                          [WorkspaceFeedController::class, 'index']);

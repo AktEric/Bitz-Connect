@@ -144,3 +144,50 @@ it('exposes the effective access role and marks my companies as admin', function
     Sanctum::actingAs($this->manager);
     $this->getJson($this->base)->assertOk()->assertJsonPath('data.me.access_role', 'manager');
 });
+
+it('makes the access role actually restrict what each role can do', function () {
+    $setRole = fn (User $u, string $role) => HotelUser::where('hotel_id', $this->hotel->id)
+        ->where('user_id', $u->id)->update(['access_role' => $role]);
+
+    // RH anexa um holerite para a colaboradora
+    Sanctum::actingAs($this->rh);
+    $this->post("{$this->base}/payslips", [
+        'user_uuid' => $this->worker->uuid, 'kind' => 'payslip', 'title' => 'Holerite',
+        'file' => UploadedFile::fake()->create('h.pdf', 20, 'application/pdf'),
+    ], ['Accept' => 'application/json'])->assertCreated();
+
+    // Financeiro: lida com holerites, mas não administra pessoas
+    $finance = wsMember($this->hotel);
+    $setRole($finance, 'finance');
+    Sanctum::actingAs($finance);
+    $this->getJson("{$this->base}/payslips?all=1")->assertOk()->assertJsonCount(1, 'data.items');
+    $this->getJson("{$this->base}/roles")->assertForbidden();
+    $this->postJson("{$this->base}/feed", ['body' => 'aviso'])->assertForbidden();
+
+    // Um admin antigo rebaixado a "employee" perde os poderes de RH
+    $demoted = wsMember($this->hotel, 'admin');
+    $setRole($demoted, 'employee');
+    Sanctum::actingAs($demoted);
+    $this->getJson("{$this->base}/roles")->assertForbidden();
+    $this->getJson("{$this->base}/payslips?all=1")->assertOk()->assertJsonCount(0, 'data.items');
+    $this->postJson("{$this->base}/payslips", [])->assertForbidden();
+
+    // Colaborador promovido a RH ganha acesso
+    $setRole($this->other, 'hr');
+    Sanctum::actingAs($this->other);
+    $this->getJson("{$this->base}/roles")->assertOk()->assertJsonPath('data.can_edit', false);
+    $this->postJson("{$this->base}/feed", ['body' => 'aviso do RH'])->assertCreated();
+});
+
+it('lets only the owner change roles and keeps at least one owner', function () {
+    Sanctum::actingAs($this->worker);
+    $this->patchJson("{$this->base}/roles/{$this->other->uuid}", ['access_role' => 'hr'])->assertForbidden();
+
+    Sanctum::actingAs($this->rh);
+    $this->getJson("{$this->base}/roles")->assertOk()->assertJsonPath('data.can_edit', true);
+    $this->patchJson("{$this->base}/roles/{$this->other->uuid}", ['access_role' => 'finance'])->assertOk();
+    $this->patchJson("{$this->base}/roles/{$this->other->uuid}", ['access_role' => 'bogus'])->assertStatus(422);
+
+    // único dono não pode se rebaixar
+    $this->patchJson("{$this->base}/roles/{$this->rh->uuid}", ['access_role' => 'hr'])->assertStatus(422);
+});

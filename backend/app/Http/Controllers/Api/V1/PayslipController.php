@@ -39,7 +39,7 @@ class PayslipController extends WorkspaceBaseController
             return $this->forbidden('Você não faz parte desta empresa.');
         }
 
-        $isAdmin = $m->role === 'admin';
+        $isAdmin = $this->access->canHandlePayslips($m);
         $q = Payslip::with('owner')->where('hotel_id', $hotel->id);
 
         if ($isAdmin && $request->filled('user')) {
@@ -66,7 +66,7 @@ class PayslipController extends WorkspaceBaseController
     public function store(Request $request, Hotel $hotel): JsonResponse
     {
         $m = $this->membership($request, $hotel);
-        if (! $m || $m->role !== 'admin') {
+        if (! $m || ! $this->access->canHandlePayslips($m)) {
             return $this->forbidden('Somente o RH/financeiro pode anexar recebimentos.');
         }
 
@@ -119,7 +119,7 @@ class PayslipController extends WorkspaceBaseController
         }
         $p = Payslip::with('owner')->where('hotel_id', $hotel->id)->where('uuid', $uuid)->first();
 
-        return $p && ($p->user_id === $request->user()->id || $m->role === 'admin') ? $p : null;
+        return $p && ($p->user_id === $request->user()->id || $this->access->canHandlePayslips($m)) ? $p : null;
     }
 
     public function download(Request $request, Hotel $hotel, string $uuid): StreamedResponse|JsonResponse
@@ -144,7 +144,7 @@ class PayslipController extends WorkspaceBaseController
     {
         $m = $this->membership($request, $hotel);
         $p = $this->findAllowed($request, $hotel, $uuid);
-        if (! $p || $m->role !== 'admin') {
+        if (! $p || ! $this->access->canHandlePayslips($m)) {
             return $this->forbidden('Somente o RH pode remover documentos.');
         }
 

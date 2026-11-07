@@ -23,9 +23,21 @@ class WorkspaceAccess
             ->first();
     }
 
+    /** Administra pessoas (RH): dono ou RH. O papel de acesso, quando definido, prevalece sobre `role`. */
     public function isAdmin(?HotelUser $membership): bool
     {
-        return $membership?->role === 'admin';
+        return in_array($this->accessRole($membership), ['owner', 'hr'], true);
+    }
+
+    public function isOwner(?HotelUser $membership): bool
+    {
+        return $this->accessRole($membership) === 'owner';
+    }
+
+    /** Pode anexar/consultar holerites de todos: dono, RH e financeiro. */
+    public function canHandlePayslips(?HotelUser $membership): bool
+    {
+        return in_array($this->accessRole($membership), ['owner', 'hr', 'finance'], true);
     }
 
     /** Papel de acesso efetivo: owner | hr | finance | manager | employee. */
@@ -42,6 +54,15 @@ class WorkspaceAccess
         }
 
         return ($hotel && $this->isManager($membership->user, $hotel)) ? 'manager' : 'employee';
+    }
+
+    /** Usuários que administram pessoas (dono/RH) na empresa — destino de avisos de RH. */
+    public function adminUsers(Hotel $hotel)
+    {
+        return HotelUser::with('user')->where('hotel_id', $hotel->id)->where('status', 'approved')
+            ->where(fn ($q) => $q->whereIn('access_role', ['owner', 'hr'])
+                ->orWhere(fn ($q2) => $q2->whereNull('access_role')->where('role', 'admin')))
+            ->get()->pluck('user')->filter();
     }
 
     /** @return int[] ids dos usuários cujo gestor direto é $manager nesta empresa */

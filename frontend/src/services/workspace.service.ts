@@ -4,6 +4,7 @@ import type {
   DevelopmentItem, DevelopmentPlan, FeedComment, FeedPost, Goal, GoalSummaryRow, InvitePreview,
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
+  RoleRow, SegmentTemplate, AccessRole,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -90,6 +91,12 @@ const workspaceService = {
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 10_000)
   },
+
+  // Papéis de acesso e modelos de segmento
+  roles: (slug: string) => get<{ items: RoleRow[]; can_edit: boolean }>(`${w(slug)}/roles`),
+  updateRole: (slug: string, uuid: string, access_role: AccessRole) => patch<{ uuid: string; access_role: AccessRole }>(`${w(slug)}/roles/${uuid}`, { access_role }),
+  segmentTemplates: () => get<SegmentTemplate[]>('/segment-templates'),
+  applySegmentTemplate: (slug: string, segment: string) => post<{ created: string[] }>(`/hotels/${slug}/segment-template`, { segment }),
 
   // Metas
   goals: (slug: string, params: { scope?: string; status?: string; user?: string }) => get<Goal[]>(`${w(slug)}/goals`, params),
