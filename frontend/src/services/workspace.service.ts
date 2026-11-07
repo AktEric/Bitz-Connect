@@ -4,7 +4,7 @@ import type {
   DevelopmentItem, DevelopmentPlan, FeedComment, FeedPost, Goal, GoalSummaryRow, InvitePreview,
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
-  RoleRow, SegmentTemplate, AccessRole,
+  RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -97,6 +97,13 @@ const workspaceService = {
   updateRole: (slug: string, uuid: string, access_role: AccessRole) => patch<{ uuid: string; access_role: AccessRole }>(`${w(slug)}/roles/${uuid}`, { access_role }),
   segmentTemplates: () => get<SegmentTemplate[]>('/segment-templates'),
   applySegmentTemplate: (slug: string, segment: string) => post<{ created: string[] }>(`/hotels/${slug}/segment-template`, { segment }),
+
+  // Jornadas (escalas de ponto)
+  schedules: (slug: string) => get<SchedulesPayload>(`${w(slug)}/schedules`),
+  createSchedule: (slug: string, body: { name: string; week_minutes: Record<string, number> }) => post<WorkSchedule>(`${w(slug)}/schedules`, body),
+  updateSchedule: (slug: string, uuid: string, body: { name: string; week_minutes: Record<string, number> }) => patch<WorkSchedule>(`${w(slug)}/schedules/${uuid}`, body),
+  deleteSchedule: (slug: string, uuid: string) => del(`${w(slug)}/schedules/${uuid}`),
+  assignSchedule: (slug: string, user_uuid: string, schedule_uuid: string | null) => patch<{ user_uuid: string; schedule_uuid: string | null }>(`${w(slug)}/schedules/assign`, { user_uuid, schedule_uuid }),
 
   // Metas
   goals: (slug: string, params: { scope?: string; status?: string; user?: string }) => get<Goal[]>(`${w(slug)}/goals`, params),

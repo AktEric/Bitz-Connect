@@ -4,6 +4,7 @@ import { Check, LayoutTemplate, ShieldCheck } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
 import type { AccessRole } from '@/types/workspace.types'
+import WorkspaceSchedulesSection from './WorkspaceSchedulesSection'
 import { Empty, PageHeader, Panel, Pill, Spinner, btnPrimary, errMsg, inputCls, useWs } from './ui'
 
 const ROLE_INFO: Record<AccessRole, { label: string; hint: string }> = {
@@ -151,8 +152,9 @@ export default function WorkspaceAdminPage() {
   const { slug } = useWs()
   return (
     <>
-      <PageHeader title="Papéis e estrutura" subtitle="Defina quem pode o quê e monte os setores da empresa." />
+      <PageHeader title="Papéis e estrutura" subtitle="Defina quem pode o quê, as jornadas de trabalho e os setores da empresa." />
       <RolesSection slug={slug} />
+      <WorkspaceSchedulesSection slug={slug} />
       <TemplateSection slug={slug} />
     </>
   )

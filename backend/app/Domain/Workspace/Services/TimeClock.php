@@ -10,8 +10,6 @@ use Illuminate\Support\Collection;
 class TimeClock
 {
     public const TZ = 'America/Sao_Paulo';
-    /** Jornada padrão em minutos (8h) até existirem escalas por pessoa. */
-    public const DAILY_MINUTES = 480;
 
     /** @param Collection<int, TimeEntry> $entries ordenadas por punched_at */
     public function state(Collection $entries): string

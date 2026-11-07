@@ -256,3 +256,18 @@ export interface SegmentTemplate {
   departments: string[]
   job_titles: string[]
 }
+
+export interface WorkSchedule {
+  uuid: string
+  name: string
+  /** Minutos esperados por dia da semana: 0 (domingo) a 6 (sábado). */
+  week_minutes: Record<string, number>
+  weekly_total: number
+  members_count: number
+}
+
+export interface SchedulesPayload {
+  default: { name: string; week_minutes: Record<string, number> }
+  schedules: WorkSchedule[]
+  members: { user: { uuid: string; name: string; avatar_url: string | null; job_title: string | null }; schedule_uuid: string | null }[]
+}

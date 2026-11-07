@@ -22,6 +22,7 @@ class HotelUser extends Model
         'job_title',
         'hired_at',
         'manager_id',
+        'work_schedule_id',
     ];
 
     protected function casts(): array
@@ -69,5 +70,10 @@ class HotelUser extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function workSchedule(): BelongsTo
+    {
+        return $this->belongsTo(WorkSchedule::class);
     }
 }

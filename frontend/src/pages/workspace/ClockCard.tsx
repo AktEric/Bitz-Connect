@@ -38,7 +38,8 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
   // Se a jornada está aberta, soma o tempo desde a última atualização do servidor.
   const lastSync = data ? new Date(data.server_time).getTime() : now.getTime()
   const live = data ? data.worked_minutes + (state === 'working' ? Math.max(0, (now.getTime() - lastSync) / 60000) : 0) : 0
-  const pct = data ? Math.min(100, (live / data.daily_minutes) * 100) : 0
+  const dayOff = !!data && data.daily_minutes === 0
+  const pct = data && data.daily_minutes > 0 ? Math.min(100, (live / data.daily_minutes) * 100) : 0
 
   const doPunch = (type: TimeType) => {
     setError(null)
@@ -59,7 +60,7 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
       <div className="mt-4">
         <div className="mb-1 flex justify-between text-xs text-violet-100">
           <span>Hoje: {data ? fmtMinutes(live) : '—'}</span>
-          <span>Jornada: {data ? fmtMinutes(data.daily_minutes) : '8h00'}</span>
+          <span>{dayOff ? 'Hoje é folga na sua escala' : `Jornada: ${data ? fmtMinutes(data.daily_minutes) : '8h00'}`}</span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-white/20">
           <div className="h-full rounded-full bg-white transition-all" style={{ width: `${pct}%` }} />

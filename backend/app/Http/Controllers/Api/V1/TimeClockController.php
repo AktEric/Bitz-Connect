@@ -10,6 +10,7 @@ use App\Models\HotelUser;
 use App\Models\TimeAdjustment;
 use App\Models\TimeEntry;
 use App\Models\User;
+use App\Models\WorkSchedule;
 use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -36,6 +37,12 @@ class TimeClockController extends WorkspaceBaseController
             ->whereBetween('punched_at', [$from, $to])->orderBy('punched_at')->get();
     }
 
+    private function scheduleFor(Hotel $hotel, User $user): ?WorkSchedule
+    {
+        return HotelUser::with('workSchedule')->where('hotel_id', $hotel->id)->where('user_id', $user->id)
+            ->where('status', 'approved')->first()?->workSchedule;
+    }
+
     private function today(): CarbonImmutable
     {
         return CarbonImmutable::now(TimeClock::TZ);
@@ -60,7 +67,7 @@ class TimeClockController extends WorkspaceBaseController
             'state'          => $this->clock->state($entries),
             'allowed_next'   => $this->clock->allowedNext($entries),
             'worked_minutes' => $this->clock->workedMinutes($entries, $now),
-            'daily_minutes'  => TimeClock::DAILY_MINUTES,
+            'daily_minutes'  => WorkSchedule::minutesFor($this->scheduleFor($hotel, $user), $now->dayOfWeek),
             'server_time'    => $now->toIso8601String(),
             'entries'        => $entries->map(fn ($e) => $this->clock->format($e))->values(),
         ];
@@ -133,6 +140,7 @@ class TimeClockController extends WorkspaceBaseController
             ->whereBetween('punched_at', [$first->utc(), $last->utc()])->orderBy('punched_at')->get()
             ->groupBy(fn ($e) => CarbonImmutable::instance($e->punched_at)->setTimezone(TimeClock::TZ)->toDateString());
 
+        $schedule = $this->scheduleFor($hotel, $target);
         $days = [];
         $worked = 0;
         $expected = 0;
@@ -140,8 +148,7 @@ class TimeClockController extends WorkspaceBaseController
             $key     = $d->toDateString();
             $entries = $all->get($key, collect());
             $mins    = $this->clock->workedMinutes($entries, $key === $now->toDateString() ? $now : null);
-            $isWork  = $d->isWeekday();
-            $exp     = ($isWork && $d <= $now) ? TimeClock::DAILY_MINUTES : 0;
+            $exp     = $d <= $now ? WorkSchedule::minutesFor($schedule, $d->dayOfWeek) : 0;
             $worked   += $mins;
             $expected += $exp;
             $days[] = [
@@ -177,7 +184,7 @@ class TimeClockController extends WorkspaceBaseController
             return $this->forbidden('Apenas RH ou gestores veem o ponto do time.');
         }
 
-        $q = HotelUser::with('user')->where('hotel_id', $hotel->id)->where('status', 'approved');
+        $q = HotelUser::with(['user', 'workSchedule'])->where('hotel_id', $hotel->id)->where('status', 'approved');
         if (! $isAdmin) {
             $q->whereIn('user_id', $this->access->reportIds($request->user(), $hotel) ?: [0]);
         }
@@ -195,6 +202,7 @@ class TimeClockController extends WorkspaceBaseController
                 'person'         => $this->access->person($m->user, $m),
                 'state'          => $this->clock->state($e),
                 'worked_minutes' => $this->clock->workedMinutes($e, $now),
+                'daily_minutes'  => WorkSchedule::minutesFor($m->workSchedule, $now->dayOfWeek),
                 'first_in'       => $e->firstWhere('type', 'in')?->punched_at?->toIso8601String(),
             ];
         })->values();
