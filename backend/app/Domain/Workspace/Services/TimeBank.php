@@ -63,6 +63,37 @@ class TimeBank
         ];
     }
 
+    /**
+     * Horas de um mês já terminado: trabalhadas, esperadas, dias trabalhados e faltas
+     * (dia com jornada esperada, sem marcação e sem férias).
+     *
+     * @return array{worked_minutes: int, expected_minutes: int, days_worked: int, absent_days: int}
+     */
+    public function monthStats(Hotel $hotel, User $user, ?WorkSchedule $schedule, CarbonImmutable $first): array
+    {
+        $last   = $first->endOfMonth();
+        $byDay  = TimeEntry::where('hotel_id', $hotel->id)->where('user_id', $user->id)
+            ->whereBetween('punched_at', [$first->utc(), $last->utc()])->orderBy('punched_at')->get()
+            ->groupBy(fn ($e) => CarbonImmutable::instance($e->punched_at)->setTimezone(TimeClock::TZ)->toDateString());
+        $covered = $this->vacationDays($hotel, $user, $first, $last);
+
+        $worked = $expected = $daysWorked = $absent = 0;
+        for ($d = $first; $d <= $last; $d = $d->addDay()) {
+            $key  = $d->toDateString();
+            $mins = $this->clock->workedMinutes($byDay->get($key, collect()));
+            $exp  = isset($covered[$key]) ? 0 : WorkSchedule::minutesFor($schedule, $d->dayOfWeek);
+            $worked   += $mins;
+            $expected += $exp;
+            if ($mins > 0) {
+                $daysWorked++;
+            } elseif ($exp > 0) {
+                $absent++;
+            }
+        }
+
+        return ['worked_minutes' => $worked, 'expected_minutes' => $expected, 'days_worked' => $daysWorked, 'absent_days' => $absent];
+    }
+
     /** @return array<string, true> datas (Y-m-d) cobertas por férias aprovadas dentro do intervalo */
     private function vacationDays(Hotel $hotel, User $user, CarbonImmutable $from, CarbonImmutable $to): array
     {

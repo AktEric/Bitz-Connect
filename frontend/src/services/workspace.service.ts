@@ -4,7 +4,7 @@ import type {
   DevelopmentItem, DevelopmentPlan, FeedComment, FeedPost, Goal, GoalSummaryRow, InvitePreview,
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
-  RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow,
+  RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -31,6 +31,19 @@ const workspaceService = {
   timeToday: (slug: string) => get<TimeToday>(`${w(slug)}/time/today`),
   punch: (slug: string, type?: TimeType) => post<TimeToday>(`${w(slug)}/time/punch`, { type, source: 'web' }),
   timesheet: (slug: string, params: { month?: string; user?: string }) => get<Timesheet>(`${w(slug)}/time/timesheet`, params),
+  timeClosings: (slug: string) => get<ClosingItem[]>(`${w(slug)}/time/closings`),
+  timeClosing: (slug: string, month: string) => get<ClosingDetail>(`${w(slug)}/time/closings/${month}`),
+  closeMonth: (slug: string, month: string) => post<ClosingDetail>(`${w(slug)}/time/closings`, { month }),
+  reopenMonth: (slug: string, month: string) => del(`${w(slug)}/time/closings/${month}`),
+  async exportClosing(slug: string, month: string): Promise<void> {
+    const res = await api.get(`${w(slug)}/time/closings/${month}/export`, { responseType: 'blob' })
+    const url = URL.createObjectURL(res.data as Blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `ponto-${month}.csv`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  },
   timeTeam: (slug: string) => get<TimeTeamRow[]>(`${w(slug)}/time/team`),
   timeBank: (slug: string, user?: string) => get<TimeBank>(`${w(slug)}/time/bank`, { user }),
   timeBankTeam: (slug: string) => get<TimeBankRow[]>(`${w(slug)}/time/bank/team`),

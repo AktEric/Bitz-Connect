@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { useTimeBankTeam, useTimeTeam, useTimesheet } from '@/hooks/useWorkspace'
 import BankCard from './BankCard'
+import ClosingView from './ClosingView'
 import { Avatar } from '@/components/ui/Avatar'
 import type { TimeState, TimeType } from '@/types/workspace.types'
 import ClockCard from './ClockCard'
@@ -278,7 +279,7 @@ export default function WorkspaceTimePage() {
   const { slug, info } = useWs()
   const lead = info.me.is_admin || info.me.is_manager
   const [params, setParams] = useSearchParams()
-  const tab = lead && params.get('aba') === 'time' ? 'time' : 'me'
+  const tab = info.me.is_admin && params.get('aba') === 'fechamento' ? 'fechamento' : lead && params.get('aba') === 'time' ? 'time' : 'me'
 
   return (
     <div>
@@ -286,8 +287,12 @@ export default function WorkspaceTimePage() {
       {lead && (
         <Tabs
           value={tab}
-          onChange={(v) => setParams(v === 'time' ? { aba: 'time' } : {})}
-          options={[{ value: 'me', label: 'Meu ponto' }, { value: 'time', label: 'Ponto do time' }]}
+          onChange={(v) => setParams(v === 'me' ? {} : { aba: v })}
+          options={[
+            { value: 'me', label: 'Meu ponto' },
+            { value: 'time', label: 'Ponto do time' },
+            ...(info.me.is_admin ? [{ value: 'fechamento' as const, label: 'Fechamento' }] : []),
+          ]}
         />
       )}
       {tab === 'me' ? (
@@ -295,6 +300,8 @@ export default function WorkspaceTimePage() {
           <div className="lg:col-span-2"><ClockCard slug={slug} compact /><BankCard slug={slug} /><MyAdjustments slug={slug} /></div>
           <div className="lg:col-span-3"><Timesheet slug={slug} /></div>
         </div>
+      ) : tab === 'fechamento' ? (
+        <ClosingView slug={slug} isOwner={info.me.access_role === 'owner'} />
       ) : (
         <TeamView slug={slug} isAdmin={info.me.is_admin} />
       )}

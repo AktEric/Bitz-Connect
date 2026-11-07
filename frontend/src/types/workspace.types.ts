@@ -296,3 +296,29 @@ export interface TimeBankRow {
   since: string | null
   balance_minutes: number
 }
+
+export interface ClosingRow {
+  user_uuid: string
+  name: string
+  job_title: string | null
+  department: string | null
+  days_worked: number
+  absent_days: number
+  worked_minutes: number
+  expected_minutes: number
+  balance_minutes: number
+  bank_minutes: number
+}
+
+export interface ClosingItem {
+  month: string
+  status: 'open' | 'closed'
+  closed_at: string | null
+  closed_by: { uuid: string; name: string; avatar_url: string | null } | null
+  people: number | null
+  pending_adjustments?: number
+}
+
+export interface ClosingDetail extends Omit<ClosingItem, 'people'> {
+  rows: ClosingRow[]
+}

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Workspace\Services\TimeClock;
+use App\Domain\Workspace\Services\TimeClosingService;
 use App\Domain\Workspace\Services\WorkspaceAccess;
 use App\Models\AuditLog;
 use App\Models\Hotel;
@@ -24,6 +25,7 @@ class TimeClockController extends WorkspaceBaseController
         WorkspaceAccess $access,
         NotificationService $notifications,
         private readonly TimeClock $clock,
+        private readonly TimeClosingService $closing,
     ) {
         parent::__construct($access, $notifications);
     }
@@ -229,6 +231,10 @@ class TimeClockController extends WorkspaceBaseController
             return $this->forbidden('Sem permissão para ajustar o ponto desta pessoa.');
         }
 
+        if ($this->closing->isClosed($hotel, CarbonImmutable::parse($data['punched_at'], TimeClock::TZ))) {
+            return $this->error('Este mês já foi fechado para a folha. Peça ao dono para reabri-lo.', [], 422);
+        }
+
         $entry = TimeEntry::create([
             'uuid'       => (string) Str::uuid(),
             'hotel_id'   => $hotel->id,
@@ -271,6 +277,10 @@ class TimeClockController extends WorkspaceBaseController
             'reason'       => ['required', 'string', 'max:255'],
         ]);
 
+        if ($this->closing->isClosed($hotel, CarbonImmutable::parse($data['requested_at'], TimeClock::TZ))) {
+            return $this->error('Este mês já foi fechado para a folha. Fale com o RH.', [], 422);
+        }
+
         $adj = TimeAdjustment::create([
             'uuid'         => (string) Str::uuid(),
             'hotel_id'     => $hotel->id,
@@ -283,8 +293,7 @@ class TimeClockController extends WorkspaceBaseController
         $m = $this->membership($request, $hotel);
         $reviewers = $m->manager_id
             ? collect([$m->manager])->filter()
-            : HotelUser::with('user')->where('hotel_id', $hotel->id)->where('role', 'admin')
-                ->where('status', 'approved')->where('user_id', '!=', $request->user()->id)->get()->pluck('user');
+            : $this->access->adminUsers($hotel)->reject(fn ($u) => $u->id === $request->user()->id);
         foreach ($reviewers->filter() as $reviewer) {
             $this->notifications->workspaceNotice(
                 $reviewer, $request->user(), 'workspace_request',
@@ -337,6 +346,10 @@ class TimeClockController extends WorkspaceBaseController
         }
         if ($adjustment->status !== 'pending') {
             return $this->error('Este pedido já foi analisado.', [], 422);
+        }
+
+        if ($data['decision'] === 'approved' && $this->closing->isClosed($hotel, $adjustment->requested_at)) {
+            return $this->error('O mês deste ajuste já foi fechado. Reabra o mês antes de aprovar.', [], 422);
         }
 
         $adjustment->update([
