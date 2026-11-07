@@ -362,3 +362,16 @@ Entregue desde a última revisão:
 - **PWA básico:** manifest + service worker mínimo (instalável, aviso offline). Não guarda dados em cache.
 
 Ainda pendente: tema escuro, acessibilidade (focus trap/contraste), sessão por cookie httpOnly, matriz de permissões customizada, parabéns automático, antivírus/miniaturas/vídeo, Reverb (tempo real), Playwright/Sentry, revisão jurídica (Portaria 671, termos LGPD), SMTP, backup offsite e passphrase de backup em produção.
+
+## Status — rede social interna e fluxos de RH
+
+Entregue na branch `feature/workspace-social`:
+
+- **Início com mural:** o mural é o centro da tela inicial; parabéns automático de aniversário (com foto, só de quem deixou visível, a data é cadastrada pelo RH), comentários visíveis, vídeo, reações, fixar/desafixar, reconhecimentos entre colegas e enquetes anônimas.
+- **Perfil em abas:** perfil social (a pessoa edita), dados cadastrais (RH edita; criptografados; leitura pela própria pessoa), avisos e equipe/conexões. RH abre o perfil de qualquer pessoa em `/pessoas/:id`.
+- **Chamados ao RH:** categoria, prazo de 48h, assumir e resolver com justificativa obrigatória; o gestor não vê. Relatório próprio com tempos de resposta.
+- **Vagas internas** com candidatura confidencial e divulgação por link público (WhatsApp).
+- **Organograma** navegável; **chat lateral** minimizável/ampliável; **relatórios** por papel (horas, ocorrências, ajustes, chamados, banco, quadro).
+- **CI:** branch `fix/ci-deps` corrige dependências incompatíveis do `main` (vitest/@vitest/ui, TypeScript 7 × typescript-eslint, imports de tipos) e usa Node 22.
+
+Pendente: pesquisa de clima recorrente, grupos por área no mural, painel visual dos chamados, matriz de permissões editável, sessão por cookie httpOnly, antivírus/miniaturas de mídia, tempo real (Reverb).
