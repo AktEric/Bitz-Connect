@@ -11,7 +11,7 @@ class WorkspacePost extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['uuid','hotel_id','author_id','department_id','body','pinned','requires_ack'];
+    protected $fillable = ['uuid','hotel_id','author_id','department_id','body','pinned','requires_ack','kind','subject_id','subject_date'];
 
     protected $table = 'workspace_posts';
     protected function casts(): array
@@ -22,6 +22,11 @@ class WorkspacePost extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
+    }
+
+    public function subject(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'subject_id');
     }
 
     public function department(): BelongsTo

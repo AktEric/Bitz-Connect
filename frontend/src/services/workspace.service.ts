@@ -105,12 +105,13 @@ const workspaceService = {
 
   // Mural
   feed: (slug: string, page = 1) => get<Paged<FeedPost>>(`${w(slug)}/feed`, { page }),
-  createPost: (slug: string, input: { body: string; pinned?: boolean; requires_ack?: boolean; department_uuid?: string | null; photos?: Blob[] }) => {
+  createPost: (slug: string, input: { body: string; pinned?: boolean; requires_ack?: boolean; department_uuid?: string | null; photos?: Blob[]; video?: File | null }) => {
     const form = new FormData()
     form.append('body', input.body)
     if (input.pinned) form.append('pinned', '1')
     if (input.requires_ack) form.append('requires_ack', '1')
     if (input.department_uuid) form.append('department_uuid', input.department_uuid)
+    if (input.video) form.append('video', input.video)
     input.photos?.forEach((b, i) => form.append('photos[]', b, `foto-${i + 1}.jpg`))
     return api.post<ApiResponse<FeedPost>>(`${w(slug)}/feed`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.data)
   },

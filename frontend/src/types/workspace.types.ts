@@ -80,10 +80,14 @@ export interface FeedMedia {
   uuid: string
   /** URL relativa assinada (expira em ~30 min); recarregar o mural gera outra. */
   url: string
+  kind?: 'image' | 'video'
 }
 
 export interface FeedPost {
   uuid: string
+  kind: 'post' | 'birthday'
+  subject: WorkspacePerson | null
+  comments_preview: FeedComment[]
   body: string
   media: FeedMedia[]
   mentions: Record<string, string>

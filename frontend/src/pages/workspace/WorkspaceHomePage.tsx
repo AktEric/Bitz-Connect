@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { CalendarDays, ClipboardList, GraduationCap, Newspaper, Plane, Target, Wallet, Clock, ChevronRight } from 'lucide-react'
+import { CalendarDays, ClipboardList, GraduationCap, Plane, Target, Wallet, Clock, ChevronRight } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { useAuth } from '@/hooks/useAuth'
 import HomeCalendarCard from './HomeCalendarCard'
@@ -8,8 +8,9 @@ import OnboardingCard from './OnboardingCard'
 import { useTimeBank, useTimeTeam, useTimesheet } from '@/hooks/useWorkspace'
 import { Avatar } from '@/components/ui/Avatar'
 import ClockCard from './ClockCard'
+import { FeedStream } from './WorkspaceFeedPage'
 import { fmtMinutes } from './timeUtils'
-import { Empty, Panel, Pill, fmtDate, timeAgo, useWs } from './ui'
+import { Panel, fmtDate, useWs } from './ui'
 
 function greeting() {
   const h = Number(new Date().toLocaleString('pt-BR', { hour: 'numeric', hour12: false, timeZone: 'America/Sao_Paulo' }))
@@ -24,7 +25,6 @@ export default function WorkspaceHomePage() {
   const c = info.counts
   const month = new Date().toISOString().slice(0, 7)
 
-  const { data: feed } = useQuery({ queryKey: ['ws', slug, 'feed', 1], queryFn: () => workspaceService.feed(slug, 1) })
   const { data: goals } = useQuery({ queryKey: ['ws', slug, 'goals', 'mine'], queryFn: () => workspaceService.goals(slug, { scope: 'mine' }) })
   const { data: sheet } = useTimesheet(slug, month)
   const { data: bank } = useTimeBank(slug)
@@ -53,9 +53,7 @@ export default function WorkspaceHomePage() {
 
       <div className="grid gap-5 xl:grid-cols-3">
         <div className="space-y-5 xl:col-span-2">
-          <ClockCard slug={slug} />
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
             {actions.map(({ to, label, Icon, tone, badge }) => (
               <Link key={to + label} to={to} className="group relative flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                 <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${tone}`}><Icon className="h-5 w-5" /></span>
@@ -65,37 +63,11 @@ export default function WorkspaceHomePage() {
             ))}
           </div>
 
-          <Panel>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-semibold text-gray-900"><Newspaper className="h-4 w-4 text-violet-500" /> Mural da empresa</h2>
-              <Link to="mural" className="text-sm font-medium text-violet-600">Ver tudo</Link>
-            </div>
-            {!feed?.items.length ? (
-              <Empty text="Nenhuma publicação ainda." />
-            ) : (
-              <ul className="divide-y divide-gray-50">
-                {feed.items.slice(0, 4).map((p) => (
-                  <li key={p.uuid} className="flex gap-3 py-3 first:pt-0 last:pb-0">
-                    <Avatar src={p.author?.avatar_url} name={p.author?.name ?? '?'} size="sm" />
-                    <div className="min-w-0">
-                      <p className="text-sm">
-                        <span className="font-semibold text-gray-900">{p.author?.name}</span>{' '}
-                        <span className="text-xs text-gray-400">{timeAgo(p.created_at)}</span>{' '}
-                        {p.pinned && <Pill tone="amber">Fixado</Pill>}
-                      </p>
-                      <p className="line-clamp-2 text-sm text-gray-600">
-                        {p.body ? p.body.replace(/@\[([^\]\n]{1,80})\]\([0-9a-fA-F-]{36}\)/g, '@$1') : 'Publicou fotos'}
-                        {p.media?.length > 0 && <span className="ml-1 text-xs text-violet-600">· {p.media.length} {p.media.length === 1 ? 'foto' : 'fotos'}</span>}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
+          <FeedStream compact />
         </div>
 
         <div className="space-y-5">
+          <ClockCard slug={slug} compact />
           <OnboardingCard slug={slug} enabled={info.me.is_admin} />
           {lead && (
             <Panel className="border-violet-100 bg-violet-50/40">

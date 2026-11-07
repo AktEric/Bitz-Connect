@@ -100,6 +100,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
     {
         return [
             'uuid' => $m->uuid,
+            'kind' => $m->kind ?? 'image',
             // URL relativa assinada (30 min): a foto não é pública nem listável; o mural gera um link novo a cada carga.
             'url'  => URL::temporarySignedRoute('workspace.media', now()->addMinutes(30), ['uuid' => $m->uuid], absolute: false),
         ];
@@ -119,6 +120,9 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'uuid'           => $p->uuid,
             'body'           => $p->body,
             'pinned'         => $p->pinned,
+            'kind'           => $p->kind ?? 'post',
+            'subject'        => $p->subject_id ? $this->access->person($p->subject) : null,
+            'comments_preview' => $p->getAttribute('preview') ?? [],
             'created_at'     => $p->created_at?->toISOString(),
             'author'         => $this->access->person($p->author),
             'department'     => $p->department?->name,
@@ -129,7 +133,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'likes_count'    => array_sum($counts),
             'comments_count' => (int) ($p->comments_count ?? 0),
             'liked_by_me'    => $mine !== null,
-            'can_delete'     => $isAdmin || $p->author_id === $meId,
+            'can_delete'     => $isAdmin || ($p->author_id === $meId && ($p->kind ?? 'post') === 'post'),
             'requires_ack'   => (bool) $p->requires_ack,
             'acked_at'       => $p->getAttribute('ack_mine_at'),
             'ack_count'      => $p->requires_ack && ($isAdmin || $p->author_id === $meId) ? (int) $p->getAttribute('ack_count') : null,
@@ -159,6 +163,25 @@ class WorkspaceFeedController extends WorkspaceBaseController
         }
     }
 
+    /** Anexa a cada publicação os 2 últimos comentários, para aparecerem direto no mural. */
+    private function attachPreviews(\Illuminate\Support\Collection $posts, Hotel $hotel): void
+    {
+        $ids = $posts->where('comments_count', '>', 0)->pluck('id');
+        if ($ids->isEmpty()) {
+            return;
+        }
+        $rows = WorkspacePostComment::with('author')->whereIn('workspace_post_id', $ids)->orderByDesc('created_at')->orderByDesc('id')->get()
+            ->groupBy('workspace_post_id')->map(fn ($g) => $g->take(2)->reverse()->values());
+        $names = $this->mentionNames($hotel, $rows->flatten(1)->flatMap(fn ($c) => $this->mentionUuids($c->body))->unique()->values()->all());
+        foreach ($posts as $p) {
+            $p->setAttribute('preview', ($rows[$p->id] ?? collect())->map(fn ($c) => [
+                'uuid' => $c->uuid, 'body' => $c->body, 'created_at' => $c->created_at?->toISOString(),
+                'author' => $this->access->person($c->author),
+                'mentions' => array_intersect_key($names, array_flip($this->mentionUuids($c->body))),
+            ])->all());
+        }
+    }
+
     /** @return array{0: array<int, array<string,int>>, 1: array<int,string>} reações por publicação e a minha */
     private function reactionData(\Illuminate\Support\Collection $postIds, int $meId): array
     {
@@ -182,7 +205,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
 
         $meId = $request->user()->id;
         $q = $this->visible(WorkspacePost::query(), $hotel, $m)
-            ->with(['author', 'department', 'media'])
+            ->with(['author', 'department', 'media', 'subject'])
             ->withCount(['comments'])
             ->orderByDesc('pinned')->orderByDesc('created_at')->orderByDesc('id');
 
@@ -192,6 +215,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
 
         [$byPost, $mine] = $this->reactionData($posts->pluck('id'), $meId);
         $this->attachAcks($posts, $meId);
+        $this->attachPreviews($posts, $hotel);
         $names = $this->mentionNames($hotel, $posts->flatMap(fn ($p) => $this->mentionUuids($p->body))->unique()->values()->all());
 
         return $this->success('Mural carregado com sucesso.', [
@@ -216,10 +240,11 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'requires_ack'    => ['sometimes', 'boolean'],
             'photos'          => ['nullable', 'array', 'max:' . self::MAX_PHOTOS],
             'photos.*'        => ['file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            'video'           => ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/quicktime', 'max:204800'],
         ]);
         $body = trim((string) ($data['body'] ?? ''));
-        if ($body === '' && ! $request->hasFile('photos')) {
-            return $this->error('Escreva algo ou anexe uma foto.', ['body' => ['Escreva algo ou anexe uma foto.']], 422);
+        if ($body === '' && ! $request->hasFile('photos') && ! $request->hasFile('video')) {
+            return $this->error('Escreva algo ou anexe uma foto ou vídeo.', ['body' => ['Escreva algo ou anexe uma foto ou vídeo.']], 422);
         }
 
         $deptId = null;
@@ -250,9 +275,18 @@ class WorkspaceFeedController extends WorkspaceBaseController
                 ]);
             }
 
+            if ($request->hasFile('video')) {
+                $video = $request->file('video');
+                WorkspacePostMedia::create([
+                    'uuid' => (string) Str::uuid(), 'workspace_post_id' => $post->id, 'kind' => 'video',
+                    'path' => $video->store("workspace-posts/{$hotel->id}", 'local'),
+                    'mime' => $video->getMimeType() ?: 'video/mp4', 'size' => $video->getSize(), 'position' => 99,
+                ]);
+            }
+
             return $post;
         });
-        $post->load(['author', 'department', 'media']);
+        $post->load(['author', 'department', 'media', 'subject']);
 
         // Comunicado com confirmação de leitura: avisa todo o público (fila de notificações; poucos registros por comunicado).
         if ($post->requires_ack) {
@@ -348,11 +382,18 @@ class WorkspaceFeedController extends WorkspaceBaseController
     }
 
     /** GET /workspace-media/{uuid}?expires=&signature= — entrega a foto (rota pública, mas só com URL assinada e válida). */
-    public function media(string $uuid): StreamedResponse|JsonResponse
+    public function media(string $uuid): StreamedResponse|JsonResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $media = WorkspacePostMedia::with('post')->where('uuid', $uuid)->first();
         if (! $media || ! $media->post || ! Storage::disk('local')->exists($media->path)) {
             return $this->notFound('Foto não encontrada.');
+        }
+
+        if (($media->kind ?? 'image') === 'video') {
+            // BinaryFileResponse entende Range: o vídeo toca e permite avançar sem baixar tudo.
+            return response()->file(Storage::disk('local')->path($media->path), [
+                'Content-Type' => $media->mime, 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, max-age=1500',
+            ]);
         }
 
         return Storage::disk('local')->response($media->path, null, [

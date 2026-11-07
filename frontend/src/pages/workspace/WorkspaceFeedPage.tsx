@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BadgeCheck, ImagePlus, MessageCircle, Pin, Trash2, X } from 'lucide-react'
+import { BadgeCheck, Cake, ImagePlus, MessageCircle, Pin, Trash2, Video, X } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
-import type { FeedPost } from '@/types/workspace.types'
+import type { FeedComment, FeedPost } from '@/types/workspace.types'
 import { Empty, Modal, PageHeader, Panel, Pill, Spinner, btnGhost, btnPrimary, errMsg, fmtDate, timeAgo, useWs } from './ui'
 import { MentionField, MentionText, applyMentions, type Mention } from './MentionField'
 import PhotoGrid from './PhotoGrid'
@@ -12,12 +12,13 @@ import { resizeImage } from './imageUtils'
 
 const MAX_PHOTOS = 6
 
-function Comments({ slug, post }: { slug: string; post: FeedPost }) {
+function Comments({ slug, post, expanded, onExpand }: { slug: string; post: FeedPost; expanded: boolean; onExpand: () => void }) {
   const qc = useQueryClient()
   const [text, setText] = useState('')
   const [mentions, setMentions] = useState<Mention[]>([])
   const key = ['ws', slug, 'comments', post.uuid]
-  const { data, isLoading } = useQuery({ queryKey: key, queryFn: () => workspaceService.comments(slug, post.uuid) })
+  const { data: full, isLoading } = useQuery({ queryKey: key, queryFn: () => workspaceService.comments(slug, post.uuid), enabled: expanded })
+  const data = expanded ? full : post.comments_preview
   const add = useMutation({
     mutationFn: () => workspaceService.addComment(slug, post.uuid, applyMentions(text.trim(), mentions)),
     onSuccess: () => { setText(''); setMentions([]); qc.invalidateQueries({ queryKey: key }); qc.invalidateQueries({ queryKey: ['ws', slug, 'feed'] }) },
@@ -26,9 +27,12 @@ function Comments({ slug, post }: { slug: string; post: FeedPost }) {
 
   return (
     <div className="mt-3 border-t border-gray-100 pt-3">
-      {isLoading ? <p className="text-xs text-gray-400">Carregando…</p> : (
+      {!expanded && post.comments_count > post.comments_preview.length && (
+        <button type="button" onClick={onExpand} className="mb-2 text-xs font-medium text-gray-500 hover:text-gray-700">Ver todos os {post.comments_count} comentários</button>
+      )}
+      {expanded && isLoading ? <p className="text-xs text-gray-400">Carregando…</p> : (
         <ul className="mb-3 space-y-2">
-          {data?.map((c) => (
+          {data?.map((c: FeedComment) => (
             <li key={c.uuid} className="flex gap-2">
               <Avatar src={c.author?.avatar_url} name={c.author?.name ?? '?'} size="xs" />
               <div className="rounded-xl bg-gray-50 px-3 py-1.5 text-sm">
@@ -89,9 +93,17 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
   const del = useMutation({ mutationFn: () => workspaceService.deletePost(slug, post.uuid), onSuccess: refresh })
 
   return (
-    <Panel>
+    <Panel className={post.kind === 'birthday' ? 'border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50' : undefined}>
+      {post.kind === 'birthday' && post.subject && (
+        <div className="mb-3 flex flex-col items-center gap-2 rounded-2xl bg-white/70 py-5 text-center">
+          <Cake className="h-5 w-5 text-pink-500" />
+          <Avatar src={post.subject.avatar_url} name={post.subject.name ?? '?'} size="xl" />
+          <p className="text-lg font-semibold text-gray-900">Feliz aniversário, {post.subject.name?.split(' ')[0]}!</p>
+          <p className="text-xs text-gray-500">{[post.subject.job_title, post.department].filter(Boolean).join(' · ')}</p>
+        </div>
+      )}
       <div className="flex items-start gap-3">
-        <Avatar src={post.author?.avatar_url} name={post.author?.name ?? '?'} size="md" />
+        {post.kind !== 'birthday' && <Avatar src={post.author?.avatar_url} name={post.author?.name ?? '?'} size="md" />}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2">
             <span className="font-semibold text-gray-900">{post.author?.name ?? 'Ex-colaborador'}</span>
@@ -101,7 +113,10 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
             {post.department && <Pill tone="blue">{post.department}</Pill>}
           </div>
           {post.body && <MentionText text={post.body} names={post.mentions} className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-700" />}
-          <PhotoGrid media={post.media ?? []} />
+          <PhotoGrid media={(post.media ?? []).filter((m) => m.kind !== 'video')} />
+          {(post.media ?? []).filter((m) => m.kind === 'video').map((m) => (
+            <video key={m.uuid} src={m.url} controls preload="metadata" playsInline className="mt-3 max-h-[28rem] w-full rounded-2xl bg-black" />
+          ))}
           {post.requires_ack && (
             <div className={`mt-3 flex flex-wrap items-center gap-3 rounded-xl px-3 py-2 text-sm ${post.acked_at || post.ack_total !== null ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-900'}`}>
               <BadgeCheck className="h-4 w-4 flex-shrink-0" />
@@ -123,9 +138,7 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
           {panel && <AckPanelModal slug={slug} post={post} onClose={() => setPanel(false)} />}
           <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-500">
             <ReactionBar slug={slug} post={post} />
-            <button type="button" onClick={() => setOpen((o) => !o)} className="flex items-center gap-1 hover:text-gray-700">
-              <MessageCircle className="h-4 w-4" /> {post.comments_count}
-            </button>
+            <span className="flex items-center gap-1"><MessageCircle className="h-4 w-4" /> {post.comments_count}</span>
             {isAdmin && (
               <button type="button" onClick={() => pin.mutate()} className="flex items-center gap-1 hover:text-gray-700"><Pin className="h-4 w-4" /> {post.pinned ? 'Desafixar' : 'Fixar'}</button>
             )}
@@ -133,7 +146,7 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
               <button type="button" onClick={() => { if (confirm('Remover esta publicação e suas fotos?')) del.mutate() }} className="ml-auto flex items-center gap-1 text-gray-400 hover:text-red-500" aria-label="Remover publicação"><Trash2 className="h-4 w-4" /></button>
             )}
           </div>
-          {open && <Comments slug={slug} post={post} />}
+          <Comments slug={slug} post={post} expanded={open} onExpand={() => setOpen(true)} />
         </div>
       </div>
     </Panel>
@@ -142,7 +155,7 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
 
 type Draft = { id: number; blob: Blob; preview: string }
 
-export default function WorkspaceFeedPage() {
+export function FeedStream({ compact = false }: { compact?: boolean }) {
   const { slug, info } = useWs()
   const qc = useQueryClient()
   const [body, setBody] = useState('')
@@ -151,6 +164,8 @@ export default function WorkspaceFeedPage() {
   const [pinned, setPinned] = useState(false)
   const [requiresAck, setRequiresAck] = useState(false)
   const [photos, setPhotos] = useState<Draft[]>([])
+  const [video, setVideo] = useState<File | null>(null)
+  const videoRef = useRef<HTMLInputElement>(null)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -173,12 +188,12 @@ export default function WorkspaceFeedPage() {
 
   const reset = () => {
     photos.forEach((p) => URL.revokeObjectURL(p.preview))
-    setBody(''); setMentions([]); setPinned(false); setRequiresAck(false); setDept(''); setPhotos([]); setError('')
+    setBody(''); setMentions([]); setPinned(false); setRequiresAck(false); setDept(''); setPhotos([]); setVideo(null); setError('')
   }
 
   const publish = useMutation({
     mutationFn: () => workspaceService.createPost(slug, {
-      body: applyMentions(body.trim(), mentions), pinned, requires_ack: requiresAck, department_uuid: dept || null, photos: photos.map((p) => p.blob),
+      body: applyMentions(body.trim(), mentions), pinned, requires_ack: requiresAck, department_uuid: dept || null, photos: photos.map((p) => p.blob), video,
     }),
     onSuccess: () => { reset(); qc.invalidateQueries({ queryKey: ['ws', slug, 'feed'] }) },
     onError: (e) => setError(errMsg(e)),
@@ -213,11 +228,11 @@ export default function WorkspaceFeedPage() {
   })
 
   const posts = feed.data?.pages.flatMap((p) => p.items) ?? []
-  const canPublish = (body.trim() || photos.length > 0) && !publish.isPending && !processing
+  const canPublish = (body.trim() || photos.length > 0 || video) && !publish.isPending && !processing
 
   return (
     <div>
-      <PageHeader title="Mural" subtitle="Novidades, fotos e comunicados da empresa." />
+      {!compact && <PageHeader title="Mural" subtitle="Novidades, fotos e comunicados da empresa." />}
 
       {info.me.can_post && (
         <Panel className="mb-4">
@@ -247,6 +262,16 @@ export default function WorkspaceFeedPage() {
             <button type="button" className={btnGhost} disabled={photos.length >= MAX_PHOTOS || processing} onClick={() => fileRef.current?.click()}>
               <ImagePlus className="h-4 w-4" /> {processing ? 'Preparando…' : `Fotos${photos.length ? ` (${photos.length}/${MAX_PHOTOS})` : ''}`}
             </button>
+            <input ref={videoRef} type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f && f.size > 200 * 1024 * 1024) setError('O vídeo pode ter no máximo 200 MB.')
+              else if (f) { setError(''); setVideo(f) }
+              if (videoRef.current) videoRef.current.value = ''
+            }} />
+            <button type="button" className={btnGhost} onClick={() => videoRef.current?.click()}><Video className="h-4 w-4" /> {video ? 'Trocar vídeo' : 'Vídeo'}</button>
+            {video && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-xs text-violet-700">{video.name.slice(0, 24)} <button type="button" aria-label="Remover vídeo" onClick={() => setVideo(null)}><X className="h-3 w-3" /></button></span>
+            )}
             <select className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900" value={dept} onChange={(e) => setDept(e.target.value)} aria-label="Público">
               <option value="">Toda a empresa</option>
               {departments?.map((d) => <option key={d.uuid} value={d.uuid}>{d.name}</option>)}
@@ -273,4 +298,8 @@ export default function WorkspaceFeedPage() {
       )}
     </div>
   )
+}
+
+export default function WorkspaceFeedPage() {
+  return <FeedStream />
 }
