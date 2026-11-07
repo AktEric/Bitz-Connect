@@ -128,7 +128,7 @@ export default function WorkspaceLayout() {
           <button
             type="button"
             onClick={() => setChatOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 xl:hidden"
             aria-label="Abrir mensagens"
           >
             <MessageSquare className="h-[18px] w-[18px]" /> <span className="hidden sm:inline">Mensagens</span>
@@ -166,6 +166,11 @@ export default function WorkspaceLayout() {
         <main className="min-w-0 flex-1">
           <Outlet context={{ slug, info }} />
         </main>
+        <aside className="hidden w-[340px] flex-shrink-0 xl:block" aria-label="Chat">
+          <div className="sticky top-20 h-[calc(100vh-6.5rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <ChatSidebar docked />
+          </div>
+        </aside>
       </div>
 
       {/* Navegação inferior (mobile) */}
@@ -204,7 +209,7 @@ export default function WorkspaceLayout() {
         </div>
       )}
 
-      <ChatSidebar open={chatOpen} onClose={() => setChatOpen(false)} requestedGroup={null} />
+      <ChatSidebar open={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   )
 }

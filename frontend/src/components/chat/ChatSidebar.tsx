@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Info, Lock, Megaphone, MessageSquare, Plus, Send, Users, X } from 'lucide-react'
-import { useConversations } from '@/hooks/useChat'
+import { useConversations, useMarkRead, useMessages, useSendMessage } from '@/hooks/useChat'
 import {
   useChatGroup,
   useChatGroups,
@@ -19,13 +19,15 @@ import GroupInfoPanel from './GroupInfoPanel'
 import type { ChatGroup } from '@/types/chatGroup.types'
 
 interface Props {
-  open: boolean
-  onClose: () => void
+  open?: boolean
+  onClose?: () => void
+  /** Coluna fixa na página (sem gaveta, sem botão de fechar). */
+  docked?: boolean
   /** Grupo a abrir ao exibir o painel (ex.: vindo de uma notificação). */
   requestedGroup?: string | null
 }
 
-type View = 'list' | 'thread' | 'info'
+type View = 'list' | 'thread' | 'info' | 'direct'
 
 function formatTime(iso: string): string {
   const d = new Date(iso)
@@ -40,14 +42,15 @@ function formatTime(iso: string): string {
  * Barra lateral de chat (painel deslizante, disponível em qualquer tela):
  * grupos da empresa e acesso às conversas diretas.
  */
-export default function ChatSidebar({ open, onClose, requestedGroup }: Props) {
+export default function ChatSidebar({ open = false, onClose = () => {}, docked = false, requestedGroup }: Props) {
   const navigate = useNavigate()
   const [tab, setTab] = useState<'groups' | 'direct'>('groups')
   const [view, setView] = useState<View>('list')
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
+  const [activeDirect, setActiveDirect] = useState<{ uuid: string; name: string; avatar_url: string | null } | null>(null)
   const [creating, setCreating] = useState(false)
 
-  const { data: groups = [], isLoading } = useChatGroups(open)
+  const { data: groups = [], isLoading } = useChatGroups(open || docked)
   const { data: conversations = [] } = useConversations()
   const { data: hotelsData } = useMyHotels()
   const isCompanyAdmin = (hotelsData?.data?.length ?? 0) > 0
@@ -69,10 +72,15 @@ export default function ChatSidebar({ open, onClose, requestedGroup }: Props) {
     <>
       <aside
         aria-label="Chat da empresa"
-        aria-hidden={!open}
+        aria-hidden={!docked && !open}
         className={cn(
-          'fixed inset-y-0 right-0 z-[55] flex w-full flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 sm:w-[400px]',
-          open ? 'translate-x-0' : 'pointer-events-none translate-x-full',
+          'flex flex-col bg-white',
+          docked
+            ? 'h-full w-full'
+            : cn(
+                'fixed inset-y-0 right-0 z-[55] w-full border-l border-gray-200 shadow-2xl transition-transform duration-300 sm:w-[400px]',
+                open ? 'translate-x-0' : 'pointer-events-none translate-x-full',
+              ),
         )}
       >
         {view === 'list' && (
@@ -88,9 +96,11 @@ export default function ChatSidebar({ open, onClose, requestedGroup }: Props) {
                     <Plus className="h-3.5 w-3.5" />Novo grupo
                   </button>
                 )}
-                <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100" aria-label="Fechar chat">
-                  <X className="h-5 w-5" />
-                </button>
+                {!docked && (
+                  <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100" aria-label="Fechar chat">
+                    <X className="h-5 w-5" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -120,7 +130,15 @@ export default function ChatSidebar({ open, onClose, requestedGroup }: Props) {
                   {conversations.map((c) => (
                     <li key={`${c.party.type}:${c.party.uuid}`}>
                       <button
-                        onClick={() => { onClose(); navigate('/chat') }}
+                        onClick={() => {
+                          if (c.party.type === 'user') {
+                            setActiveDirect({ uuid: c.party.uuid, name: c.party.name, avatar_url: c.party.avatar_url ?? null })
+                            setView('direct')
+                          } else {
+                            onClose()
+                            navigate('/chat')
+                          }
+                        }}
                         className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50"
                       >
                         <Avatar src={c.party.avatar_url} name={c.party.name} size="md" />
@@ -140,8 +158,12 @@ export default function ChatSidebar({ open, onClose, requestedGroup }: Props) {
           </>
         )}
 
+        {view === 'direct' && activeDirect && (
+          <DirectThread person={activeDirect} onBack={() => { setView('list'); setTab('direct') }} onClose={docked ? undefined : onClose} />
+        )}
+
         {view === 'thread' && activeGroup && (
-          <GroupThread groupUuid={activeGroup} onBack={() => setView('list')} onInfo={() => setView('info')} onClose={onClose} />
+          <GroupThread groupUuid={activeGroup} onBack={() => setView('list')} onInfo={() => setView('info')} onClose={docked ? undefined : onClose} />
         )}
 
         {view === 'info' && activeGroup && (
@@ -149,7 +171,7 @@ export default function ChatSidebar({ open, onClose, requestedGroup }: Props) {
         )}
       </aside>
 
-      {open && (
+      {open && !docked && (
         <button aria-label="Fechar chat" onClick={onClose} className="fixed inset-0 z-[54] hidden bg-black/10 sm:block" tabIndex={-1} />
       )}
 
@@ -243,7 +265,7 @@ function GroupThread({
   groupUuid: string
   onBack: () => void
   onInfo: () => void
-  onClose: () => void
+  onClose?: () => void
 }) {
   const { toast } = useToast()
   const { data: group } = useChatGroup(groupUuid)
@@ -295,9 +317,11 @@ function GroupThread({
         <button onClick={onInfo} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100" aria-label="Informações do grupo">
           <Info className="h-5 w-5" />
         </button>
-        <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100" aria-label="Fechar chat">
-          <X className="h-5 w-5" />
-        </button>
+        {onClose && (
+          <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100" aria-label="Fechar chat">
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       {group?.only_admins_can_post && (
@@ -381,6 +405,111 @@ function GroupThread({
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────
+// Conversa direta com uma pessoa
+// ──────────────────────────────────────────────────────────
+
+function DirectThread({
+  person, onBack, onClose,
+}: {
+  person: { uuid: string; name: string; avatar_url: string | null }
+  onBack: () => void
+  onClose?: () => void
+}) {
+  const { toast } = useToast()
+  const { data: rawMessages = [] } = useMessages(person.uuid)
+  const send = useSendMessage(person.uuid)
+  const markRead = useMarkRead(person.uuid)
+  const [text, setText] = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  const messages = useMemo(() => [...rawMessages].reverse(), [rawMessages])
+  const latestUuid = rawMessages[0]?.uuid
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: 'end' })
+  }, [messages.length, person.uuid])
+
+  useEffect(() => {
+    if (latestUuid && !latestUuid.startsWith('optimistic-')) markRead.mutate()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestUuid, person.uuid])
+
+  async function handleSend() {
+    const content = text.trim()
+    if (!content || send.isPending) return
+    setText('')
+    try {
+      await send.mutateAsync(content)
+    } catch (err) {
+      setText(content)
+      toast(extractApiError(err), 'error')
+    }
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-3">
+        <button onClick={onBack} className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100" aria-label="Voltar">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <Avatar src={person.avatar_url} name={person.name} size="sm" />
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">{person.name}</span>
+        {onClose && (
+          <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100" aria-label="Fechar chat">
+            <X className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
+      <div className="flex-1 space-y-2 overflow-y-auto bg-gray-50/60 px-4 py-4">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center gap-2 py-12 text-center text-gray-400">
+            <MessageSquare className="h-8 w-8" />
+            <p className="text-sm">Diga olá para {person.name.split(' ')[0]}.</p>
+          </div>
+        )}
+        {messages.map((m) => (
+          <div key={m.uuid} className={cn('flex', m.is_mine && 'justify-end')}>
+            <div className={cn('max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm', m.is_mine ? 'bg-violet-600 text-white' : 'bg-white text-gray-800')}>
+              <p className="whitespace-pre-wrap break-words">{m.content}</p>
+              <p className={cn('mt-1 text-right text-[10px]', m.is_mine ? 'text-violet-200' : 'text-gray-400')}>{formatTime(m.created_at)}</p>
+            </div>
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="border-t border-gray-100 bg-white p-3">
+        <div className="flex items-end gap-2">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleSend()
+              }
+            }}
+            rows={1}
+            maxLength={5000}
+            placeholder="Escreva uma mensagem"
+            className="max-h-28 min-h-[40px] flex-1 resize-none rounded-xl border-gray-200 text-sm"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!text.trim() || send.isPending}
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white transition-colors hover:bg-violet-700 disabled:opacity-40"
+            aria-label="Enviar"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
