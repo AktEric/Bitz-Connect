@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\Api\V1\WorkspaceSearchController;
 use App\Http\Controllers\Api\V1\AccountSecurityController;
 use App\Http\Controllers\Api\V1\AreaController;
+use App\Http\Controllers\Api\V1\PersonController;
+use App\Http\Controllers\Api\V1\WorkspaceJobController;
 use App\Http\Controllers\Api\V1\PrivacyController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\OnboardingController;
@@ -77,6 +79,7 @@ Route::get('/hotels/{hotel}',                  [HotelController::class, 'show'])
 
 // Convite para a empresa — pré-visualização pública (por token, com rate limit)
 Route::get('/invites/{token}', [CompanyInviteController::class, 'preview'])->middleware('throttle:30,1');
+Route::get('/public/jobs/{token}', [WorkspaceJobController::class, 'publicShow'])->middleware('throttle:60,1');
 
 // Assinatura do calendário (Google/Outlook/Apple): pública, protegida por segredo pessoal e rate limit
 Route::get('/calendar-feed/{token}.ics', [CalendarController::class, 'feed'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1');
@@ -228,6 +231,23 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('workspaces/{hotel:slug}')->middleware('workspace.2fa')->group(function () {
 
+        // Vagas
+        Route::get('/jobs',                              [WorkspaceJobController::class, 'index']);
+        Route::post('/jobs',                             [WorkspaceJobController::class, 'store']);
+        Route::patch('/jobs/{uuid}',                     [WorkspaceJobController::class, 'update']);
+        Route::delete('/jobs/{uuid}',                    [WorkspaceJobController::class, 'destroy']);
+        Route::post('/jobs/{uuid}/apply',                [WorkspaceJobController::class, 'apply']);
+        Route::delete('/jobs/{uuid}/apply',              [WorkspaceJobController::class, 'withdraw']);
+        Route::get('/jobs/{uuid}/applications',          [WorkspaceJobController::class, 'applications']);
+        Route::patch('/jobs/{uuid}/applications/{app}',  [WorkspaceJobController::class, 'setApplicationStatus']);
+
+        // Perfil e ficha
+        Route::get('/me/profile',                [PersonController::class, 'mine']);
+        Route::put('/me/profile',                [PersonController::class, 'updateMine']);
+        Route::get('/people/{uuid}/profile',     [PersonController::class, 'show']);
+        Route::get('/people/{uuid}/record',      [PersonController::class, 'record']);
+        Route::put('/people/{uuid}/record',      [PersonController::class, 'updateRecord']);
+
         // LGPD
         Route::get('/me/privacy',          [PrivacyController::class, 'status']);
         Route::post('/me/privacy/consent', [PrivacyController::class, 'consent']);
@@ -297,6 +317,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Mural
         Route::get('/feed',                          [WorkspaceFeedController::class, 'index']);
         Route::post('/feed',                         [WorkspaceFeedController::class, 'store']);
+        Route::post('/kudos',                        [WorkspaceFeedController::class, 'kudos']);
+        Route::post('/polls',                        [WorkspaceFeedController::class, 'createPoll']);
+        Route::post('/feed/{post}/vote',             [WorkspaceFeedController::class, 'vote']);
         Route::delete('/feed/{post}',                [WorkspaceFeedController::class, 'destroy']);
         Route::post('/feed/{post}/pin',              [WorkspaceFeedController::class, 'pin']);
         Route::post('/feed/{post}/ack',              [WorkspaceFeedController::class, 'ack']);
@@ -311,6 +334,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/requests',                     [WorkspaceRequestController::class, 'store']);
         Route::get('/requests/{uuid}',               [WorkspaceRequestController::class, 'show']);
         Route::post('/requests/{uuid}/decision',     [WorkspaceRequestController::class, 'decide']);
+        Route::post('/requests/{uuid}/assign',       [WorkspaceRequestController::class, 'assign']);
+        Route::post('/requests/{uuid}/resolve',      [WorkspaceRequestController::class, 'resolve']);
         Route::post('/requests/{uuid}/cancel',       [WorkspaceRequestController::class, 'cancel']);
         Route::post('/requests/{uuid}/comments',     [WorkspaceRequestController::class, 'comment']);
 

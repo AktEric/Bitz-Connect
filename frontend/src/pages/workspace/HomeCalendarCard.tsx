@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { CalendarDays, ChevronRight } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
 import { Panel } from './ui'
@@ -33,12 +33,6 @@ export default function HomeCalendarCard({ slug }: { slug: string }) {
         <h2 className="flex items-center gap-2 font-semibold text-gray-900"><CalendarDays className="h-4 w-4 text-violet-500" /> Calendário</h2>
         <Link to="calendario" className="text-sm font-medium text-violet-600">Abrir</Link>
       </div>
-
-      {data && !data.me.birth_date && (
-        <Link to="calendario" className="mb-3 flex items-center gap-2 rounded-xl bg-pink-50 px-3 py-2 text-xs text-pink-800">
-          🎂 Informe seu aniversário para a equipe te parabenizar <ChevronRight className="ml-auto h-3.5 w-3.5" />
-        </Link>
-      )}
 
       {people.length === 0 && next.length === 0 ? (
         <p className="text-sm text-gray-400">Nada marcado para os próximos dias.</p>

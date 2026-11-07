@@ -80,10 +80,16 @@ export interface FeedMedia {
   uuid: string
   /** URL relativa assinada (expira em ~30 min); recarregar o mural gera outra. */
   url: string
+  kind?: 'image' | 'video'
 }
 
 export interface FeedPost {
   uuid: string
+  kind: 'post' | 'birthday' | 'kudos' | 'poll'
+  poll?: { options: { uuid: string; label: string; votes: number }[]; total: number; my_vote: string | null; closes_on: string | null; closed: boolean } | null
+  badge?: string | null
+  subject: WorkspacePerson | null
+  comments_preview: FeedComment[]
   body: string
   media: FeedMedia[]
   mentions: Record<string, string>
@@ -112,8 +118,9 @@ export interface FeedComment {
   author: WorkspacePerson | null
 }
 
-export type RequestType = 'vacation' | 'document' | 'reimbursement' | 'schedule' | 'other'
-export type RequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled'
+export type RequestType = 'vacation' | 'document' | 'reimbursement' | 'schedule' | 'other' | 'ticket'
+export type RequestStatus = 'pending' | 'in_progress' | 'resolved' | 'approved' | 'rejected' | 'cancelled'
+export type TicketCategory = 'time' | 'payroll' | 'benefits' | 'documents' | 'other'
 
 export interface WorkspaceRequest {
   uuid: string
@@ -130,6 +137,11 @@ export interface WorkspaceRequest {
   requester: WorkspacePerson | null
   created_at: string
   is_mine: boolean
+  category?: TicketCategory | null
+  assigned_to?: WorkspacePerson | null
+  due_at?: string | null
+  first_response_at?: string | null
+  overdue?: boolean
   comments?: { uuid: number; body: string; created_at: string; author: WorkspacePerson | null }[]
 }
 
@@ -537,3 +549,32 @@ export interface OnboardingData {
   percent: number
   dismissed: boolean
 }
+
+export interface PersonProfileFields {
+  bio: string | null; favorite_book: string | null; favorite_food: string | null; favorite_movie: string | null
+  hobbies: string | null; fun_fact: string | null; hometown: string | null
+}
+export interface PersonCard {
+  person: WorkspacePerson | null
+  department: string | null
+  hired_at: string | null
+  birthday: { day: number; month: number } | null
+  profile: PersonProfileFields
+}
+export interface MyProfile extends PersonCard { birthday_visible: boolean; has_birth_date: boolean; email: string }
+export interface PersonRecord {
+  birth_date: string | null; hired_at: string | null
+  phone: string | null; zip: string | null; street: string | null; number: string | null; complement: string | null; district: string | null; city: string | null; state: string | null
+  emergency_name: string | null; emergency_relation: string | null; emergency_phone: string | null
+  bank: string | null; agency: string | null; account: string | null; account_type: string | null; pix: string | null
+  can_edit: boolean
+}
+
+export interface JobItem {
+  uuid: string; title: string; description: string; requirements: string | null; location: string | null
+  contract_type: string | null; contact: string | null; department: string | null; department_uuid: string | null
+  status: 'open' | 'closed'; public: boolean; closes_on: string | null; created_at: string
+  author: WorkspacePerson | null; applied: boolean; can_edit: boolean; applications_count: number | null; share_url: string | null
+}
+export interface JobApplicationItem { uuid: string; status: 'new' | 'reviewing' | 'rejected' | 'hired'; message: string | null; created_at: string; person: WorkspacePerson | null; department: string | null }
+export interface PublicJob { title: string; description: string; requirements: string | null; location: string | null; contract_type: string | null; contact: string | null; department: string | null; company: string | null; closes_on: string | null }

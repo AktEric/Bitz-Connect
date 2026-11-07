@@ -15,7 +15,9 @@ use Illuminate\Validation\Rule;
 /** Solicitações internas ao RH/gestor: férias, documentos, reembolso, escala. */
 class WorkspaceRequestController extends WorkspaceBaseController
 {
-    private const TYPES = ['vacation', 'document', 'reimbursement', 'schedule', 'other'];
+    private const TYPES = ['vacation', 'document', 'reimbursement', 'schedule', 'other', 'ticket'];
+    private const CATEGORIES = ['time', 'payroll', 'benefits', 'documents', 'other'];
+    private const SLA_HOURS = 48; // prazo para o RH responder um chamado
 
     private function format(WorkspaceRequest $r, ?HotelUser $viewerMembership, int $meId, bool $withDetails = false): array
     {
@@ -34,6 +36,11 @@ class WorkspaceRequestController extends WorkspaceBaseController
             'requester'     => $this->access->person($r->requester),
             'created_at'    => $r->created_at?->toISOString(),
             'is_mine'       => $r->requester_id === $meId,
+            'category'      => $r->category,
+            'assigned_to'   => $r->relationLoaded('assignee') ? $this->access->person($r->assignee) : null,
+            'due_at'        => $r->due_at?->toISOString(),
+            'first_response_at' => $r->first_response_at?->toISOString(),
+            'overdue'       => $r->type === 'ticket' && $r->due_at && $r->due_at->isPast() && in_array($r->status, ['pending', 'in_progress'], true),
         ];
 
         if ($withDetails) {
@@ -52,7 +59,8 @@ class WorkspaceRequestController extends WorkspaceBaseController
         $q = WorkspaceRequest::where('hotel_id', $hotel->id)->where('requester_id', '!=', $request->user()->id);
 
         if (! $this->access->isAdmin($m)) {
-            $q->whereIn('requester_id', $this->access->reportIds($request->user(), $hotel) ?: [0]);
+            // chamados ao RH são confidenciais: o gestor não os vê
+            $q->where('type', '!=', 'ticket')->whereIn('requester_id', $this->access->reportIds($request->user(), $hotel) ?: [0]);
         }
 
         return $q;
@@ -67,7 +75,7 @@ class WorkspaceRequestController extends WorkspaceBaseController
 
         $filters = $request->validate([
             'scope'  => ['sometimes', Rule::in(['mine', 'review', 'all'])],
-            'status' => ['sometimes', Rule::in(['pending', 'approved', 'rejected', 'cancelled'])],
+            'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'resolved', 'approved', 'rejected', 'cancelled'])],
             'type'   => ['sometimes', Rule::in(self::TYPES)],
         ]);
         $scope = $filters['scope'] ?? 'mine';
@@ -90,7 +98,7 @@ class WorkspaceRequestController extends WorkspaceBaseController
             $q->where('type', $filters['type']);
         }
 
-        $page = $q->with(['requester', 'decider'])->orderByRaw("case when status = 'pending' then 0 else 1 end")
+        $page = $q->with(['requester', 'decider', 'assignee'])->orderByRaw("case when status in ('pending', 'in_progress') then 0 else 1 end")
             ->orderByDesc('created_at')->paginate(20);
         $meId = $request->user()->id;
 
@@ -115,20 +123,25 @@ class WorkspaceRequestController extends WorkspaceBaseController
             'starts_on'    => ['nullable', 'date', 'required_if:type,vacation'],
             'ends_on'      => ['nullable', 'date', 'after_or_equal:starts_on', 'required_if:type,vacation'],
             'amount_cents' => ['nullable', 'integer', 'min:1', 'max:100000000', 'required_if:type,reimbursement'],
+            'category'     => ['nullable', Rule::in(self::CATEGORIES), 'required_if:type,ticket'],
         ]);
+        $isTicket = $data['type'] === 'ticket';
+        if (! $isTicket) {
+            unset($data['category']);
+        }
 
         $r = WorkspaceRequest::create($data + [
             'uuid' => (string) Str::uuid(), 'hotel_id' => $hotel->id,
             'requester_id' => $request->user()->id, 'status' => 'pending',
-        ]);
-        $r->load(['requester', 'decider']);
+        ] + ($isTicket ? ['due_at' => now()->addHours(self::SLA_HOURS)] : []));
+        $r->load(['requester', 'decider', 'assignee']);
 
-        // Avisa quem vai analisar: gestor direto; sem gestor, os admins (RH).
-        $reviewers = $this->access->reviewersFor($m, $hotel);
+        // Avisa quem vai analisar: gestor direto (sem gestor, o RH); chamados vão direto para o RH.
+        $reviewers = $isTicket ? $this->access->adminUsers($hotel)->reject(fn ($u) => $u->id === $request->user()->id)->values() : $this->access->reviewersFor($m, $hotel);
         foreach ($reviewers->filter() as $reviewer) {
             $this->notifications->workspaceNotice(
                 $reviewer, $request->user(), 'workspace_request',
-                "Nova solicitação de {$request->user()->name}", $r->title, $this->link($hotel, 'solicitacoes'),
+                $isTicket ? "Novo chamado de {$request->user()->name}" : "Nova solicitação de {$request->user()->name}", $r->title, $this->link($hotel, 'solicitacoes'),
             );
         }
 
@@ -144,7 +157,51 @@ class WorkspaceRequestController extends WorkspaceBaseController
             return null;
         }
 
+        if ($r->type === 'ticket') {
+            // chamado ao RH: só quem abriu e o RH
+            return ($r->requester_id === $request->user()->id || $this->access->isAdmin($m)) ? $r : null;
+        }
+
         return $this->access->canViewPerson($request->user(), $m, $hotel, $r->requester) ? $r : null;
+    }
+
+    /** POST /requests/{uuid}/assign — o RH assume o chamado. */
+    public function assign(Request $request, Hotel $hotel, string $uuid): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $r = $m ? $this->findVisible($request, $hotel, $m, $uuid) : null;
+        if (! $r || $r->type !== 'ticket' || ! $this->access->isAdmin($m)) {
+            return $this->notFound('Chamado não encontrado.');
+        }
+        if (! in_array($r->status, ['pending', 'in_progress'], true)) {
+            return $this->error('Este chamado já foi encerrado.', [], 409);
+        }
+        $r->update(['assigned_to' => $request->user()->id, 'status' => 'in_progress', 'first_response_at' => $r->first_response_at ?? now()]);
+        AuditLog::record($request, $hotel, 'ticket.assigned', $r->requester, ['title' => $r->title]);
+        $r->load(['requester', 'decider', 'assignee']);
+        $this->notifications->workspaceNotice($r->requester, $request->user(), 'workspace_request_decision', 'Seu chamado está em atendimento', $r->title, $this->link($hotel, 'solicitacoes'));
+
+        return $this->success('Chamado assumido.', $this->format($r, $m, $request->user()->id, true));
+    }
+
+    /** POST /requests/{uuid}/resolve  { note } — encerra o chamado com justificativa obrigatória. */
+    public function resolve(Request $request, Hotel $hotel, string $uuid): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $r = $m ? $this->findVisible($request, $hotel, $m, $uuid) : null;
+        if (! $r || $r->type !== 'ticket' || ! $this->access->isAdmin($m)) {
+            return $this->notFound('Chamado não encontrado.');
+        }
+        if (! in_array($r->status, ['pending', 'in_progress'], true)) {
+            return $this->error('Este chamado já foi encerrado.', [], 409);
+        }
+        $data = $request->validate(['note' => ['required', 'string', 'min:5', 'max:1000']]);
+        $r->update(['status' => 'resolved', 'decided_by' => $request->user()->id, 'decided_at' => now(), 'decision_note' => $data['note'], 'assigned_to' => $r->assigned_to ?? $request->user()->id, 'first_response_at' => $r->first_response_at ?? now()]);
+        AuditLog::record($request, $hotel, 'ticket.resolved', $r->requester, ['title' => $r->title, 'justification' => $data['note']]);
+        $r->load(['requester', 'decider', 'assignee']);
+        $this->notifications->workspaceNotice($r->requester, $request->user(), 'workspace_request_decision', 'Chamado resolvido', $data['note'], $this->link($hotel, 'solicitacoes'));
+
+        return $this->success('Chamado resolvido.', $this->format($r, $m, $request->user()->id, true));
     }
 
     public function show(Request $request, Hotel $hotel, string $uuid): JsonResponse
@@ -163,6 +220,9 @@ class WorkspaceRequestController extends WorkspaceBaseController
         $r = $m ? $this->findVisible($request, $hotel, $m, $uuid) : null;
         if (! $r) {
             return $this->notFound('Solicitação não encontrada.');
+        }
+        if ($r->type === 'ticket') {
+            return $this->error('Chamados ao RH são assumidos e resolvidos, não aprovados.', [], 422);
         }
         if (! $this->access->canManagePerson($request->user(), $m, $hotel, $r->requester)) {
             return $this->forbidden('Você não pode analisar esta solicitação.');
@@ -221,7 +281,15 @@ class WorkspaceRequestController extends WorkspaceBaseController
         ]);
 
         // Avisa a outra ponta da conversa.
-        $other = $r->requester_id === $request->user()->id ? $r->decider ?? null : $r->requester;
+        if ($r->type === 'ticket' && $r->requester_id !== $request->user()->id && ! $r->first_response_at) {
+            $r->update(['first_response_at' => now()]);
+        }
+        if ($r->type === 'ticket' && $r->requester_id === $request->user()->id) {
+            $r->loadMissing('assignee');
+            $other = $r->assignee ?? $this->access->adminUsers($hotel)->first();
+        } else {
+            $other = $r->requester_id === $request->user()->id ? $r->decider ?? null : $r->requester;
+        }
         if ($other) {
             $this->notifications->workspaceNotice(
                 $other, $request->user(), 'workspace_request_comment',

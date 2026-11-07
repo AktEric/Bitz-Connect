@@ -10,7 +10,7 @@ class WorkspacePostMedia extends Model
 {
     protected $table = 'workspace_post_media';
 
-    protected $fillable = ['uuid', 'workspace_post_id', 'path', 'mime', 'size', 'position'];
+    protected $fillable = ['uuid', 'workspace_post_id', 'path', 'mime', 'size', 'position', 'kind'];
 
     /** Publicação (não retorna se ela foi removida). */
     public function post(): BelongsTo

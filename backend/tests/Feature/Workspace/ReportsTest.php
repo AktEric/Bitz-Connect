@@ -24,7 +24,7 @@ afterEach(fn () => Carbon::setTestNow());
 it('shows each role only the reports it may see', function () {
     $keys = function (User $u) { Sanctum::actingAs($u); return collect($this->getJson("{$this->base}/reports")->assertOk()->json('data'))->pluck('key')->all(); };
 
-    expect($keys($this->rh))->toBe(['hours', 'occurrences', 'adjustments', 'bank', 'headcount']);
+    expect($keys($this->rh))->toBe(['hours', 'occurrences', 'adjustments', 'tickets', 'bank', 'headcount']);
     expect($keys($this->manager))->toBe(['hours', 'occurrences', 'adjustments']);
     expect($keys($this->director))->toBe(['headcount']);
     expect($keys($this->other))->toBe([]);
@@ -53,4 +53,21 @@ it('keeps the director report aggregated and audits every generation', function 
     expect($r['columns'])->toBe(['Área', 'Pessoas', 'Admissões no mês'])->and(end($r['rows']))->toBe(['Total', 5, 0]);
     expect(\App\Models\AuditLog::where('action', 'report.generated')->count())->toBe(1);
     $this->getJson("{$this->base}/reports/nope")->assertNotFound();
+});
+
+it('reports ticket response times for RH only', function () {
+    Sanctum::actingAs($this->mine);
+    $uuid = $this->postJson("{$this->base}/requests", ['type' => 'ticket', 'category' => 'payroll', 'title' => 'Holerite errado'])->assertCreated()->json('data.uuid');
+    Carbon::setTestNow('2026-11-10 17:00:00'); // 2h depois (a abertura foi às 15h)
+    Sanctum::actingAs($this->rh);
+    $this->postJson("{$this->base}/requests/{$uuid}/assign")->assertOk();
+    Carbon::setTestNow('2026-11-11 15:00:00'); // 24h após a abertura
+    $this->postJson("{$this->base}/requests/{$uuid}/resolve", ['note' => 'Corrigido na folha'])->assertOk();
+
+    $r = $this->getJson("{$this->base}/reports/tickets?month=2026-11")->assertOk()->json('data');
+    expect($r['rows'][0][2])->toBe('Folha e holerite')->and($r['rows'][0][3])->toBe('Resolvido')->and($r['rows'][0][5])->toBe(2)->and($r['rows'][0][6])->toBe(24)->and($r['rows'][0][7])->toBe('Não');
+    expect(end($r['rows'])[0])->toBe('Média');
+
+    Sanctum::actingAs($this->manager);
+    $this->getJson("{$this->base}/reports/tickets")->assertForbidden();
 });

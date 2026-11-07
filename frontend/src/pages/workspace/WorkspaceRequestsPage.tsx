@@ -4,14 +4,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
-import type { RequestStatus, RequestType, WorkspaceRequest } from '@/types/workspace.types'
+import type { RequestStatus, RequestType, TicketCategory, WorkspaceRequest } from '@/types/workspace.types'
 import { Empty, Modal, PageHeader, Panel, Pill, Spinner, Tabs, btnGhost, btnPrimary, errMsg, fmtDate, fmtMoney, inputCls, labelCls, timeAgo, useWs } from './ui'
 
 const TYPE_LABEL: Record<RequestType, string> = {
-  vacation: 'Férias', document: 'Documento', reimbursement: 'Reembolso', schedule: 'Escala / horário', other: 'Outro',
+  vacation: 'Férias', document: 'Documento', reimbursement: 'Reembolso', schedule: 'Escala / horário', other: 'Outro', ticket: 'Chamado ao RH',
 }
-const STATUS: Record<RequestStatus, { label: string; tone: 'amber' | 'green' | 'red' | 'gray' }> = {
-  pending: { label: 'Pendente', tone: 'amber' }, approved: { label: 'Aprovada', tone: 'green' },
+const CATEGORY_LABEL: Record<TicketCategory, string> = { time: 'Ponto e banco de horas', payroll: 'Folha e holerite', benefits: 'Benefícios', documents: 'Documentos', other: 'Outro assunto' }
+const STATUS: Record<RequestStatus, { label: string; tone: 'amber' | 'green' | 'red' | 'gray' | 'blue' }> = {
+  pending: { label: 'Pendente', tone: 'amber' }, in_progress: { label: 'Em atendimento', tone: 'blue' }, resolved: { label: 'Resolvido', tone: 'green' }, approved: { label: 'Aprovada', tone: 'green' },
   rejected: { label: 'Recusada', tone: 'red' }, cancelled: { label: 'Cancelada', tone: 'gray' },
 }
 
@@ -23,6 +24,7 @@ function NewRequestModal({ slug, onClose }: { slug: string; onClose: () => void 
   const [startsOn, setStartsOn] = useState('')
   const [endsOn, setEndsOn] = useState('')
   const [amount, setAmount] = useState('')
+  const [category, setCategory] = useState<TicketCategory>('time')
   const [error, setError] = useState('')
 
   const create = useMutation({
@@ -30,6 +32,7 @@ function NewRequestModal({ slug, onClose }: { slug: string; onClose: () => void 
       type, title: title.trim(), description: description.trim() || null,
       starts_on: type === 'vacation' || type === 'schedule' ? startsOn || null : null,
       ends_on: type === 'vacation' || type === 'schedule' ? endsOn || null : null,
+      category: type === 'ticket' ? category : null,
       amount_cents: type === 'reimbursement' && amount ? Math.round(Number(amount.replace(',', '.')) * 100) : null,
     }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['ws', slug, 'requests'] }); qc.invalidateQueries({ queryKey: ['workspace', slug] }); onClose() },
@@ -52,6 +55,15 @@ function NewRequestModal({ slug, onClose }: { slug: string; onClose: () => void 
             <div><label className={labelCls}>Até</label><input type="date" className={inputCls} value={endsOn} onChange={(e) => setEndsOn(e.target.value)} /></div>
           </div>
         )}
+        {type === 'ticket' && (
+          <div>
+            <label className={labelCls}>Assunto do chamado</label>
+            <select className={inputCls} value={category} onChange={(e) => setCategory(e.target.value as TicketCategory)}>
+              {Object.entries(CATEGORY_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+            <p className="mt-1 text-xs text-gray-400">Vai direto para o RH (seu gestor não vê) e tem prazo de resposta de 48h.</p>
+          </div>
+        )}
         {type === 'reimbursement' && (
           <div><label className={labelCls}>Valor (R$)</label><input className={inputCls} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" /></div>
         )}
@@ -66,7 +78,7 @@ function NewRequestModal({ slug, onClose }: { slug: string; onClose: () => void 
   )
 }
 
-function RequestDetail({ slug, uuid, canDecide, onClose }: { slug: string; uuid: string; canDecide: boolean; onClose: () => void }) {
+function RequestDetail({ slug, uuid, canDecide, canResolve, onClose }: { slug: string; uuid: string; canDecide: boolean; canResolve: boolean; onClose: () => void }) {
   const qc = useQueryClient()
   const key = ['ws', slug, 'request', uuid]
   const { data: r, isLoading } = useQuery({ queryKey: key, queryFn: () => workspaceService.request(slug, uuid) })
@@ -76,6 +88,8 @@ function RequestDetail({ slug, uuid, canDecide, onClose }: { slug: string; uuid:
   const refresh = () => { qc.invalidateQueries({ queryKey: key }); qc.invalidateQueries({ queryKey: ['ws', slug, 'requests'] }); qc.invalidateQueries({ queryKey: ['workspace', slug] }) }
   const decide = useMutation({ mutationFn: (d: 'approved' | 'rejected') => workspaceService.decideRequest(slug, uuid, d, note.trim() || undefined), onSuccess: () => { setError(''); refresh() }, onError: (e) => setError(errMsg(e)) })
   const cancel = useMutation({ mutationFn: () => workspaceService.cancelRequest(slug, uuid), onSuccess: refresh })
+  const assign = useMutation({ mutationFn: () => workspaceService.assignRequest(slug, uuid), onSuccess: () => { setError(''); refresh() }, onError: (e) => setError(errMsg(e)) })
+  const resolve = useMutation({ mutationFn: () => workspaceService.resolveRequest(slug, uuid, note.trim()), onSuccess: () => { setError(''); setNote(''); refresh() }, onError: (e) => setError(errMsg(e)) })
   const send = useMutation({ mutationFn: () => workspaceService.commentRequest(slug, uuid, comment.trim()), onSuccess: () => { setComment(''); refresh() } })
 
   return (
@@ -88,11 +102,18 @@ function RequestDetail({ slug, uuid, canDecide, onClose }: { slug: string; uuid:
             <span className="ml-auto"><Pill tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Pill></span>
           </div>
           <p className="text-base font-medium text-gray-900">{r.title}</p>
+          {r.type === 'ticket' && (
+            <p className="flex flex-wrap items-center gap-2 text-gray-600">
+              {r.category && <Pill tone="violet">{CATEGORY_LABEL[r.category]}</Pill>}
+              {r.assigned_to && <span>Atendido por <b>{r.assigned_to.name}</b></span>}
+              {r.due_at && (r.status === 'pending' || r.status === 'in_progress') && <Pill tone={r.overdue ? 'red' : 'gray'}>{r.overdue ? 'Prazo vencido' : `Prazo: ${fmtDate(r.due_at)}`}</Pill>}
+            </p>
+          )}
           {r.starts_on && <p className="text-gray-600">Período: {fmtDate(r.starts_on)} a {fmtDate(r.ends_on)}</p>}
           {r.amount_cents != null && <p className="text-gray-600">Valor: {fmtMoney(r.amount_cents)}</p>}
           {r.description && <p className="whitespace-pre-wrap text-gray-600">{r.description}</p>}
-          {r.status !== 'pending' && r.status !== 'cancelled' && (
-            <p className="rounded-xl bg-gray-50 p-3 text-gray-600">Analisada por {r.decided_by?.name ?? '—'} em {fmtDate(r.decided_at)}{r.decision_note ? ` — ${r.decision_note}` : ''}</p>
+          {r.status !== 'pending' && r.status !== 'in_progress' && r.status !== 'cancelled' && (
+            <p className="rounded-xl bg-gray-50 p-3 text-gray-600">{r.type === 'ticket' ? 'Resolvido' : 'Analisada'} por {r.decided_by?.name ?? '—'} em {fmtDate(r.decided_at)}{r.decision_note ? ` — ${r.decision_note}` : ''}</p>
           )}
 
           <div className="border-t border-gray-100 pt-3">
@@ -107,7 +128,16 @@ function RequestDetail({ slug, uuid, canDecide, onClose }: { slug: string; uuid:
             </div>
           </div>
 
-          {r.status === 'pending' && canDecide && !r.is_mine && (
+          {r.type === 'ticket' && (r.status === 'pending' || r.status === 'in_progress') && canResolve && !r.is_mine && (
+            <div className="border-t border-gray-100 pt-3">
+              {r.status === 'pending' && <button className={`${btnGhost} mb-3 w-full`} disabled={assign.isPending} onClick={() => assign.mutate()}>Assumir este chamado</button>}
+              <label className={labelCls}>Justificativa da resolução (obrigatória)</label>
+              <textarea className={inputCls} rows={2} value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} placeholder="O que foi feito para resolver" />
+              {error && <p className="mt-2 text-red-600" role="alert">{error}</p>}
+              <button className={`${btnPrimary} mt-3 w-full`} disabled={resolve.isPending || note.trim().length < 5} onClick={() => resolve.mutate()}>Marcar como resolvido</button>
+            </div>
+          )}
+          {r.type !== 'ticket' && r.status === 'pending' && canDecide && !r.is_mine && (
             <div className="border-t border-gray-100 pt-3">
               <label className={labelCls}>Observação (obrigatória ao recusar)</label>
               <input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} />
@@ -145,7 +175,7 @@ export default function WorkspaceRequestsPage() {
     <div>
       <PageHeader
         title="Solicitações"
-        subtitle="Férias, documentos, reembolsos e pedidos ao RH ou ao seu gestor."
+        subtitle="Férias, documentos, reembolsos, chamados ao RH e pedidos ao seu gestor."
         actions={<button className={btnPrimary} onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> Nova</button>}
       />
       {options.length > 1 && <Tabs value={scope} onChange={setScope} options={options} />}
@@ -160,6 +190,7 @@ export default function WorkspaceRequestsPage() {
                   <p className="truncate font-medium text-gray-900">{r.title}</p>
                   <p className="truncate text-xs text-gray-400">{r.requester?.name} · {TYPE_LABEL[r.type]} · {timeAgo(r.created_at)}</p>
                 </div>
+                {r.overdue && <Pill tone="red">Prazo vencido</Pill>}
                 <Pill tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Pill>
               </button>
             </Panel>
@@ -168,7 +199,7 @@ export default function WorkspaceRequestsPage() {
       )}
 
       {creating && <NewRequestModal slug={slug} onClose={() => setCreating(false)} />}
-      {openId && <RequestDetail slug={slug} uuid={openId} canDecide={canReview} onClose={() => setOpenId(null)} />}
+      {openId && <RequestDetail slug={slug} uuid={openId} canDecide={canReview} canResolve={info.me.is_admin} onClose={() => setOpenId(null)} />}
     </div>
   )
 }

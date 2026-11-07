@@ -14,3 +14,4 @@ Schedule::command('queue:prune-batches --hours=48')->daily();
 Schedule::command('queue:prune-failed --hours=168')->daily();
 Schedule::command('ponto:purge-sensitive')->dailyAt('03:30');
 Schedule::command('ponto:alert-overtime')->everyFifteenMinutes();
+Schedule::command('workspace:birthday-posts')->dailyAt('07:00');

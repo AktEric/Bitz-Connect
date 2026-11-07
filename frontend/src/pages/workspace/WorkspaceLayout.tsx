@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Moon, Sun, Globe, CheckCircle2, type LucideIcon,
+  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, Network, Maximize2, Minimize2, PanelRightClose, PanelRightOpen, Moon, Sun, Globe, CheckCircle2, type LucideIcon,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import { useAuth } from '@/hooks/useAuth'
@@ -27,6 +27,8 @@ export default function WorkspaceLayout() {
   const [chatOpen, setChatOpen] = useState(false)
   const [drawer, setDrawer] = useState(false)
   const [menu, setMenu] = useState(false)
+  const [dock, setDock] = useState<'min' | 'open' | 'wide'>(() => { try { const v = localStorage.getItem('chatDock'); return v === 'min' || v === 'wide' ? v : 'open' } catch { return 'open' } })
+  const changeDock = (d: 'min' | 'open' | 'wide') => { setDock(d); try { localStorage.setItem('chatDock', d) } catch { /* ignora */ } }
   const [themeNow, setThemeNow] = useState<Theme>(getTheme)
   const [searchOpen, setSearchOpen] = useState(false)
 
@@ -73,7 +75,7 @@ export default function WorkspaceLayout() {
         { to: 'desenvolvimento', label: 'Desenvolvimento', Icon: GraduationCap },
       ],
     },
-    { title: 'Empresa', items: [{ to: 'equipe', label: 'Pessoas', Icon: Users }] },
+    { title: 'Empresa', items: [{ to: 'equipe', label: 'Pessoas', Icon: Users }, { to: 'organograma', label: 'Organograma', Icon: Network }, { to: 'vagas', label: 'Vagas', Icon: Briefcase }] },
   ]
   if (info.me.can_see_dashboard) {
     groups.splice(groups.length - 1, 0, { title: 'Diretoria', items: [{ to: 'painel', label: 'Painel da diretoria', Icon: LayoutDashboard }] })
@@ -174,6 +176,7 @@ export default function WorkspaceLayout() {
                   <p className="truncate text-sm font-semibold text-gray-900">{user?.name}</p>
                   <p className="truncate text-xs text-gray-400">{roleLabel}</p>
                 </div>
+                <Link to={`/w/${slug}/perfil`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Users className="h-4 w-4" /> Meu perfil</Link>
                 <Link to={`/w/${slug}/seguranca`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ShieldCheck className="h-4 w-4" /> Segurança</Link>
                 <Link to="/w" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ArrowLeftRight className="h-4 w-4" /> Trocar de empresa</Link>
                 <Link to="/feed" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Globe className="h-4 w-4" /> Rede profissional</Link>
@@ -207,9 +210,24 @@ export default function WorkspaceLayout() {
           )}
           {info.me.needs_two_factor && !location.pathname.endsWith('/seguranca') ? null : <Outlet context={{ slug, info }} />}
         </main>
-        <aside className="hidden w-[340px] flex-shrink-0 xl:block" aria-label="Chat">
+        <aside className={cn('hidden flex-shrink-0 transition-[width] duration-200 xl:block', dock === 'min' ? 'w-12' : dock === 'wide' ? 'w-[460px]' : 'w-[340px]')} aria-label="Chat">
           <div className="sticky top-20 h-[calc(100vh-6.5rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <ChatSidebar docked />
+            {dock === 'min' ? (
+              <button type="button" onClick={() => changeDock('open')} aria-label="Abrir o chat" title="Abrir o chat"
+                className="flex h-full w-full flex-col items-center gap-3 pt-3 text-gray-500 hover:bg-gray-50">
+                <MessageSquare className="h-5 w-5" />
+                <span className="text-xs font-medium [writing-mode:vertical-rl]">Mensagens</span>
+                <PanelRightOpen className="mt-auto mb-3 h-4 w-4" />
+              </button>
+            ) : (
+              <div className="flex h-full flex-col">
+                <div className="flex flex-shrink-0 justify-end gap-1 border-b border-gray-100 px-2 py-1">
+                  <button type="button" onClick={() => changeDock(dock === 'wide' ? 'open' : 'wide')} aria-label={dock === 'wide' ? 'Reduzir o chat' : 'Ampliar o chat'} title={dock === 'wide' ? 'Reduzir' : 'Ampliar'} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">{dock === 'wide' ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}</button>
+                  <button type="button" onClick={() => changeDock('min')} aria-label="Minimizar o chat" title="Minimizar" className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"><PanelRightClose className="h-4 w-4" /></button>
+                </div>
+                <div className="min-h-0 flex-1"><ChatSidebar docked /></div>
+              </div>
+            )}
           </div>
         </aside>
       </div>

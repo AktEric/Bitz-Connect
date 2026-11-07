@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Link2, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
@@ -195,7 +195,7 @@ export default function WorkspaceTeamPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {filtered.map((m) => (
                 <Panel key={m.uuid} className="flex items-start gap-3 !p-3">
-                  <Avatar src={m.avatar_url} name={m.name} size="lg" />
+                  <Link to={`/w/${slug}/pessoas/${m.uuid}`} aria-label={`Ver perfil de ${m.name}`}><Avatar src={m.avatar_url} name={m.name} size="lg" /></Link>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-gray-900">{m.name} {m.role === 'admin' && <Pill tone="violet">RH/Gestão</Pill>}</p>
                     <p className="truncate text-sm text-gray-600">{m.job_title ?? 'Cargo não informado'}</p>

@@ -23,6 +23,7 @@ class ReportController extends WorkspaceBaseController
         'hours'       => ['title' => 'Horas do mês', 'description' => 'Dias trabalhados, faltas, horas esperadas, trabalhadas, saldo e horas extras por pessoa.', 'scope' => 'team'],
         'occurrences' => ['title' => 'Ocorrências de ponto', 'description' => 'Marcações fora da norma, fora do local/rede autorizados e em aparelho novo.', 'scope' => 'team'],
         'adjustments' => ['title' => 'Ajustes e justificativas', 'description' => 'Pedidos de ajuste de ponto, quem decidiu e a justificativa registrada.', 'scope' => 'team'],
+        'tickets'     => ['title' => 'Chamados ao RH', 'description' => 'Chamados abertos no mês: assunto, atendente, tempo até o primeiro retorno e até a resolução, e prazos vencidos.', 'scope' => 'admin'],
         'bank'        => ['title' => 'Banco de horas', 'description' => 'Saldo atual de cada pessoa.', 'scope' => 'admin'],
         'headcount'   => ['title' => 'Quadro de pessoas', 'description' => 'Pessoas por área e admissões do mês (agregado).', 'scope' => 'aggregate'],
     ];
@@ -110,6 +111,7 @@ class ReportController extends WorkspaceBaseController
             'hours'       => $this->hours($request, $hotel, $first),
             'occurrences' => $this->occurrences($request, $hotel, $first, $last),
             'adjustments' => $this->adjustments($request, $hotel, $first, $last),
+            'tickets'     => $this->tickets($hotel, $first, $last),
             'bank'        => $this->bankReport($request, $hotel),
             'headcount'   => $this->headcount($hotel, $first, $last),
         };
@@ -166,6 +168,27 @@ class ReportController extends WorkspaceBaseController
                 $a->reviewer?->name ?? '—', $a->review_note ?? '—'])->all();
 
         return [['Data do ajuste', 'Pessoa', 'Tipo', 'Motivo do pedido', 'Situação', 'Decidido por', 'Justificativa'], $rows];
+    }
+
+    private function tickets(Hotel $hotel, CarbonImmutable $first, CarbonImmutable $last): array
+    {
+        $labels = ['time' => 'Ponto e banco de horas', 'payroll' => 'Folha e holerite', 'benefits' => 'Benefícios', 'documents' => 'Documentos', 'other' => 'Outro assunto'];
+        $status = ['pending' => 'Aberto', 'in_progress' => 'Em atendimento', 'resolved' => 'Resolvido', 'cancelled' => 'Cancelado'];
+        $list = \App\Models\WorkspaceRequest::with(['requester', 'assignee'])->where('hotel_id', $hotel->id)->where('type', 'ticket')
+            ->whereBetween('created_at', [$first->utc(), $last->utc()])->orderBy('created_at')->get();
+        $h = fn ($a, $b) => $a && $b ? round($a->diffInMinutes($b) / 60, 1) : null;
+
+        $rows = $list->map(fn ($t) => [
+            self::local($t->created_at), $t->requester?->name, $labels[$t->category] ?? '—', $status[$t->status] ?? $t->status, $t->assignee?->name ?? '—',
+            ($v = $h($t->created_at, $t->first_response_at)) !== null ? $v : '—',
+            ($v = $h($t->created_at, $t->decided_at)) !== null ? $v : '—',
+            $t->due_at && ((in_array($t->status, ['pending', 'in_progress'], true) && $t->due_at->isPast()) || ($t->decided_at && $t->decided_at->greaterThan($t->due_at))) ? 'Sim' : 'Não',
+        ])->all();
+
+        $avg = fn (int $col) => ($vals = array_filter(array_column($rows, $col), 'is_numeric')) ? round(array_sum($vals) / count($vals), 1) : '—';
+        $rows[] = ['Média', count($rows) . ' chamado(s)', '', '', '', $avg(5), $avg(6), count(array_filter($rows, fn ($r) => ($r[7] ?? '') === 'Sim')) . ' vencido(s)'];
+
+        return [['Abertura', 'Pessoa', 'Assunto', 'Situação', 'Atendente', '1º retorno (h)', 'Resolvido em (h)', 'Fora do prazo'], $rows];
     }
 
     private function bankReport(Request $request, Hotel $hotel): array

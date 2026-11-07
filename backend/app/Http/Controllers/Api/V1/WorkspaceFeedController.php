@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\AuditLog;
 use App\Models\Hotel;
 use App\Models\HotelUser;
 use App\Models\WorkspacePost;
 use App\Models\WorkspacePostAck;
 use App\Models\WorkspacePostComment;
 use App\Models\WorkspacePostLike;
+use App\Models\WorkspacePollOption;
+use App\Models\WorkspacePollVote;
 use App\Models\WorkspacePostMedia;
 use App\Support\ImageSanitizer;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,6 +27,8 @@ class WorkspaceFeedController extends WorkspaceBaseController
 {
     public const REACTIONS = ['like', 'love', 'celebrate', 'clap'];
     public const MAX_PHOTOS = 6;
+    public const BADGES = ['teamwork', 'innovation', 'service', 'leadership', 'dedication', 'thanks'];
+    private const KUDOS_PER_DAY = 5;
     /** Menção no texto: @[Nome](uuid). O nome exibido vem sempre do servidor. */
     private const MENTION_RE = '/@\[([^\]\n]{1,80})\]\(([0-9a-fA-F-]{36})\)/';
 
@@ -100,6 +105,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
     {
         return [
             'uuid' => $m->uuid,
+            'kind' => $m->kind ?? 'image',
             // URL relativa assinada (30 min): a foto não é pública nem listável; o mural gera um link novo a cada carga.
             'url'  => URL::temporarySignedRoute('workspace.media', now()->addMinutes(30), ['uuid' => $m->uuid], absolute: false),
         ];
@@ -119,6 +125,11 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'uuid'           => $p->uuid,
             'body'           => $p->body,
             'pinned'         => $p->pinned,
+            'kind'           => $p->kind ?? 'post',
+            'badge'          => $p->badge,
+            'poll'           => ($p->kind ?? 'post') === 'poll' ? $this->pollPayload($p) : null,
+            'subject'        => $p->subject_id ? $this->access->person($p->subject) : null,
+            'comments_preview' => $p->getAttribute('preview') ?? [],
             'created_at'     => $p->created_at?->toISOString(),
             'author'         => $this->access->person($p->author),
             'department'     => $p->department?->name,
@@ -129,7 +140,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'likes_count'    => array_sum($counts),
             'comments_count' => (int) ($p->comments_count ?? 0),
             'liked_by_me'    => $mine !== null,
-            'can_delete'     => $isAdmin || $p->author_id === $meId,
+            'can_delete'     => $isAdmin || ($p->author_id === $meId && ($p->kind ?? 'post') === 'post'),
             'requires_ack'   => (bool) $p->requires_ack,
             'acked_at'       => $p->getAttribute('ack_mine_at'),
             'ack_count'      => $p->requires_ack && ($isAdmin || $p->author_id === $meId) ? (int) $p->getAttribute('ack_count') : null,
@@ -159,6 +170,25 @@ class WorkspaceFeedController extends WorkspaceBaseController
         }
     }
 
+    /** Anexa a cada publicação os 2 últimos comentários, para aparecerem direto no mural. */
+    private function attachPreviews(\Illuminate\Support\Collection $posts, Hotel $hotel): void
+    {
+        $ids = $posts->where('comments_count', '>', 0)->pluck('id');
+        if ($ids->isEmpty()) {
+            return;
+        }
+        $rows = WorkspacePostComment::with('author')->whereIn('workspace_post_id', $ids)->orderByDesc('created_at')->orderByDesc('id')->get()
+            ->groupBy('workspace_post_id')->map(fn ($g) => $g->take(2)->reverse()->values());
+        $names = $this->mentionNames($hotel, $rows->flatten(1)->flatMap(fn ($c) => $this->mentionUuids($c->body))->unique()->values()->all());
+        foreach ($posts as $p) {
+            $p->setAttribute('preview', ($rows[$p->id] ?? collect())->map(fn ($c) => [
+                'uuid' => $c->uuid, 'body' => $c->body, 'created_at' => $c->created_at?->toISOString(),
+                'author' => $this->access->person($c->author),
+                'mentions' => array_intersect_key($names, array_flip($this->mentionUuids($c->body))),
+            ])->all());
+        }
+    }
+
     /** @return array{0: array<int, array<string,int>>, 1: array<int,string>} reações por publicação e a minha */
     private function reactionData(\Illuminate\Support\Collection $postIds, int $meId): array
     {
@@ -182,7 +212,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
 
         $meId = $request->user()->id;
         $q = $this->visible(WorkspacePost::query(), $hotel, $m)
-            ->with(['author', 'department', 'media'])
+            ->with(['author', 'department', 'media', 'subject'])
             ->withCount(['comments'])
             ->orderByDesc('pinned')->orderByDesc('created_at')->orderByDesc('id');
 
@@ -192,6 +222,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
 
         [$byPost, $mine] = $this->reactionData($posts->pluck('id'), $meId);
         $this->attachAcks($posts, $meId);
+        $this->attachPreviews($posts, $hotel);
         $names = $this->mentionNames($hotel, $posts->flatMap(fn ($p) => $this->mentionUuids($p->body))->unique()->values()->all());
 
         return $this->success('Mural carregado com sucesso.', [
@@ -200,6 +231,112 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'last_page' => $page->lastPage(),
             'can_post'  => $this->canPost($hotel, $m, $request),
         ]);
+    }
+
+    /** Enquete: opções com totais e o meu voto (quem votou em quê nunca é exposto). */
+    private function pollPayload(WorkspacePost $p): array
+    {
+        $counts = WorkspacePollVote::where('workspace_post_id', $p->id)->select('workspace_poll_option_id', DB::raw('count(*) as c'))->groupBy('workspace_poll_option_id')->pluck('c', 'workspace_poll_option_id');
+        $mine   = WorkspacePollVote::where('workspace_post_id', $p->id)->where('user_id', request()->user()->id)->value('workspace_poll_option_id');
+        $options = $p->pollOptions()->get();
+
+        return [
+            'options'   => $options->map(fn ($o) => ['uuid' => $o->uuid, 'label' => $o->label, 'votes' => (int) ($counts[$o->id] ?? 0)])->values(),
+            'total'     => (int) $counts->sum(),
+            'my_vote'   => $options->firstWhere('id', $mine)?->uuid,
+            'closes_on' => $p->poll_closes_on?->toDateString(),
+            'closed'    => $p->poll_closes_on !== null && $p->poll_closes_on->endOfDay()->isPast(),
+        ];
+    }
+
+    /** POST /workspaces/{slug}/polls  { question, options[], closes_on?, department_uuid? } — RH e gestores. */
+    public function createPoll(Request $request, Hotel $hotel): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        if (! $m || ! $this->canPost($hotel, $m, $request)) {
+            return $this->forbidden('Somente RH/gestores criam enquetes.');
+        }
+        $data = $request->validate([
+            'question'        => ['required', 'string', 'min:5', 'max:300'],
+            'options'         => ['required', 'array', 'min:2', 'max:6'],
+            'options.*'       => ['required', 'string', 'max:120', 'distinct'],
+            'closes_on'       => ['nullable', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'department_uuid' => ['nullable', 'uuid'],
+        ]);
+        $deptId = null;
+        if (! empty($data['department_uuid'])) {
+            $deptId = $hotel->departments()->where('uuid', $data['department_uuid'])->value('id');
+            if (! $deptId) {
+                return $this->error('Setor inválido.', ['department_uuid' => ['Setor não encontrado.']], 422);
+            }
+        }
+        $post = DB::transaction(function () use ($request, $hotel, $data, $deptId) {
+            $post = WorkspacePost::create([
+                'uuid' => (string) Str::uuid(), 'hotel_id' => $hotel->id, 'author_id' => $request->user()->id, 'department_id' => $deptId,
+                'kind' => 'poll', 'body' => trim($data['question']), 'pinned' => false, 'poll_closes_on' => $data['closes_on'] ?? null,
+            ]);
+            foreach (array_values($data['options']) as $i => $label) {
+                WorkspacePollOption::create(['uuid' => (string) Str::uuid(), 'workspace_post_id' => $post->id, 'label' => trim($label), 'position' => $i]);
+            }
+
+            return $post;
+        });
+        $post->load(['author', 'department', 'media', 'subject']);
+
+        return $this->created('Enquete publicada.', $this->format($post, $request->user()->id, $this->access->isAdmin($m)));
+    }
+
+    /** POST /workspaces/{slug}/feed/{post}/vote  { option_uuid } — um voto por pessoa; dá para trocar até encerrar. */
+    public function vote(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? $this->visible(WorkspacePost::query(), $hotel, $m)->where('uuid', $post)->where('kind', 'poll')->first() : null;
+        if (! $p) {
+            return $this->notFound('Enquete não encontrada.');
+        }
+        if ($p->poll_closes_on && $p->poll_closes_on->endOfDay()->isPast()) {
+            return $this->error('Esta enquete já foi encerrada.', [], 409);
+        }
+        $data = $request->validate(['option_uuid' => ['required', 'uuid']]);
+        $option = $p->pollOptions()->where('uuid', $data['option_uuid'])->first();
+        if (! $option) {
+            return $this->error('Opção inválida.', ['option_uuid' => ['Opção não encontrada.']], 422);
+        }
+        WorkspacePollVote::updateOrCreate(['workspace_post_id' => $p->id, 'user_id' => $request->user()->id], ['workspace_poll_option_id' => $option->id]);
+
+        return $this->success('Voto registrado.', $this->pollPayload($p));
+    }
+
+    /** POST /workspaces/{slug}/kudos  { to_uuid, badge, message } — qualquer pessoa reconhece um colega; vira publicação no mural. */
+    public function kudos(Request $request, Hotel $hotel): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        if (! $m) {
+            return $this->forbidden('Você não faz parte desta empresa.');
+        }
+        $data = $request->validate([
+            'to_uuid' => ['required', 'uuid'],
+            'badge'   => ['required', 'in:' . implode(',', self::BADGES)],
+            'message' => ['required', 'string', 'min:5', 'max:500'],
+        ]);
+        $to = $this->access->memberByUuid($hotel, $data['to_uuid']);
+        if (! $to || $to->user_id === $request->user()->id) {
+            return $this->error('Escolha um colega da empresa (não vale você mesmo).', ['to_uuid' => ['Colega inválido.']], 422);
+        }
+        $today = WorkspacePost::where('hotel_id', $hotel->id)->where('author_id', $request->user()->id)->where('kind', 'kudos')->where('created_at', '>=', now()->startOfDay())->count();
+        if ($today >= self::KUDOS_PER_DAY) {
+            return $this->error('Você já fez ' . self::KUDOS_PER_DAY . ' reconhecimentos hoje. Volte amanhã!', [], 429);
+        }
+
+        $post = WorkspacePost::create([
+            'uuid' => (string) Str::uuid(), 'hotel_id' => $hotel->id, 'author_id' => $request->user()->id,
+            'kind' => 'kudos', 'subject_id' => $to->user_id, 'badge' => $data['badge'], 'body' => trim($data['message']), 'pinned' => false,
+        ]);
+        $this->notifications->workspaceNotice($to->user, $request->user(), 'workspace_kudos', "{$request->user()->name} reconheceu você", Str::limit(trim($data['message']), 100), $this->link($hotel, 'mural'));
+        AuditLog::record($request, $hotel, 'kudos.given', $to->user, ['badge' => $data['badge']]);
+        $post->load(['author', 'department', 'media', 'subject']);
+
+        return $this->created('Reconhecimento publicado.', $this->format($post, $request->user()->id, $this->access->isAdmin($m)));
     }
 
     public function store(Request $request, Hotel $hotel): JsonResponse
@@ -216,10 +353,11 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'requires_ack'    => ['sometimes', 'boolean'],
             'photos'          => ['nullable', 'array', 'max:' . self::MAX_PHOTOS],
             'photos.*'        => ['file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            'video'           => ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/quicktime', 'max:204800'],
         ]);
         $body = trim((string) ($data['body'] ?? ''));
-        if ($body === '' && ! $request->hasFile('photos')) {
-            return $this->error('Escreva algo ou anexe uma foto.', ['body' => ['Escreva algo ou anexe uma foto.']], 422);
+        if ($body === '' && ! $request->hasFile('photos') && ! $request->hasFile('video')) {
+            return $this->error('Escreva algo ou anexe uma foto ou vídeo.', ['body' => ['Escreva algo ou anexe uma foto ou vídeo.']], 422);
         }
 
         $deptId = null;
@@ -250,9 +388,18 @@ class WorkspaceFeedController extends WorkspaceBaseController
                 ]);
             }
 
+            if ($request->hasFile('video')) {
+                $video = $request->file('video');
+                WorkspacePostMedia::create([
+                    'uuid' => (string) Str::uuid(), 'workspace_post_id' => $post->id, 'kind' => 'video',
+                    'path' => $video->store("workspace-posts/{$hotel->id}", 'local'),
+                    'mime' => $video->getMimeType() ?: 'video/mp4', 'size' => $video->getSize(), 'position' => 99,
+                ]);
+            }
+
             return $post;
         });
-        $post->load(['author', 'department', 'media']);
+        $post->load(['author', 'department', 'media', 'subject']);
 
         // Comunicado com confirmação de leitura: avisa todo o público (fila de notificações; poucos registros por comunicado).
         if ($post->requires_ack) {
@@ -348,11 +495,18 @@ class WorkspaceFeedController extends WorkspaceBaseController
     }
 
     /** GET /workspace-media/{uuid}?expires=&signature= — entrega a foto (rota pública, mas só com URL assinada e válida). */
-    public function media(string $uuid): StreamedResponse|JsonResponse
+    public function media(string $uuid): StreamedResponse|JsonResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $media = WorkspacePostMedia::with('post')->where('uuid', $uuid)->first();
         if (! $media || ! $media->post || ! Storage::disk('local')->exists($media->path)) {
             return $this->notFound('Foto não encontrada.');
+        }
+
+        if (($media->kind ?? 'image') === 'video') {
+            // BinaryFileResponse entende Range: o vídeo toca e permite avançar sem baixar tudo.
+            return response()->file(Storage::disk('local')->path($media->path), [
+                'Content-Type' => $media->mime, 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, max-age=1500',
+            ]);
         }
 
         return Storage::disk('local')->response($media->path, null, [

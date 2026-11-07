@@ -85,18 +85,17 @@ function NewEventModal({ slug, day, canHoliday, onClose }: { slug: string; day: 
 
 function BirthdayModal({ slug, me, onClose }: { slug: string; me: { birth_date: string | null; birthday_visible: boolean }; onClose: () => void }) {
   const qc = useQueryClient()
-  const [date, setDate] = useState(me.birth_date ?? '')
   const [visible, setVisible] = useState(me.birthday_visible)
   const [error, setError] = useState('')
   const save = useMutation({
-    mutationFn: () => workspaceService.updateMyBirthday(slug, { birth_date: date || null, birthday_visible: visible }),
+    mutationFn: () => workspaceService.updateMyBirthday(slug, { birthday_visible: visible }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['ws', slug, 'calendar'] }); onClose() },
     onError: (e) => setError(errMsg(e)),
   })
   return (
     <Modal title="Meu aniversário" onClose={onClose}>
       <div className="space-y-3">
-        <div><label className={labelCls}>Data de nascimento</label><input type="date" className={inputCls} max={ymd(new Date())} value={date} onChange={(e) => setDate(e.target.value)} /></div>
+        <p className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-600">{me.birth_date ? 'Sua data de nascimento foi cadastrada pelo RH.' : 'Sua data de nascimento ainda não foi cadastrada. Peça ao RH.'}</p>
         <label className="flex cursor-pointer items-start gap-2 text-sm text-gray-700">
           <input type="checkbox" className="mt-0.5 rounded border-gray-300 text-violet-600" checked={visible} onChange={(e) => setVisible(e.target.checked)} />
           <span>Mostrar meu aniversário para a equipe<br /><span className="text-xs text-gray-400">Só o dia e o mês aparecem; o ano de nascimento fica visível apenas para você e para o RH.</span></span>

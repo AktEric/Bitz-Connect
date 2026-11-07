@@ -6,7 +6,7 @@ import type {
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData,
+  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult, PersonCard, PersonProfileFields, MyProfile, PersonRecord, JobItem, JobApplicationItem, PublicJob,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -57,6 +57,23 @@ const workspaceService = {
   givePunchConsent: (slug: string) => post<{ punch_consent_at: string }>(`${w(slug)}/me/privacy/consent`, {}),
   exportMyData: (slug: string) => get<Record<string, unknown>>(`${w(slug)}/me/export`),
   timeReceipt: (slug: string, uuid: string) => get<TimeReceipt>(`${w(slug)}/time/entries/${uuid}/receipt`),
+  myProfile: (slug: string) => get<MyProfile>(`${w(slug)}/me/profile`),
+  saveMyProfile: (slug: string, body: Partial<PersonProfileFields> & { birthday_visible?: boolean }) => api.put<ApiResponse<MyProfile>>(`${w(slug)}/me/profile`, body).then((r) => r.data.data),
+  personCard: (slug: string, uuid: string) => get<PersonCard>(`${w(slug)}/people/${uuid}/profile`),
+  personRecord: (slug: string, uuid: string) => get<PersonRecord>(`${w(slug)}/people/${uuid}/record`),
+  savePersonRecord: (slug: string, uuid: string, body: Partial<PersonRecord>) => api.put<ApiResponse<PersonRecord>>(`${w(slug)}/people/${uuid}/record`, body).then((r) => r.data.data),
+  createPoll: (slug: string, body: { question: string; options: string[]; closes_on?: string | null; department_uuid?: string | null }) => post<FeedPost>(`${w(slug)}/polls`, body),
+  votePoll: (slug: string, uuid: string, option_uuid: string) => post<unknown>(`${w(slug)}/feed/${uuid}/vote`, { option_uuid }),
+  giveKudos: (slug: string, body: { to_uuid: string; badge: string; message: string }) => post<FeedPost>(`${w(slug)}/kudos`, body),
+  jobs: (slug: string) => get<{ items: JobItem[]; can_create: boolean }>(`${w(slug)}/jobs`),
+  createJob: (slug: string, body: Record<string, unknown>) => post<JobItem>(`${w(slug)}/jobs`, body),
+  updateJob: (slug: string, uuid: string, body: Record<string, unknown>) => patch<JobItem>(`${w(slug)}/jobs/${uuid}`, body),
+  deleteJob: (slug: string, uuid: string) => del(`${w(slug)}/jobs/${uuid}`),
+  applyJob: (slug: string, uuid: string, message?: string) => post<{ applied: boolean }>(`${w(slug)}/jobs/${uuid}/apply`, { message }),
+  withdrawJob: (slug: string, uuid: string) => del(`${w(slug)}/jobs/${uuid}/apply`),
+  jobApplications: (slug: string, uuid: string) => get<JobApplicationItem[]>(`${w(slug)}/jobs/${uuid}/applications`),
+  setJobApplication: (slug: string, uuid: string, app: string, status: JobApplicationItem['status']) => patch<unknown>(`${w(slug)}/jobs/${uuid}/applications/${app}`, { status }),
+  publicJob: (token: string) => api.get<ApiResponse<PublicJob>>(`/public/jobs/${token}`).then((r) => r.data.data),
   reports: (slug: string) => get<ReportItem[]>(`${w(slug)}/reports`),
   report: (slug: string, key: string, month: string) => get<ReportData>(`${w(slug)}/reports/${key}`, month ? { month } : undefined),
   timeIntegrity: (slug: string) => get<IntegrityResult>(`${w(slug)}/time/integrity`),
@@ -105,12 +122,13 @@ const workspaceService = {
 
   // Mural
   feed: (slug: string, page = 1) => get<Paged<FeedPost>>(`${w(slug)}/feed`, { page }),
-  createPost: (slug: string, input: { body: string; pinned?: boolean; requires_ack?: boolean; department_uuid?: string | null; photos?: Blob[] }) => {
+  createPost: (slug: string, input: { body: string; pinned?: boolean; requires_ack?: boolean; department_uuid?: string | null; photos?: Blob[]; video?: File | null }) => {
     const form = new FormData()
     form.append('body', input.body)
     if (input.pinned) form.append('pinned', '1')
     if (input.requires_ack) form.append('requires_ack', '1')
     if (input.department_uuid) form.append('department_uuid', input.department_uuid)
+    if (input.video) form.append('video', input.video)
     input.photos?.forEach((b, i) => form.append('photos[]', b, `foto-${i + 1}.jpg`))
     return api.post<ApiResponse<FeedPost>>(`${w(slug)}/feed`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.data)
   },
@@ -130,6 +148,8 @@ const workspaceService = {
   createRequest: (slug: string, body: Record<string, unknown>) => post<WorkspaceRequest>(`${w(slug)}/requests`, body),
   decideRequest: (slug: string, uuid: string, decision: 'approved' | 'rejected', note?: string) =>
     post<WorkspaceRequest>(`${w(slug)}/requests/${uuid}/decision`, { decision, note }),
+  assignRequest: (slug: string, uuid: string) => post<WorkspaceRequest>(`${w(slug)}/requests/${uuid}/assign`),
+  resolveRequest: (slug: string, uuid: string, note: string) => post<WorkspaceRequest>(`${w(slug)}/requests/${uuid}/resolve`, { note }),
   cancelRequest: (slug: string, uuid: string) => post<WorkspaceRequest>(`${w(slug)}/requests/${uuid}/cancel`),
   commentRequest: (slug: string, uuid: string, body: string) => post<unknown>(`${w(slug)}/requests/${uuid}/comments`, { body }),
 
@@ -174,7 +194,7 @@ const workspaceService = {
   createCalendarEvent: (slug: string, body: CalendarEventInput) => post<{ uuid: string }>(`${w(slug)}/calendar/events`, body),
   deleteCalendarEvent: (slug: string, uuid: string) => del(`${w(slug)}/calendar/events/${uuid}`),
   rsvpEvent: (slug: string, uuid: string, status: RsvpStatus | null) => post<unknown>(`${w(slug)}/calendar/events/${uuid}/rsvp`, { status }),
-  updateMyBirthday: (slug: string, body: { birth_date: string | null; birthday_visible: boolean }) => patch<unknown>(`${w(slug)}/calendar/me`, body),
+  updateMyBirthday: (slug: string, body: { birthday_visible: boolean }) => patch<unknown>(`${w(slug)}/calendar/me`, body),
   icsLink: (slug: string) => get<{ url: string }>(`${w(slug)}/calendar/ics-link`),
   rotateIcsLink: (slug: string) => post<{ url: string }>(`${w(slug)}/calendar/ics-link`),
 

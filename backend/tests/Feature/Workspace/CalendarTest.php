@@ -58,8 +58,10 @@ it('computes national holidays, including the ones that move with Easter', funct
 });
 
 it('shows birthdays without exposing the year and respects the privacy choice', function () {
+    Sanctum::actingAs($this->rh);
+    $this->patchJson("{$this->base}/calendar/birthdays/{$this->worker->uuid}", ['birth_date' => '1990-11-10'])->assertOk();
     Sanctum::actingAs($this->worker);
-    $this->patchJson("{$this->base}/calendar/me", ['birth_date' => '1990-11-10', 'birthday_visible' => true])->assertOk();
+    $this->patchJson("{$this->base}/calendar/me", ['birthday_visible' => true])->assertOk();
 
     Sanctum::actingAs($this->finance);
     $res = $this->getJson("{$this->base}/calendar?from=2026-11-01&to=2026-11-30")->assertOk();
@@ -87,7 +89,11 @@ it('moves 29 February birthdays to the 28th in non-leap years and validates date
     $b = calItems($this, '2026-02-01', '2026-02-28', 'birthday');
     expect($b)->toHaveCount(1)->and($b[0]['date'])->toBe('2026-02-28');
 
-    $this->patchJson("{$this->base}/calendar/me", ['birth_date' => '2999-01-01'])->assertStatus(422);
+    // a pessoa não consegue mudar a própria data (é o RH que cadastra): o campo é ignorado
+    $this->patchJson("{$this->base}/calendar/me", ['birth_date' => '2000-01-01'])->assertOk();
+    expect(calItems($this, '2026-01-01', '2026-01-31', 'birthday'))->toHaveCount(0);
+    Sanctum::actingAs($this->rh);
+    $this->patchJson("{$this->base}/calendar/birthdays/{$this->worker->uuid}", ['birth_date' => '2999-01-01'])->assertStatus(422);
     $this->getJson("{$this->base}/calendar?from=2026-01-01&to=2026-12-31")->assertStatus(422); // mais de 100 dias
 });
 
@@ -149,8 +155,10 @@ it('lets RH and managers create events with audience by area, and RSVP counts', 
 });
 
 it('serves a personal ICS subscription that can be rotated', function () {
+    Sanctum::actingAs($this->rh);
+    $this->patchJson("{$this->base}/calendar/birthdays/{$this->worker->uuid}", ['birth_date' => '1990-11-10'])->assertOk();
     Sanctum::actingAs($this->worker);
-    $this->patchJson("{$this->base}/calendar/me", ['birth_date' => '1990-11-10', 'birthday_visible' => true])->assertOk();
+    $this->patchJson("{$this->base}/calendar/me", ['birthday_visible' => true])->assertOk();
 
     $url  = $this->getJson("{$this->base}/calendar/ics-link")->assertOk()->json('data.url');
     $path = parse_url($url, PHP_URL_PATH);
