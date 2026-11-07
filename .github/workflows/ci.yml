@@ -49,7 +49,7 @@ jobs:
       - name: Extensão unaccent (busca)
         run: |
           PGPASSWORD=secret psql -h 127.0.0.1 -U hotelconnect -d hotelconnect_test -c "CREATE EXTENSION IF NOT EXISTS unaccent" || true
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: backend/vendor
           key: composer-${{ hashFiles('backend/composer.lock') }}
