@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ChatGroupController;
 use App\Http\Controllers\Api\V1\CompanyDirectoryController;
 use App\Http\Controllers\Api\V1\CompanyInviteController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
+use App\Http\Controllers\Api\V1\TimeBankController;
 use App\Http\Controllers\Api\V1\TimeClockController;
 use App\Http\Controllers\Api\V1\WorkScheduleController;
 use App\Http\Controllers\Api\V1\WorkspaceFeedController;
@@ -207,6 +208,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/time/punch',     [TimeClockController::class, 'punch']);
         Route::get('/time/timesheet',  [TimeClockController::class, 'timesheet']);
         Route::get('/time/team',       [TimeClockController::class, 'team']);
+        Route::get('/time/bank',                  [TimeBankController::class, 'show']);
+        Route::get('/time/bank/team',             [TimeBankController::class, 'team']);
+        Route::post('/time/bank/adjustments',     [TimeBankController::class, 'adjust']);
         Route::post('/time/entries',   [TimeClockController::class, 'manual']);
         Route::get('/time/adjustments',                          [TimeClockController::class, 'adjustments']);
         Route::post('/time/adjustments',                         [TimeClockController::class, 'requestAdjustment']);

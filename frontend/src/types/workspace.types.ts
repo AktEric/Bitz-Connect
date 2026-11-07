@@ -271,3 +271,28 @@ export interface SchedulesPayload {
   schedules: WorkSchedule[]
   members: { user: { uuid: string; name: string; avatar_url: string | null; job_title: string | null }; schedule_uuid: string | null }[]
 }
+
+export interface TimeBankAdjustment {
+  uuid: string
+  minutes: number
+  reason: string
+  author: { uuid: string; name: string; avatar_url: string | null } | null
+  created_at: string
+}
+
+export interface TimeBank {
+  since: string | null
+  worked_minutes: number
+  expected_minutes: number
+  entries_balance: number
+  adjustments_minutes: number
+  balance_minutes: number
+  user: { uuid: string; name: string; avatar_url: string | null } | null
+  adjustments: TimeBankAdjustment[]
+}
+
+export interface TimeBankRow {
+  person: { uuid: string; name: string; avatar_url: string | null } | null
+  since: string | null
+  balance_minutes: number
+}

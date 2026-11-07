@@ -59,3 +59,19 @@ export function useTimeTeam(slug: string, enabled: boolean) {
     refetchInterval: 60_000,
   })
 }
+
+export function useTimeBank(slug: string, user?: string) {
+  return useQuery({
+    queryKey: ['ws', slug, 'time', 'bank', user ?? 'me'],
+    queryFn: () => workspaceService.timeBank(slug, user),
+    enabled: !!slug,
+  })
+}
+
+export function useTimeBankTeam(slug: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['ws', slug, 'time', 'bank', 'team'],
+    queryFn: () => workspaceService.timeBankTeam(slug),
+    enabled: !!slug && enabled,
+  })
+}

@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
-import { useTimeTeam, useTimesheet } from '@/hooks/useWorkspace'
+import { useTimeBankTeam, useTimeTeam, useTimesheet } from '@/hooks/useWorkspace'
+import BankCard from './BankCard'
 import { Avatar } from '@/components/ui/Avatar'
 import type { TimeState, TimeType } from '@/types/workspace.types'
 import ClockCard from './ClockCard'
@@ -230,6 +231,8 @@ function ReviewAdjustments({ slug }: { slug: string }) {
 
 function TeamView({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
   const { data, isLoading } = useTimeTeam(slug, true)
+  const { data: bankRows } = useTimeBankTeam(slug, isAdmin)
+  const bankOf = (uuid: string) => bankRows?.find((b) => b.person?.uuid === uuid)?.balance_minutes
   const [selected, setSelected] = useState<string | null>(null)
   if (isLoading) return <Spinner />
   if (!data?.length) return <Empty text="Nenhuma pessoa no seu time ainda." />
@@ -249,7 +252,12 @@ function TeamView({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
                   <Avatar src={r.person?.avatar_url} name={r.person?.name ?? '?'} size="sm" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-gray-900">{r.person?.name}</span>
-                    <span className="block text-xs text-gray-400">hoje {fmtMinutes(r.worked_minutes)}</span>
+                    <span className="block text-xs text-gray-400">
+                      hoje {fmtMinutes(r.worked_minutes)}
+                      {isAdmin && bankOf(uuid) !== undefined && (
+                        <> · banco <b className={bankOf(uuid)! < 0 ? 'text-red-600' : 'text-emerald-600'}>{fmtMinutes(bankOf(uuid)!)}</b></>
+                      )}
+                    </span>
                   </span>
                   <Pill tone={pill.tone}>{pill.label}</Pill>
                 </button>
@@ -259,7 +267,7 @@ function TeamView({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
         </ul>
       </Panel>
       <div className="lg:col-span-3">
-        {selected ? <Timesheet slug={slug} userUuid={selected} canAdjust key={selected} /> : <Empty text={isAdmin ? 'Selecione uma pessoa para ver o espelho de ponto.' : 'Selecione alguém do seu time.'} />}
+        {selected ? <><BankCard slug={slug} userUuid={selected} canPost={isAdmin} key={`bank-${selected}`} /><div className="mt-5"><Timesheet slug={slug} userUuid={selected} canAdjust key={selected} /></div></> : <Empty text={isAdmin ? 'Selecione uma pessoa para ver o espelho de ponto.' : 'Selecione alguém do seu time.'} />}
       </div>
     </div>
     </div>
@@ -284,7 +292,7 @@ export default function WorkspaceTimePage() {
       )}
       {tab === 'me' ? (
         <div className="grid gap-5 lg:grid-cols-5">
-          <div className="lg:col-span-2"><ClockCard slug={slug} compact /><MyAdjustments slug={slug} /></div>
+          <div className="lg:col-span-2"><ClockCard slug={slug} compact /><BankCard slug={slug} /><MyAdjustments slug={slug} /></div>
           <div className="lg:col-span-3"><Timesheet slug={slug} /></div>
         </div>
       ) : (

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { CalendarDays, ClipboardList, GraduationCap, Newspaper, Plane, Target, Wallet, Clock, ChevronRight } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { useAuth } from '@/hooks/useAuth'
-import { useTimeTeam, useTimesheet } from '@/hooks/useWorkspace'
+import { useTimeBank, useTimeTeam, useTimesheet } from '@/hooks/useWorkspace'
 import { Avatar } from '@/components/ui/Avatar'
 import ClockCard from './ClockCard'
 import { fmtMinutes } from './timeUtils'
@@ -25,6 +25,7 @@ export default function WorkspaceHomePage() {
   const { data: feed } = useQuery({ queryKey: ['ws', slug, 'feed', 1], queryFn: () => workspaceService.feed(slug, 1) })
   const { data: goals } = useQuery({ queryKey: ['ws', slug, 'goals', 'mine'], queryFn: () => workspaceService.goals(slug, { scope: 'mine' }) })
   const { data: sheet } = useTimesheet(slug, month)
+  const { data: bank } = useTimeBank(slug)
   const { data: team } = useTimeTeam(slug, lead)
 
   const firstName = (user?.name ?? '').split(' ')[0]
@@ -114,7 +115,7 @@ export default function WorkspaceHomePage() {
                 <p className="text-xs text-gray-500">horas trabalhadas</p>
               </div>
               <div className="rounded-xl bg-gray-50 p-3">
-                <p className={`text-xl font-bold ${sheet && sheet.balance_minutes < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{sheet ? fmtMinutes(sheet.balance_minutes) : '—'}</p>
+                <p className={`text-xl font-bold ${bank && bank.balance_minutes < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{bank ? fmtMinutes(bank.balance_minutes) : '—'}</p>
                 <p className="text-xs text-gray-500">saldo do banco de horas</p>
               </div>
             </div>

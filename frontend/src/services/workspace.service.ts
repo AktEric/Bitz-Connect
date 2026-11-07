@@ -4,7 +4,7 @@ import type {
   DevelopmentItem, DevelopmentPlan, FeedComment, FeedPost, Goal, GoalSummaryRow, InvitePreview,
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
-  RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule,
+  RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -32,6 +32,9 @@ const workspaceService = {
   punch: (slug: string, type?: TimeType) => post<TimeToday>(`${w(slug)}/time/punch`, { type, source: 'web' }),
   timesheet: (slug: string, params: { month?: string; user?: string }) => get<Timesheet>(`${w(slug)}/time/timesheet`, params),
   timeTeam: (slug: string) => get<TimeTeamRow[]>(`${w(slug)}/time/team`),
+  timeBank: (slug: string, user?: string) => get<TimeBank>(`${w(slug)}/time/bank`, { user }),
+  timeBankTeam: (slug: string) => get<TimeBankRow[]>(`${w(slug)}/time/bank/team`),
+  postBankAdjustment: (slug: string, body: { user_uuid: string; minutes: number; reason: string }) => post<unknown>(`${w(slug)}/time/bank/adjustments`, body),
   manualEntry: (slug: string, body: { user_uuid: string; type: TimeType; punched_at: string; note: string }) =>
     post<unknown>(`${w(slug)}/time/entries`, body),
 
