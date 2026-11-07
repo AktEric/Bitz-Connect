@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import workspaceService from '@/services/workspace.service'
 import { Coffee, LogIn, LogOut, Play } from 'lucide-react'
 import { useTimeToday, usePunch } from '@/hooks/useWorkspace'
 import { cn } from '@/utils/cn'
@@ -6,6 +8,7 @@ import type { TimeType } from '@/types/workspace.types'
 import { ACTION_LABEL, TYPE_LABEL, fmtClock, fmtMinutes } from './timeUtils'
 import { errMsg } from './ui'
 import CameraModal from './CameraModal'
+import DeviceNameModal from './DeviceNameModal'
 
 type Geo = { lat: number; lng: number; accuracy: number }
 
@@ -37,6 +40,8 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
   const [error, setError] = useState<string | null>(null)
   const [askPhoto, setAskPhoto] = useState<TimeType | null>(null)
   const [locating, setLocating] = useState(false)
+  const [askDevice, setAskDevice] = useState<{ type: TimeType; photo: Blob | null } | null>(null)
+  const qc = useQueryClient()
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -59,8 +64,16 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
   const pct = data && data.daily_minutes > 0 ? Math.min(100, (live / data.daily_minutes) * 100) : 0
 
   const req = data?.requirements
+  const deviceMode = req?.devices ?? 'off'
+  const { data: device } = useQuery({
+    queryKey: ['ws', slug, 'time', 'device'],
+    queryFn: () => workspaceService.myDevice(slug),
+    enabled: deviceMode === 'required',
+    staleTime: 30_000,
+  })
+  const deviceBlocked = deviceMode === 'required' && (device?.status === 'pending' || device?.status === 'blocked')
 
-  const send = async (type: TimeType, photo: Blob | null) => {
+  const send = async (type: TimeType, photo: Blob | null, deviceName?: string) => {
     setError(null)
     let geo: Geo | null = null
     if (req && req.geo !== 'off') {
@@ -68,13 +81,26 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
       try { geo = await getPosition(req.geo === 'required') } catch (e) { setError((e as Error).message); setLocating(false); return }
       setLocating(false)
     }
-    punch.mutate({ type, geo, photo }, { onError: (e) => setError(errMsg(e)) })
+    punch.mutate({ type, geo, photo, deviceName }, {
+      onError: (e) => {
+        setError(errMsg(e))
+        // pendente/bloqueado/nome obrigatório: atualiza o estado do aparelho
+        if (deviceMode !== 'off') void qc.invalidateQueries({ queryKey: ['ws', slug, 'time', 'device'] })
+      },
+      onSuccess: () => { if (deviceMode !== 'off') void qc.invalidateQueries({ queryKey: ['ws', slug, 'time', 'device'] }) },
+    })
+  }
+
+  // Passo final: aparelho desconhecido (cadastro exigido) pede um nome antes de enviar a marcação.
+  const proceed = (type: TimeType, photo: Blob | null) => {
+    if (deviceMode === 'required' && (!device || device.status === 'unknown')) setAskDevice({ type, photo })
+    else void send(type, photo)
   }
 
   const doPunch = (type: TimeType) => {
     setError(null)
     if (req && req.photo !== 'off') setAskPhoto(type)
-    else void send(type, null)
+    else proceed(type, null)
   }
 
   return (
@@ -104,7 +130,7 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
           return (
             <button
               type="button"
-              disabled={punch.isPending || isLoading}
+              disabled={punch.isPending || isLoading || deviceBlocked}
               onClick={() => doPunch(primary)}
               className="inline-flex min-w-[10rem] flex-1 items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-violet-700 shadow-sm transition hover:bg-violet-50 disabled:opacity-60 sm:flex-none"
             >
@@ -118,7 +144,7 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
             <button
               key={t}
               type="button"
-              disabled={punch.isPending}
+              disabled={punch.isPending || deviceBlocked}
               onClick={() => doPunch(t)}
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white/15 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/25 disabled:opacity-60"
             >
@@ -129,12 +155,25 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
       </div>
       {locating && <p className="mt-3 text-xs text-violet-100">Obtendo sua localização…</p>}
       {error && <p className="mt-3 rounded-xl bg-red-500/20 px-3 py-2 text-xs text-white" role="alert">{error}</p>}
+      {deviceBlocked && (
+        <p className="mt-3 rounded-xl bg-amber-400/20 px-3 py-2 text-xs text-white" role="status">
+          {device?.status === 'blocked'
+            ? 'Este dispositivo foi bloqueado pelo RH. Use outro aparelho cadastrado ou fale com o RH.'
+            : `O dispositivo “${device?.name ?? 'deste aparelho'}” aguarda a aprovação do RH para marcar o ponto.`}
+        </p>
+      )}
+      {askDevice && (
+        <DeviceNameModal
+          onCancel={() => setAskDevice(null)}
+          onConfirm={(name) => { const a = askDevice; setAskDevice(null); void send(a.type, a.photo, name) }}
+        />
+      )}
       {askPhoto && (
         <CameraModal
           required={req?.photo === 'required'}
           onCancel={() => setAskPhoto(null)}
-          onSkip={() => { const t = askPhoto; setAskPhoto(null); void send(t, null) }}
-          onCapture={(blob) => { const t = askPhoto; setAskPhoto(null); void send(t, blob) }}
+          onSkip={() => { const t = askPhoto; setAskPhoto(null); proceed(t, null) }}
+          onCapture={(blob) => { const t = askPhoto; setAskPhoto(null); proceed(t, blob) }}
         />
       )}
 

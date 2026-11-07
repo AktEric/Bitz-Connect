@@ -65,6 +65,12 @@ class TimeClock
             'accuracy_m' => $e->accuracy_m,
             'has_photo'  => $e->photo_path !== null,
             'outside_fence' => (bool) $e->outside_fence,
+            'ip'            => $e->ip,
+            'device_name'   => $e->device_name,
+            'device_label'  => $e->device_label,
+            'network_name'  => $e->network_name,
+            'outside_network' => (bool) $e->outside_network,
+            'new_device'    => (bool) $e->new_device,
         ];
     }
 }

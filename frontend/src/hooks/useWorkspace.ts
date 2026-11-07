@@ -34,7 +34,7 @@ export function useTimeToday(slug: string) {
 export function usePunch(slug: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (opts: { type?: TimeType; geo?: { lat: number; lng: number; accuracy: number } | null; photo?: Blob | null }) => workspaceService.punch(slug, opts),
+    mutationFn: (opts: { type?: TimeType; geo?: { lat: number; lng: number; accuracy: number } | null; photo?: Blob | null; deviceName?: string }) => workspaceService.punch(slug, opts),
     onSuccess: (data) => {
       qc.setQueryData(['ws', slug, 'time', 'today'], data)
       qc.invalidateQueries({ queryKey: ['ws', slug, 'time', 'timesheet'] })

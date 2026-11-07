@@ -80,6 +80,17 @@ Verificação: 154 testes de backend passando, 9 de front, type-check e shellche
 | C4 ICS | **Feito e testado** | Link pessoal de assinatura (Google/Outlook/Apple), protegido por segredo, com renovação que invalida o anterior; testado por requisição, **não** testado importando num cliente real |
 | Home | **Feito e verificado** | Card com aniversariantes, tempo de casa e próximos eventos; convite para a pessoa informar o aniversário |
 
+### Dia 2 — Dispositivo, IP e rede no ponto (feito)
+
+| Item | Status | O que foi feito / como foi verificado |
+|------|--------|---------------------------------------|
+| §5.2 a — aparelho | **Feito e testado** | Toda marcação guarda IP, navegador, sistema e tipo (ex.: "Chrome 130 · Windows 10/11 · desktop"), mesmo com o recurso desligado |
+| §5.2 b — dispositivo cadastrado | **Feito, testado e verificado no navegador** | Três modos: só registrar / cadastrar automaticamente / **exigir aprovação do RH**. No modo exigido, o aparelho novo pede um nome ("Recepção — PC 01"), o RH é avisado, aprova/bloqueia/renomeia/remove na tela, e só então marca. Computador compartilhado serve a várias pessoas. A chave do aparelho fica no navegador e o servidor guarda só o hash |
+| §5.2 c — redes autorizadas | **Feito e testado** | Lista de IPs/faixas (IPv4 e IPv6) com nome ("Matriz — Wi-Fi"); sinaliza "fora da rede" ou bloqueia; botão "usar meu IP atual" |
+| Espelho | **Feito e verificado** | Ícone de detalhes em cada marcação (dispositivo, navegador, IP, rede, local) e selos "fora da rede" e "aparelho novo"; visível só para a pessoa, o gestor e o RH |
+
+**Limite honesto:** o navegador não informa o *nome do computador* (hostname). O nome exibido é o que o RH/colaborador deu ao dispositivo cadastrado. Se limparem os dados do navegador, o aparelho precisa ser recadastrado. Passkey/biometria, quiosque e agente instalado seguem como P1/P2 da §5.2.
+
 Pendente: aviso/publicação automática de parabéns (precisa de opt-in da empresa), feriados estaduais/municipais por localidade (hoje o RH cadastra como "feriado da empresa"), feriados alimentando banco de horas e fechamento (C5), cobertura/conflito de férias (C6) e edição de evento pela interface (a API já permite).
 
 Pendente do M1/S5: antivírus (ClamAV) nas fotos, miniaturas geradas no servidor (hoje só o redimensionamento no aparelho) e vídeo (M2).

@@ -3,13 +3,16 @@
 namespace App\Domain\Workspace\Services;
 
 use App\Models\Hotel;
+use Symfony\Component\HttpFoundation\IpUtils;
 
 /** Regras de localização e foto na marcação de ponto, configuráveis por empresa. */
 class PunchRules
 {
     public const MODES = ['off', 'optional', 'required'];
 
-    /** @return array{geo: string, photo: string, fence: ?array{lat: float, lng: float, radius_m: int, block: bool}} */
+    public const DEVICE_MODES = ['off', 'log', 'required'];
+
+    /** @return array{geo: string, photo: string, fence: ?array{lat: float, lng: float, radius_m: int, block: bool}, devices: string, networks: array<int, array{name: string, cidr: string}>, networks_block: bool} */
     public function settings(Hotel $hotel): array
     {
         $s = $hotel->time_settings ?? [];
@@ -23,7 +26,26 @@ class PunchRules
                 'radius_m' => (int) $s['fence']['radius_m'],
                 'block'    => (bool) ($s['fence']['block'] ?? false),
             ] : null,
+            // devices: off = só registra aparelho/navegador/IP | log = cadastra todo aparelho automaticamente | required = RH aprova antes
+            'devices'        => in_array($s['devices'] ?? null, self::DEVICE_MODES, true) ? $s['devices'] : 'off',
+            'networks'       => array_values(array_filter(array_map(
+                fn ($n) => isset($n['name'], $n['cidr']) ? ['name' => (string) $n['name'], 'cidr' => (string) $n['cidr']] : null,
+                (array) ($s['networks'] ?? []),
+            ))),
+            'networks_block' => (bool) ($s['networks_block'] ?? false),
         ];
+    }
+
+    /** Nome da rede autorizada que contém o IP, ou null se nenhuma contém. */
+    public function matchNetwork(array $networks, string $ip): ?string
+    {
+        foreach ($networks as $n) {
+            if (IpUtils::checkIp($ip, $n['cidr'])) {
+                return $n['name'];
+            }
+        }
+
+        return null;
     }
 
     /** O que o app do colaborador precisa saber (sem expor as coordenadas da cerca). */
@@ -31,7 +53,10 @@ class PunchRules
     {
         $s = $this->settings($hotel);
 
-        return ['geo' => $s['geo'], 'photo' => $s['photo'], 'fence' => $s['fence'] !== null];
+        return [
+            'geo' => $s['geo'], 'photo' => $s['photo'], 'fence' => $s['fence'] !== null,
+            'devices' => $s['devices'], 'networks' => $s['networks'] !== [],
+        ];
     }
 
     /** Distância em metros entre dois pontos (fórmula de Haversine). */

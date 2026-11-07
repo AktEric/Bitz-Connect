@@ -218,6 +218,12 @@ export interface TimeEntryItem {
   accuracy_m?: number | null
   has_photo?: boolean
   outside_fence?: boolean
+  ip?: string | null
+  device_name?: string | null
+  device_label?: string | null
+  network_name?: string | null
+  outside_network?: boolean
+  new_device?: boolean
 }
 
 export interface TimeToday {
@@ -226,7 +232,7 @@ export interface TimeToday {
   worked_minutes: number
   daily_minutes: number
   server_time: string
-  requirements?: { geo: PunchMode; photo: PunchMode; fence: boolean }
+  requirements?: { geo: PunchMode; photo: PunchMode; fence: boolean; devices?: 'off' | 'log' | 'required'; networks?: boolean }
   entries: TimeEntryItem[]
 }
 
@@ -349,6 +355,30 @@ export interface PunchSettings {
   geo: PunchMode
   photo: PunchMode
   fence: { lat: number; lng: number; radius_m: number; block: boolean } | null
+  devices?: 'off' | 'log' | 'required'
+  networks?: { name: string; cidr: string }[]
+  networks_block?: boolean
+  /** IP que o servidor enxerga nesta conexão (só na leitura, para facilitar o cadastro de redes). */
+  current_ip?: string
+}
+
+export type DeviceStatus = 'unknown' | 'pending' | 'approved' | 'blocked'
+
+export interface MyDevice {
+  mode: 'off' | 'log' | 'required'
+  status: DeviceStatus
+  name: string | null
+}
+
+export interface TimeDeviceItem {
+  uuid: string
+  name: string
+  status: 'pending' | 'approved' | 'blocked'
+  label: string | null
+  last_ip: string | null
+  last_seen_at: string | null
+  registered_by: { uuid: string; name: string; avatar_url: string | null } | null
+  users_count: number
 }
 
 export interface AreaPerson { uuid: string; name: string; avatar_url: string | null; job_title: string | null }

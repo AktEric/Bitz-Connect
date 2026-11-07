@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\CalendarController;
 use App\Http\Controllers\Api\V1\TimeBankController;
 use App\Http\Controllers\Api\V1\TimeClosingController;
+use App\Http\Controllers\Api\V1\TimeDeviceController;
 use App\Http\Controllers\Api\V1\TimeSettingsController;
 use App\Http\Controllers\Api\V1\TimeClockController;
 use App\Http\Controllers\Api\V1\WorkScheduleController;
@@ -218,6 +219,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/time/punch',     [TimeClockController::class, 'punch']);
         Route::get('/time/timesheet',  [TimeClockController::class, 'timesheet']);
         Route::get('/time/team',       [TimeClockController::class, 'team']);
+        Route::get('/time/device',                         [TimeDeviceController::class, 'mine']);
+        Route::get('/time/devices',                        [TimeDeviceController::class, 'index']);
+        Route::patch('/time/devices/{uuid}',               [TimeDeviceController::class, 'update']);
+        Route::delete('/time/devices/{uuid}',              [TimeDeviceController::class, 'destroy']);
         Route::get('/time/settings',                       [TimeSettingsController::class, 'show']);
         Route::put('/time/settings',                       [TimeSettingsController::class, 'update']);
         Route::get('/time/entries/{uuid}/photo',           [TimeClockController::class, 'photo']);

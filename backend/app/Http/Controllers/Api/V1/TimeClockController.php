@@ -10,6 +10,8 @@ use App\Models\AuditLog;
 use App\Models\Hotel;
 use App\Models\HotelUser;
 use App\Models\TimeAdjustment;
+use App\Models\TimeDevice;
+use App\Support\DeviceInfo;
 use App\Models\TimeEntry;
 use App\Models\User;
 use App\Models\WorkSchedule;
@@ -101,6 +103,12 @@ class TimeClockController extends WorkspaceBaseController
         ]);
     }
 
+    /** Recusa uma marcação por regra da empresa (rede/dispositivo): mensagem para a pessoa e `code` para o app. */
+    private function denyPunch(string $message, string $code): JsonResponse
+    {
+        return response()->json(['success' => false, 'message' => $message, 'errors' => [], 'code' => $code], 422);
+    }
+
     /** POST /workspaces/{slug}/time/punch  { type?: break_start|break_end|out|in } */
     public function punch(Request $request, Hotel $hotel): JsonResponse
     {
@@ -115,6 +123,8 @@ class TimeClockController extends WorkspaceBaseController
             'lng'      => ['nullable', 'numeric', 'between:-180,180'],
             'accuracy' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'photo'    => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:3072'],
+            'device_key'  => ['nullable', 'string', 'max:128'],
+            'device_name' => ['nullable', 'string', 'max:80'],
         ]);
 
         $user    = $request->user();
@@ -149,6 +159,64 @@ class TimeClockController extends WorkspaceBaseController
             }
         }
 
+        // Rede autorizada (pelo IP que o servidor enxerga)
+        $ip          = (string) $request->ip();
+        $networkName = null;
+        $outsideNet  = false;
+        if ($rules['networks']) {
+            $networkName = $this->rules->matchNetwork($rules['networks'], $ip);
+            $outsideNet  = $networkName === null;
+            if ($outsideNet && $rules['networks_block']) {
+                return $this->denyPunch('Você está fora das redes autorizadas da empresa. Conecte-se à rede do local para marcar o ponto.', 'network_outside');
+            }
+        }
+
+        // Aparelho: navegador/sistema sempre; dispositivo cadastrado conforme a política da empresa
+        $ua        = DeviceInfo::parse($request->userAgent());
+        $device    = null;
+        $newDevice = false;
+        if ($rules['devices'] !== 'off') {
+            $key = (string) ($request->header('X-Device-Key') ?: ($data['device_key'] ?? ''));
+            if (! preg_match('/^[A-Za-z0-9_-]{16,128}$/', $key)) {
+                if ($rules['devices'] === 'required') {
+                    return $this->denyPunch('Não foi possível identificar este aparelho. Atualize a página e tente de novo.', 'device_key_missing');
+                }
+            } else {
+                $device = TimeDevice::where('hotel_id', $hotel->id)->where('key_hash', hash('sha256', $key))->first();
+                if (! $device) {
+                    $name = trim((string) ($data['device_name'] ?? ''));
+                    if ($rules['devices'] === 'required' && $name === '') {
+                        return $this->denyPunch('Dê um nome a este dispositivo (ex.: Recepção — PC 01).', 'device_name_required');
+                    }
+                    $pending = $rules['devices'] === 'required';
+                    $device  = TimeDevice::create([
+                        'uuid' => (string) Str::uuid(), 'hotel_id' => $hotel->id, 'key_hash' => hash('sha256', $key),
+                        'name' => mb_substr($name !== '' ? $name : $ua['label'], 0, 80), 'status' => $pending ? 'pending' : 'approved',
+                        'label' => $ua['label'], 'last_ip' => $ip, 'registered_by' => $user->id,
+                        'approved_at' => $pending ? null : now(), 'last_seen_at' => now(),
+                    ]);
+                    $newDevice = true;
+                    if ($pending) {
+                        foreach ($this->access->adminUsers($hotel)->reject(fn ($u) => $u->id === $user->id) as $admin) {
+                            $this->notifications->workspaceNotice(
+                                $admin, $user, 'workspace_device_pending', 'Novo dispositivo aguardando aprovação',
+                                "{$device->name} — cadastrado por {$user->name}", $this->link($hotel, 'configuracoes'),
+                            );
+                        }
+
+                        return $this->denyPunch('Dispositivo cadastrado. Aguarde a aprovação do RH para marcar o ponto por ele.', 'device_pending');
+                    }
+                }
+                if ($device->status === 'blocked') {
+                    return $this->denyPunch('Este dispositivo foi bloqueado pelo RH e não pode marcar ponto.', 'device_blocked');
+                }
+                if ($device->status === 'pending' && $rules['devices'] === 'required') {
+                    return $this->denyPunch('Este dispositivo ainda aguarda a aprovação do RH.', 'device_pending');
+                }
+                $device->forceFill(['last_seen_at' => now(), 'last_ip' => $ip, 'label' => $ua['label']])->save();
+            }
+        }
+
         $photoPath = $request->hasFile('photo') && $rules['photo'] !== 'off'
             ? \App\Support\ImageSanitizer::store($request->file('photo'), "punch-photos/{$hotel->id}", 'local')
             : null;
@@ -166,6 +234,13 @@ class TimeClockController extends WorkspaceBaseController
             'accuracy_m' => $rules['geo'] === 'off' || ! isset($data['accuracy']) ? null : (int) round($data['accuracy']),
             'photo_path' => $photoPath,
             'outside_fence' => $outside,
+            'device_id'     => $device?->id,
+            'device_name'   => $device?->name,
+            'device_label'  => $ua['label'],
+            'user_agent'    => mb_substr((string) $request->userAgent(), 0, 255),
+            'network_name'  => $networkName,
+            'outside_network' => $outsideNet,
+            'new_device'    => $newDevice,
         ]);
 
         return $this->created('Ponto registrado.', $this->todayPayload($hotel, $user));

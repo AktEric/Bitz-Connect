@@ -1,11 +1,12 @@
 import api from './api'
+import { getDeviceKey } from '@/pages/workspace/deviceKey'
 import type { ApiResponse } from '@/types/api.types'
 import type {
   DevelopmentItem, DevelopmentPlan, FeedComment, FeedPost, Goal, GoalSummaryRow, InvitePreview,
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, CalendarEventInput, RsvpStatus,
+  CalendarPayload, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -30,14 +31,22 @@ const workspaceService = {
 
   // Ponto
   timeToday: (slug: string) => get<TimeToday>(`${w(slug)}/time/today`),
-  punch: (slug: string, opts: { type?: TimeType; geo?: { lat: number; lng: number; accuracy: number } | null; photo?: Blob | null } = {}) => {
-    const base = { type: opts.type, source: 'web', lat: opts.geo?.lat, lng: opts.geo?.lng, accuracy: opts.geo?.accuracy }
-    if (!opts.photo) return post<TimeToday>(`${w(slug)}/time/punch`, base)
+  punch: (slug: string, opts: { type?: TimeType; geo?: { lat: number; lng: number; accuracy: number } | null; photo?: Blob | null; deviceName?: string } = {}) => {
+    const base = { type: opts.type, source: 'web', lat: opts.geo?.lat, lng: opts.geo?.lng, accuracy: opts.geo?.accuracy, device_name: opts.deviceName }
+    // A chave do aparelho vai em cabeçalho; o servidor só a usa se a empresa ligou o cadastro de dispositivos.
+    const headers: Record<string, string> = { 'X-Device-Key': getDeviceKey() }
+    if (!opts.photo) {
+      return api.post<ApiResponse<TimeToday>>(`${w(slug)}/time/punch`, base, { headers }).then((r) => r.data.data)
+    }
     const form = new FormData()
     for (const [k, v] of Object.entries(base)) if (v !== undefined && v !== null) form.append(k, String(v))
     form.append('photo', opts.photo, 'ponto.jpg')
-    return api.post<ApiResponse<TimeToday>>(`${w(slug)}/time/punch`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.data)
+    return api.post<ApiResponse<TimeToday>>(`${w(slug)}/time/punch`, form, { headers: { ...headers, 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.data)
   },
+  myDevice: (slug: string) => api.get<ApiResponse<MyDevice>>(`${w(slug)}/time/device`, { headers: { 'X-Device-Key': getDeviceKey() } }).then((r) => r.data.data),
+  timeDevices: (slug: string) => get<TimeDeviceItem[]>(`${w(slug)}/time/devices`),
+  updateTimeDevice: (slug: string, uuid: string, body: { name?: string; status?: TimeDeviceItem['status'] }) => patch<unknown>(`${w(slug)}/time/devices/${uuid}`, body),
+  deleteTimeDevice: (slug: string, uuid: string) => del(`${w(slug)}/time/devices/${uuid}`),
   timeSettings: (slug: string) => get<PunchSettings>(`${w(slug)}/time/settings`),
   saveTimeSettings: (slug: string, body: PunchSettings) => api.put<ApiResponse<PunchSettings>>(`${w(slug)}/time/settings`, body).then((r) => r.data.data),
   async entryPhotoUrl(slug: string, uuid: string): Promise<string> {

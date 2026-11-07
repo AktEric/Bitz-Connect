@@ -21,7 +21,7 @@ return [
     'allowed_methods'          => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     'allowed_origins'          => $origins,
     'allowed_origins_patterns' => [],
-    'allowed_headers'          => ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'X-XSRF-TOKEN'],
+    'allowed_headers'          => ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'X-XSRF-TOKEN', 'X-Device-Key'],
     'exposed_headers'          => [],
     'max_age'                  => 600,
     'supports_credentials'     => false,
