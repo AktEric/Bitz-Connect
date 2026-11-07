@@ -216,6 +216,14 @@ class WorkspaceFeedController extends WorkspaceBaseController
             ->withCount(['comments'])
             ->orderByDesc('pinned')->orderByDesc('created_at')->orderByDesc('id');
 
+        // Grupos por área: ?group=company (só avisos da empresa toda) ou ?group=<uuid do setor>.
+        $group = (string) $request->query('group', '');
+        if ($group === 'company') {
+            $q->whereNull('department_id');
+        } elseif ($group !== '') {
+            $q->where('department_id', $hotel->departments()->where('uuid', $group)->value('id') ?? 0);
+        }
+
         $page = $q->paginate(15);
         $isAdmin = $this->access->isAdmin($m);
         $posts = $page->getCollection();
@@ -230,6 +238,10 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'page'      => $page->currentPage(),
             'last_page' => $page->lastPage(),
             'can_post'  => $this->canPost($hotel, $m, $request),
+            // Grupos que a pessoa enxerga: RH/dono veem todos os setores; os demais, só o próprio.
+            'groups'    => $hotel->departments()
+                ->when(! $isAdmin, fn ($d) => $d->where('id', $m->department_id ?? 0))
+                ->orderBy('name')->get(['uuid', 'name'])->map(fn ($d) => ['uuid' => $d->uuid, 'name' => $d->name])->values(),
         ]);
     }
 

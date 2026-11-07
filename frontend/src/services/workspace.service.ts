@@ -121,7 +121,7 @@ const workspaceService = {
   acceptInvite: (token: string) => post<{ hotel: { slug: string; name: string } }>(`/invites/${token}/accept`),
 
   // Mural
-  feed: (slug: string, page = 1) => get<Paged<FeedPost>>(`${w(slug)}/feed`, { page }),
+  feed: (slug: string, page = 1, group = '') => get<Paged<FeedPost> & { groups: { uuid: string; name: string }[] }>(`${w(slug)}/feed`, group ? { page, group } : { page }),
   createPost: (slug: string, input: { body: string; pinned?: boolean; requires_ack?: boolean; department_uuid?: string | null; photos?: Blob[]; video?: File | null }) => {
     const form = new FormData()
     form.append('body', input.body)

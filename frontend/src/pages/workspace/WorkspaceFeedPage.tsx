@@ -174,6 +174,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
   const [body, setBody] = useState('')
   const [mentions, setMentions] = useState<Mention[]>([])
   const [dept, setDept] = useState('')
+  const [group, setGroup] = useState('')   // '' = tudo · 'company' = só empresa toda · uuid = grupo do setor
   const [pinned, setPinned] = useState(false)
   const [requiresAck, setRequiresAck] = useState(false)
   const [photos, setPhotos] = useState<Draft[]>([])
@@ -187,8 +188,8 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
   const nextId = useRef(1)
 
   const feed = useInfiniteQuery({
-    queryKey: ['ws', slug, 'feed'],
-    queryFn: ({ pageParam }) => workspaceService.feed(slug, pageParam),
+    queryKey: ['ws', slug, 'feed', group],
+    queryFn: ({ pageParam }) => workspaceService.feed(slug, pageParam, group),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < last.last_page ? last.page + 1 : undefined),
     // as URLs das fotos expiram em 30 min: recarrega o mural antes disso quando a aba volta ao foco
@@ -243,6 +244,9 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
   })
 
   const posts = feed.data?.pages.flatMap((p) => p.items) ?? []
+  const groups = feed.data?.pages[0]?.groups ?? []
+  const chip = (active: boolean) => `rounded-full border px-3 py-1 text-sm ${active ? 'border-violet-600 bg-violet-600 text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`
+  const pick = (g: string) => { setGroup(g); setDept(g && g !== 'company' ? g : '') }
   const canPublish = (body.trim() || photos.length > 0 || video) && !publish.isPending && !processing
 
   return (
@@ -253,6 +257,13 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
         {info.me.can_post && <button type="button" className={btnGhost} onClick={() => setPollOpen(true)}>📊 Criar enquete</button>}
         <button type="button" className={btnGhost} onClick={() => setKudos(true)}>🌟 Reconhecer um colega</button>
       </div>
+      {(groups.length > 0 || group !== '') && (
+        <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Filtrar mural por grupo">
+          <button type="button" aria-pressed={group === ''} className={chip(group === '')} onClick={() => pick('')}>Tudo</button>
+          <button type="button" aria-pressed={group === 'company'} className={chip(group === 'company')} onClick={() => pick('company')}>Empresa toda</button>
+          {groups.map((g) => <button key={g.uuid} type="button" aria-pressed={group === g.uuid} className={chip(group === g.uuid)} onClick={() => pick(g.uuid)}>{g.name}</button>)}
+        </div>
+      )}
       {kudos && <KudosModal slug={slug} onClose={() => setKudos(false)} />}
       {pollOpen && <PollModal slug={slug} onClose={() => setPollOpen(false)} />}
 

@@ -85,3 +85,42 @@ it('keeps results from regular employees and lets only RH open or close surveys'
     Sanctum::actingAs($this->staffA[0]);
     $this->postJson("{$this->base}/climate/{$uuid}/answer", ['scores' => ['nps' => 8, 'recognition' => 4, 'clarity' => 5, 'manager' => 3]])->assertNotFound();
 });
+
+it('lets RH choose the questions and validates answers against them', function () {
+    Sanctum::actingAs($this->rh);
+    $this->postJson("{$this->base}/climate", ['title' => 'Pulso rápido', 'questions' => [
+        ['label' => 'De 0 a 10, indicaria a empresa?', 'type' => 'nps'],
+        ['label' => 'Tenho as ferramentas que preciso.', 'type' => 'scale'],
+    ]])->assertCreated();
+    $item = $this->getJson("{$this->base}/climate")->json('data.items.0');
+    expect(collect($item['questions'])->pluck('key')->all())->toBe(['q1', 'q2']);
+
+    Sanctum::actingAs($this->staffA[0]);
+    $this->postJson("{$this->base}/climate/{$item['uuid']}/answer", ['scores' => ['q1' => 9]])->assertUnprocessable();       // falta q2
+    $this->postJson("{$this->base}/climate/{$item['uuid']}/answer", ['scores' => ['q1' => 9, 'q2' => 4]])->assertCreated();
+
+    Sanctum::actingAs($this->rh);
+    $this->postJson("{$this->base}/climate/{$item['uuid']}/close")->assertOk();
+    $this->postJson("{$this->base}/climate", ['title' => 'Duas de indicação', 'questions' => [
+        ['label' => 'Primeira de indicação aqui', 'type' => 'nps'], ['label' => 'Segunda de indicação aqui', 'type' => 'nps'],
+    ]])->assertUnprocessable();
+});
+
+it('compares with the previous survey by question text and lists the history', function () {
+    $first = openSurvey($this);
+    foreach ($this->staffA as $u) { respond($this, $u, $first, 6); }            // 5 respostas: 5 detratores => eNPS -100
+    Sanctum::actingAs($this->rh);
+    $this->postJson("{$this->base}/climate/{$first}/close")->assertOk();
+
+    $second = openSurvey($this);
+    foreach ($this->staffA as $u) { respond($this, $u, $second, 10); }          // 5 promotores => eNPS 100
+    Sanctum::actingAs($this->rh);
+    $r = $this->getJson("{$this->base}/climate/{$second}/results")->assertOk()->json('data');
+
+    expect($r['comparison']['enps'])->toBe(['current' => 100, 'previous' => -100, 'delta' => 200]);
+    expect(collect($r['comparison']['items'])->pluck('delta')->unique()->all())->toBe([0]);   // mesmas notas nas afirmações
+    expect(collect($r['history'])->pluck('current')->all())->toBe([false, true]);
+
+    $firstResults = $this->getJson("{$this->base}/climate/{$first}/results")->json('data');
+    expect($firstResults['comparison'])->toBeNull();
+});

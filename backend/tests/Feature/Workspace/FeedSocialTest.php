@@ -115,3 +115,25 @@ it('lets RH run an anonymous poll: one vote per person, changeable until it clos
     $this->postJson("{$this->base}/feed/{$poll['uuid']}/vote", ['option_uuid' => $a])->assertStatus(409);
     expect($this->getJson("{$this->base}/feed")->json('data.items.0.poll.closed'))->toBeTrue();
 });
+
+it('filters the mural by group and only offers each person their own groups', function () {
+    $mkDept = fn (string $n) => \App\Models\Department::create(['uuid' => (string) \Illuminate\Support\Str::uuid(), 'hotel_id' => $this->hotel->id, 'name' => $n]);
+    $rec = $mkDept('Recepção');
+    $coz = $mkDept('Cozinha');
+    HotelUser::where("user_id", $this->person->id)->update(["department_id" => $rec->id]);
+    $mk = fn (?int $dept, string $body) => WorkspacePost::create(['uuid' => (string) \Illuminate\Support\Str::uuid(), 'hotel_id' => $this->hotel->id,
+        'author_id' => $this->rh->id, 'department_id' => $dept, 'body' => $body]);
+    $mk(null, 'Aviso geral'); $mk($rec->id, 'Escala da recepção'); $mk($coz->id, 'Cardápio da cozinha');
+
+    Sanctum::actingAs($this->person);   // da Recepção
+    $all = $this->getJson("{$this->base}/feed")->assertOk()->json('data');
+    expect(collect($all['groups'])->pluck('name')->all())->toBe(['Recepção']);
+    expect(collect($all['items'])->pluck('body')->sort()->values()->all())->toBe(['Aviso geral', 'Escala da recepção']);
+    expect(collect($this->getJson("{$this->base}/feed?group=company")->json('data.items'))->pluck('body')->all())->toBe(['Aviso geral']);
+    expect(collect($this->getJson("{$this->base}/feed?group={$rec->uuid}")->json('data.items'))->pluck('body')->all())->toBe(['Escala da recepção']);
+    expect($this->getJson("{$this->base}/feed?group={$coz->uuid}")->json('data.items'))->toBe([]);   // grupo de outro setor: nada
+
+    Sanctum::actingAs($this->rh);   // RH vê todos os grupos
+    expect(collect($this->getJson("{$this->base}/feed")->json('data.groups'))->pluck('name')->all())->toBe(['Cozinha', 'Recepção']);
+    expect(collect($this->getJson("{$this->base}/feed?group={$coz->uuid}")->json('data.items'))->pluck('body')->all())->toBe(['Cardápio da cozinha']);
+});
