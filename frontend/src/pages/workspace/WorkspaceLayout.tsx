@@ -159,7 +159,7 @@ export default function WorkspaceLayout() {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-[88rem] gap-6 px-3 pb-24 pt-4 sm:px-5 lg:pb-8 lg:pt-6">
+      <div className="flex w-full gap-6 px-3 pb-24 pt-4 sm:px-5 2xl:px-8 lg:pb-8 lg:pt-6">
         <aside className="hidden w-60 flex-shrink-0 lg:block">
           <div className="sticky top-20">{renderGroups()}</div>
         </aside>
