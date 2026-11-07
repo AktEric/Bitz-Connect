@@ -85,9 +85,9 @@ it('lets a worker request an adjustment and only the manager approves it into a 
 
     Sanctum::actingAs($this->manager);
     $this->getJson("{$this->base}/adjustments?scope=review")->assertOk()->assertJsonCount(1, 'data');
-    $this->postJson("{$this->base}/adjustments/{$uuid}/decision", ['decision' => 'approved'])
+    $this->postJson("{$this->base}/adjustments/{$uuid}/decision", ['decision' => 'approved', 'note' => 'Conferido com o gestor'])
         ->assertOk()->assertJsonPath('data.status', 'approved');
-    $this->postJson("{$this->base}/adjustments/{$uuid}/decision", ['decision' => 'rejected'])->assertStatus(422);
+    $this->postJson("{$this->base}/adjustments/{$uuid}/decision", ['decision' => 'rejected', 'note' => 'Já analisado antes'])->assertStatus(422);
 
     expect(TimeEntry::where('user_id', $this->worker->id)->where('source', 'manual')->count())->toBe(1);
     // Gestor foi avisado do pedido e o colaborador da decisão.
