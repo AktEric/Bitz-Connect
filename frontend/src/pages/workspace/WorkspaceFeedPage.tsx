@@ -245,7 +245,8 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
 
   const posts = feed.data?.pages.flatMap((p) => p.items) ?? []
   const groups = feed.data?.pages[0]?.groups ?? []
-  const chip = (active: boolean) => `rounded-full border px-3 py-1 text-sm ${active ? 'border-violet-600 bg-violet-600 text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'}`
+  const chip = (active: boolean) => `whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition ${active ? 'border-violet-600 text-violet-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`
+  const tool = 'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50'
   const pick = (g: string) => { setGroup(g); setDept(g && g !== 'company' ? g : '') }
   const canPublish = (body.trim() || photos.length > 0 || video) && !publish.isPending && !processing
 
@@ -253,25 +254,19 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
     <div>
       {!compact && <PageHeader title="Mural" subtitle="Novidades, fotos e comunicados da empresa." />}
 
-      <div className="mb-3 flex justify-end gap-2">
-        {info.me.can_post && <button type="button" className={btnGhost} onClick={() => setPollOpen(true)}>📊 Criar enquete</button>}
-        <button type="button" className={btnGhost} onClick={() => setKudos(true)}>🌟 Reconhecer um colega</button>
-      </div>
-      {(groups.length > 0 || group !== '') && (
-        <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Filtrar mural por grupo">
-          <button type="button" aria-pressed={group === ''} className={chip(group === '')} onClick={() => pick('')}>Tudo</button>
-          <button type="button" aria-pressed={group === 'company'} className={chip(group === 'company')} onClick={() => pick('company')}>Empresa toda</button>
-          {groups.map((g) => <button key={g.uuid} type="button" aria-pressed={group === g.uuid} className={chip(group === g.uuid)} onClick={() => pick(g.uuid)}>{g.name}</button>)}
+      {!info.me.can_post && (
+        <div className="mb-3 flex justify-end">
+          <button type="button" className={btnGhost} onClick={() => setKudos(true)}>🌟 Reconhecer um colega</button>
         </div>
       )}
       {kudos && <KudosModal slug={slug} onClose={() => setKudos(false)} />}
-      {pollOpen && <PollModal slug={slug} onClose={() => setPollOpen(false)} />}
+      {pollOpen && <PollModal slug={slug} defaultDept={group !== 'company' ? group : ''} onClose={() => setPollOpen(false)} />}
 
       {info.me.can_post && (
         <Panel className="mb-4">
           <MentionField
             slug={slug} value={body} onChange={setBody} mentions={mentions} onMentions={setMentions}
-            rows={3} maxLength={3000} placeholder="Compartilhe uma novidade com a equipe… use @ para mencionar alguém"
+            rows={2} maxLength={3000} placeholder="Compartilhe uma novidade com a equipe… use @ para mencionar alguém"
           />
 
           {photos.length > 0 && (
@@ -290,10 +285,10 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
             </ul>
           )}
 
-          <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => void addFiles(e.target.files)} />
-            <button type="button" className={btnGhost} disabled={photos.length >= MAX_PHOTOS || processing} onClick={() => fileRef.current?.click()}>
-              <ImagePlus className="h-4 w-4" /> {processing ? 'Preparando…' : `Fotos${photos.length ? ` (${photos.length}/${MAX_PHOTOS})` : ''}`}
+            <button type="button" className={tool} disabled={photos.length >= MAX_PHOTOS || processing} onClick={() => fileRef.current?.click()}>
+              <ImagePlus className="h-4 w-4" /> {processing ? 'Preparando…' : `Foto${photos.length ? ` (${photos.length}/${MAX_PHOTOS})` : ''}`}
             </button>
             <input ref={videoRef} type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={(e) => {
               const f = e.target.files?.[0]
@@ -301,24 +296,40 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
               else if (f) { setError(''); setVideo(f) }
               if (videoRef.current) videoRef.current.value = ''
             }} />
-            <button type="button" className={btnGhost} onClick={() => videoRef.current?.click()}><Video className="h-4 w-4" /> {video ? 'Trocar vídeo' : 'Vídeo'}</button>
+            <button type="button" className={tool} onClick={() => videoRef.current?.click()}><Video className="h-4 w-4" /> {video ? 'Trocar vídeo' : 'Vídeo'}</button>
             {video && (
               <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-xs text-violet-700">{video.name.slice(0, 24)} <button type="button" aria-label="Remover vídeo" onClick={() => setVideo(null)}><X className="h-3 w-3" /></button></span>
             )}
-            <select className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900" value={dept} onChange={(e) => setDept(e.target.value)} aria-label="Público">
+            <button type="button" className={tool} onClick={() => setPollOpen(true)}>📊 Enquete</button>
+            <button type="button" className={tool} onClick={() => setKudos(true)}>🌟 Reconhecer</button>
+            <span className="mx-1 hidden h-5 w-px bg-gray-200 sm:block" aria-hidden="true" />
+            <select className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-900" value={dept} onChange={(e) => setDept(e.target.value)} aria-label="Público">
               <option value="">Toda a empresa</option>
               {departments?.map((d) => <option key={d.uuid} value={d.uuid}>{d.name}</option>)}
             </select>
-            <label className="flex items-center gap-1.5 text-sm text-gray-600"><input type="checkbox" checked={requiresAck} onChange={(e) => setRequiresAck(e.target.checked)} /> Exigir confirmação de leitura</label>
-            {info.me.is_admin && (
-              <label className="flex items-center gap-1.5 text-sm text-gray-600"><input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} /> Fixar no topo</label>
-            )}
+            <details className="relative">
+              <summary className={`${tool} list-none`}>⚙ Opções</summary>
+              <div className="absolute left-0 z-10 mt-1 w-64 space-y-2 rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
+                <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={requiresAck} onChange={(e) => setRequiresAck(e.target.checked)} /> Exigir confirmação de leitura</label>
+                {info.me.is_admin && (
+                  <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} /> Fixar no topo</label>
+                )}
+              </div>
+            </details>
             <button className={`${btnPrimary} ml-auto`} disabled={!canPublish} onClick={() => publish.mutate()}>
               {publish.isPending ? 'Publicando…' : 'Publicar'}
             </button>
           </div>
           {error && <p className="mt-2 text-sm text-red-600" role="alert">{error}</p>}
         </Panel>
+      )}
+
+      {(groups.length > 0 || group !== '') && (
+        <div className="mb-3 flex gap-1 overflow-x-auto border-b border-gray-200" role="group" aria-label="Filtrar mural por grupo">
+          <button type="button" aria-pressed={group === ''} className={chip(group === '')} onClick={() => pick('')}>Tudo</button>
+          <button type="button" aria-pressed={group === 'company'} className={chip(group === 'company')} onClick={() => pick('company')}>Empresa toda</button>
+          {groups.map((g) => <button key={g.uuid} type="button" aria-pressed={group === g.uuid} className={chip(group === g.uuid)} onClick={() => pick(g.uuid)}>{g.name}</button>)}
+        </div>
       )}
 
       {feed.isLoading ? <Spinner /> : !posts.length ? <Empty text="Ainda não há publicações." /> : (
