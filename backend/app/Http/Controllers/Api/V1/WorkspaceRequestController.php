@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\AuditLog;
 use App\Models\Hotel;
 use App\Models\HotelUser;
 use App\Models\WorkspaceRequest;
@@ -181,6 +182,7 @@ class WorkspaceRequestController extends WorkspaceBaseController
             'status' => $data['decision'], 'decided_by' => $request->user()->id,
             'decided_at' => now(), 'decision_note' => $data['note'] ?? null,
         ]);
+        AuditLog::record($request, $hotel, 'request.decided', $r->requester, ['decision' => $data['decision'], 'title' => $r->title]);
         $r->load('decider');
 
         $this->notifications->workspaceNotice(

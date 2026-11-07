@@ -8,13 +8,13 @@
 | Média | Recuperação de senha revelava se o e-mail existe (**enumeração**) | Resposta idêntica com ou sem conta |
 | Média | Tokens Sanctum **sem expiração** | Expiram em 30 dias |
 | Média | `isHotelAdminOf` aceitava admin **pendente** | Exige `status = approved` |
+| Alta | `/hotels/{hotel}/employees` e `/admins` eram públicos (lista de funcionários exposta) | Agora exigem login |
+| Alta | Sem auditoria de ações de RH | Tabela `audit_logs` (holerite criado/baixado por terceiro/removido, decisão de solicitação e de ajuste de ponto, lançamento manual, mudança de papel) e `GET /workspaces/{slug}/audit` para dono/RH |
 | Baixa | Pastas `bootstrap/cache` e `storage/framework` ausentes quebravam a API (500) | Criadas |
 
 ## Abertos (priorizados)
 | Severidade | Achado | Recomendação |
 |-----------|--------|--------------|
-| Alta | `/hotels/{hotel}/employees` e `/admins` são **públicos**: lista de funcionários exposta (LGPD) | Tornar opt-in por empresa ou exigir login; decisão de produto |
-| Alta | Sem **auditoria** de ações de RH (quem viu/baixou holerite, quem aprovou) | Tabela de auditoria (Fase 9) |
 | Média | Chat 1:1: `conversations()` carrega **todas** as mensagens em memória | Consulta agregada/paginada |
 | Média | Chat por **polling** a cada 5 s: não escala para milhares de usuários simultâneos | WebSocket (Laravel Reverb) |
 | Média | Tokens em `localStorage` (exposição a XSS) | Cookie httpOnly (Sanctum SPA) + CSP |

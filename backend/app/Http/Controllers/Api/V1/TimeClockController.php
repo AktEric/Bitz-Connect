@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Workspace\Services\TimeClock;
 use App\Domain\Workspace\Services\WorkspaceAccess;
+use App\Models\AuditLog;
 use App\Models\Hotel;
 use App\Models\HotelUser;
 use App\Models\TimeAdjustment;
@@ -232,6 +233,8 @@ class TimeClockController extends WorkspaceBaseController
             'ip'         => $request->ip(),
         ]);
 
+        AuditLog::record($request, $hotel, 'time.manual_entry', $target->user, ['type' => $entry->type]);
+
         return $this->created('Lançamento registrado.', $this->clock->format($entry));
     }
 
@@ -334,6 +337,7 @@ class TimeClockController extends WorkspaceBaseController
             'reviewed_at' => now(),
             'review_note' => $data['note'] ?? null,
         ]);
+        AuditLog::record($request, $hotel, 'time.adjustment_decided', $adjustment->user, ['decision' => $data['decision']]);
 
         $this->notifications->workspaceNotice(
             $adjustment->user, $request->user(), 'workspace_request_decision',

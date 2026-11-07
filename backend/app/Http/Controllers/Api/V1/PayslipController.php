@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\AuditLog;
 use App\Models\Hotel;
 use App\Models\Payslip;
 use Illuminate\Http\JsonResponse;
@@ -102,6 +103,7 @@ class PayslipController extends WorkspaceBaseController
             'size'            => $file->getSize(),
         ]);
         $p->load('owner');
+        AuditLog::record($request, $hotel, 'payslip.created', $target->user, ['kind' => $p->kind, 'title' => $p->title]);
 
         $this->notifications->workspaceNotice(
             $target->user, $request->user(), 'workspace_payslip',
@@ -133,6 +135,10 @@ class PayslipController extends WorkspaceBaseController
             $p->forceFill(['first_viewed_at' => now()])->save();
         }
 
+        if ($p->user_id !== $request->user()->id) {
+            AuditLog::record($request, $hotel, 'payslip.downloaded', $p->owner, ['title' => $p->title]);
+        }
+
         return Storage::disk('local')->download($p->file_path, $p->original_name, [
             'Content-Type'           => $p->mime,
             'X-Content-Type-Options' => 'nosniff',
@@ -148,6 +154,7 @@ class PayslipController extends WorkspaceBaseController
             return $this->forbidden('Somente o RH pode remover documentos.');
         }
 
+        AuditLog::record($request, $hotel, 'payslip.deleted', $p->owner, ['title' => $p->title]);
         Storage::disk('local')->delete($p->file_path);
         $p->delete();
 

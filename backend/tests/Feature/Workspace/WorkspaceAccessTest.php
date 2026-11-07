@@ -191,3 +191,33 @@ it('lets only the owner change roles and keeps at least one owner', function () 
     // único dono não pode se rebaixar
     $this->patchJson("{$this->base}/roles/{$this->rh->uuid}", ['access_role' => 'hr'])->assertStatus(422);
 });
+
+it('records sensitive HR actions in an audit trail only RH can read', function () {
+    Sanctum::actingAs($this->rh);
+    $uuid = $this->post("{$this->base}/payslips", [
+        'user_uuid' => $this->worker->uuid, 'kind' => 'payslip', 'title' => 'Holerite',
+        'file' => UploadedFile::fake()->create('h.pdf', 20, 'application/pdf'),
+    ], ['Accept' => 'application/json'])->assertCreated()->json('data.uuid');
+    $this->get("{$this->base}/payslips/{$uuid}/download")->assertOk();
+    $this->patchJson("{$this->base}/roles/{$this->other->uuid}", ['access_role' => 'finance'])->assertOk();
+
+    // o próprio dono do holerite baixando não gera registro de terceiro
+    Sanctum::actingAs($this->worker);
+    $this->get("{$this->base}/payslips/{$uuid}/download")->assertOk();
+    $this->getJson("{$this->base}/audit")->assertForbidden();
+
+    Sanctum::actingAs($this->rh);
+    $res = $this->getJson("{$this->base}/audit")->assertOk();
+    $actions = collect($res->json('data.items'))->pluck('action')->all();
+    expect($actions)->toContain('payslip.created', 'payslip.downloaded', 'role.changed');
+    expect(collect($actions)->filter(fn ($a) => $a === 'payslip.downloaded'))->toHaveCount(1);
+    $this->getJson("{$this->base}/audit?action=role.changed")->assertOk()->assertJsonCount(1, 'data.items');
+});
+
+it('keeps the company employee list private to logged-in users', function () {
+    $this->getJson("/api/v1/hotels/{$this->hotel->slug}/employees")->assertUnauthorized();
+    $this->getJson("/api/v1/hotels/{$this->hotel->slug}/admins")->assertUnauthorized();
+
+    Sanctum::actingAs($this->worker);
+    $this->getJson("/api/v1/hotels/{$this->hotel->slug}/employees")->assertOk();
+});

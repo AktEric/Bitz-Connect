@@ -73,8 +73,6 @@ Route::get('/plans',                           [SubscriptionController::class, '
 Route::get('/creators/{user}',                 [CreatorController::class, 'show']);
 Route::get('/hotels/{hotel}/jobs',             [HotelController::class, 'hotelJobs']);
 Route::get('/hotels/{hotel}/posts',            [HotelController::class, 'hotelPosts']);
-Route::get('/hotels/{hotel}/admins',           [HotelController::class, 'hotelAdmins']);
-Route::get('/hotels/{hotel}/employees',        [HotelController::class, 'employees']);
 
 // Jobs listing and detail are accessible to authenticated users (see auth group below)
 
@@ -82,6 +80,10 @@ Route::get('/hotels/{hotel}/employees',        [HotelController::class, 'employe
 // Authenticated routes
 // ──────────────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
+
+    // Pessoas da empresa (LGPD): só para quem está logado — nunca públicas
+    Route::get('/hotels/{hotel}/admins',    [HotelController::class, 'hotelAdmins']);
+    Route::get('/hotels/{hotel}/employees', [HotelController::class, 'employees']);
 
     // Auth
     Route::prefix('auth')->group(function () {
@@ -212,6 +214,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/invites',                  [CompanyInviteController::class, 'index']);
         Route::post('/invites',                 [CompanyInviteController::class, 'store']);
         Route::delete('/invites/{invite}',      [CompanyInviteController::class, 'destroy']);
+        Route::get('/audit',                    [WorkspaceController::class, 'audit']);
         Route::get('/roles',                    [WorkspaceController::class, 'roles']);
         Route::patch('/roles/{uuid}',           [WorkspaceController::class, 'updateRole']);
         //WORKSPACE_ROUTES

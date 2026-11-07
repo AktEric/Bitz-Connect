@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Domain\Workspace\Services\WorkspaceAccess;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\ApiResponseTrait;
+use App\Models\AuditLog;
 use App\Models\Hotel;
 use App\Models\HotelUser;
 use App\Models\Payslip;
@@ -91,10 +92,40 @@ class WorkspaceController extends Controller
             }
         }
 
+        $before = $this->access->accessRole($target, $hotel);
         $target->update(['access_role' => $data['access_role']]);
+        AuditLog::record($request, $hotel, 'role.changed', $target->user, ['from' => $before, 'to' => $data['access_role']]);
 
         return $this->success('Papel atualizado com sucesso.', [
             'uuid' => $uuid, 'access_role' => $this->access->accessRole($target, $hotel),
+        ]);
+    }
+
+    /** GET /workspaces/{hotel:slug}/audit — trilha de auditoria (dono e RH). */
+    public function audit(Request $request, Hotel $hotel): JsonResponse
+    {
+        $m = $this->access->membership($request->user(), $hotel);
+        if (! $this->access->isAdmin($m)) {
+            return $this->forbidden('Somente o dono ou o RH podem ver a auditoria.');
+        }
+
+        $q = AuditLog::with(['actor', 'target'])->where('hotel_id', $hotel->id);
+        if ($request->filled('action')) {
+            $q->where('action', (string) $request->query('action'));
+        }
+        $page = $q->orderByDesc('id')->paginate(50);
+
+        return $this->success('Auditoria carregada com sucesso.', [
+            'items' => $page->getCollection()->map(fn ($l) => [
+                'action'     => $l->action,
+                'actor'      => $this->access->person($l->actor),
+                'target'     => $this->access->person($l->target),
+                'meta'       => $l->meta,
+                'ip'         => $l->ip,
+                'created_at' => $l->created_at?->toISOString(),
+            ])->values(),
+            'page'      => $page->currentPage(),
+            'last_page' => $page->lastPage(),
         ]);
     }
 
