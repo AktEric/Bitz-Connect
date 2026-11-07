@@ -7,6 +7,7 @@ import type { AccessRole } from '@/types/workspace.types'
 import WorkspaceSchedulesSection from './WorkspaceSchedulesSection'
 import PunchSettingsSection from './PunchSettingsSection'
 import AreasSection from './AreasSection'
+import IntegritySection from './IntegritySection'
 import { Empty, PageHeader, Panel, Pill, Spinner, btnPrimary, errMsg, inputCls, useWs } from './ui'
 
 const ROLE_INFO: Record<AccessRole, { label: string; hint: string }> = {
@@ -160,6 +161,7 @@ export default function WorkspaceAdminPage() {
       <AreasSection slug={slug} />
       <WorkspaceSchedulesSection slug={slug} />
       <PunchSettingsSection slug={slug} />
+      <IntegritySection slug={slug} />
       <TemplateSection slug={slug} />
     </>
   )

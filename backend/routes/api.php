@@ -237,6 +237,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/time/devices/{uuid}',              [TimeDeviceController::class, 'destroy']);
         Route::get('/time/settings',                       [TimeSettingsController::class, 'show']);
         Route::put('/time/settings',                       [TimeSettingsController::class, 'update']);
+        Route::get('/time/entries/{uuid}/receipt',         [TimeClockController::class, 'receipt']);
+        Route::get('/time/integrity',                      [TimeClockController::class, 'integrity']);
         Route::get('/time/entries/{uuid}/photo',           [TimeClockController::class, 'photo']);
         Route::get('/time/closings',                       [TimeClosingController::class, 'index']);
         Route::post('/time/closings',                      [TimeClosingController::class, 'store']);

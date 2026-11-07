@@ -232,7 +232,24 @@ export interface TimeEntryItem {
   network_name?: string | null
   outside_network?: boolean
   new_device?: boolean
+  nsr?: number | null
 }
+
+export interface TimeReceipt {
+  company: { name: string; cnpj: string | null }
+  person: { name: string | null }
+  type: TimeType
+  punched_at: string
+  local_date: string
+  local_time: string
+  source: string
+  device: string | null
+  network: string | null
+  nsr: number | null
+  hash: string | null
+}
+
+export interface IntegrityResult { ok: boolean; checked: number; first_broken_nsr: number | null; reason: string | null }
 
 export interface TimeToday {
   state: TimeState

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Camera, Info, MapPin } from 'lucide-react'
+import { Camera, Info, MapPin, Receipt } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import type { TimeEntryItem } from '@/types/workspace.types'
 import { TYPE_LABEL } from './timeUtils'
 import { Modal, Pill, errMsg } from './ui'
+import ReceiptModal from './ReceiptModal'
 
 function PhotoModal({ slug, uuid, onClose }: { slug: string; uuid: string; onClose: () => void }) {
   const [url, setUrl] = useState<string | null>(null)
@@ -38,7 +39,8 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 /** Tudo o que se sabe sobre uma marcação: hora, aparelho, rede, IP e local. */
-function DetailsModal({ entry, onClose }: { entry: TimeEntryItem; onClose: () => void }) {
+function DetailsModal({ slug, entry, onClose }: { slug: string; entry: TimeEntryItem; onClose: () => void }) {
+  const [receipt, setReceipt] = useState(false)
   const alerts = [
     entry.outside_fence && 'fora do local de trabalho',
     entry.outside_network && 'fora das redes autorizadas',
@@ -65,7 +67,13 @@ function DetailsModal({ entry, onClose }: { entry: TimeEntryItem; onClose: () =>
       {alerts.length > 0 && (
         <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">Atenção: {alerts.join('; ')}.</p>
       )}
+      {entry.nsr != null && (
+        <button type="button" onClick={() => setReceipt(true)} className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <Receipt size={15} /> Ver comprovante (NSR {entry.nsr})
+        </button>
+      )}
       <p className="mt-3 text-[11px] text-gray-400">Dados visíveis apenas para a própria pessoa, o gestor e o RH.</p>
+      {receipt && <ReceiptModal slug={slug} uuid={entry.uuid} onClose={() => setReceipt(false)} />}
     </Modal>
   )
 }
@@ -109,7 +117,7 @@ export default function EntryChips({ slug, entries }: { slug: string; entries: T
         ))}
       </span>
       {photo && <PhotoModal slug={slug} uuid={photo} onClose={() => setPhoto(null)} />}
-      {details && <DetailsModal entry={details} onClose={() => setDetails(null)} />}
+      {details && <DetailsModal slug={slug} entry={details} onClose={() => setDetails(null)} />}
     </>
   )
 }

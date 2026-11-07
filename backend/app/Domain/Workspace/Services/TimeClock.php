@@ -71,6 +71,7 @@ class TimeClock
             'network_name'  => $e->network_name,
             'outside_network' => (bool) $e->outside_network,
             'new_device'    => (bool) $e->new_device,
+            'nsr'           => $e->nsr,
         ];
     }
 }

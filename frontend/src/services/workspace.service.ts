@@ -53,6 +53,8 @@ const workspaceService = {
     const res = await api.get(`${w(slug)}/time/entries/${uuid}/photo`, { responseType: 'blob' })
     return URL.createObjectURL(res.data as Blob)
   },
+  timeReceipt: (slug: string, uuid: string) => get<TimeReceipt>(`${w(slug)}/time/entries/${uuid}/receipt`),
+  timeIntegrity: (slug: string) => get<IntegrityResult>(`${w(slug)}/time/integrity`),
   timesheet: (slug: string, params: { month?: string; user?: string }) => get<Timesheet>(`${w(slug)}/time/timesheet`, params),
   timeClosings: (slug: string) => get<ClosingItem[]>(`${w(slug)}/time/closings`),
   timeClosing: (slug: string, month: string) => get<ClosingDetail>(`${w(slug)}/time/closings/${month}`),

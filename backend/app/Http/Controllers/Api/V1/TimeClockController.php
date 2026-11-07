@@ -6,6 +6,7 @@ use App\Domain\Workspace\Services\TimeClock;
 use App\Domain\Workspace\Services\CalendarService;
 use App\Domain\Workspace\Services\PunchRules;
 use App\Domain\Workspace\Services\TimeBank;
+use App\Domain\Workspace\Services\TimeEntryRecorder;
 use App\Domain\Workspace\Services\TimeClosingService;
 use App\Domain\Workspace\Services\WorkspaceAccess;
 use App\Models\AuditLog;
@@ -36,6 +37,7 @@ class TimeClockController extends WorkspaceBaseController
         private readonly PunchRules $rules,
         private readonly TimeBank $bank,
         private readonly CalendarService $calendar,
+        private readonly TimeEntryRecorder $recorder,
     ) {
         parent::__construct($access, $notifications);
     }
@@ -105,6 +107,44 @@ class TimeClockController extends WorkspaceBaseController
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control'          => 'private, no-store',
         ]);
+    }
+
+    /** GET /workspaces/{slug}/time/entries/{uuid}/receipt — comprovante da marcação (a própria pessoa, o gestor ou o RH). */
+    public function receipt(Request $request, Hotel $hotel, string $uuid): JsonResponse
+    {
+        $me    = $this->membership($request, $hotel);
+        $entry = $me ? TimeEntry::with('user')->where('hotel_id', $hotel->id)->where('uuid', $uuid)->first() : null;
+        if (! $entry || ($entry->user_id !== $request->user()->id && ! $this->access->canViewPerson($request->user(), $me, $hotel, $entry->user))) {
+            return $this->notFound('Marcação não encontrada.');
+        }
+
+        $local = CarbonImmutable::instance($entry->punched_at)->setTimezone(TimeClock::TZ);
+
+        return $this->success('Comprovante carregado.', [
+            'company'    => ['name' => $hotel->name, 'cnpj' => $hotel->cnpj],
+            'person'     => ['name' => $entry->user?->name],
+            'type'       => $entry->type,
+            'punched_at' => $entry->punched_at->toIso8601String(),
+            'local_date' => $local->format('d/m/Y'),
+            'local_time' => $local->format('H:i:s'),
+            'source'     => $entry->source,
+            'device'     => $entry->device_name,
+            'network'    => $entry->network_name,
+            'nsr'        => $entry->nsr,
+            'hash'       => $entry->hash,
+        ]);
+    }
+
+    /** GET /workspaces/{slug}/time/integrity — confere se alguma marcação foi alterada ou apagada (dono e RH). */
+    public function integrity(Request $request, Hotel $hotel): JsonResponse
+    {
+        if (! $this->access->isAdmin($this->membership($request, $hotel))) {
+            return $this->forbidden('Somente o dono ou o RH verificam a integridade do ponto.');
+        }
+        $result = $this->recorder->verify($hotel);
+        AuditLog::record($request, $hotel, 'time.integrity_checked', null, ['ok' => $result['ok'], 'checked' => $result['checked']]);
+
+        return $this->success($result['ok'] ? 'Cadeia íntegra.' : 'Cadeia com problema.', $result);
     }
 
     /** Recusa uma marcação por regra da empresa (rede/dispositivo): mensagem para a pessoa e `code` para o app. */
@@ -225,7 +265,7 @@ class TimeClockController extends WorkspaceBaseController
             ? \App\Support\ImageSanitizer::store($request->file('photo'), "punch-photos/{$hotel->id}", 'local')
             : null;
 
-        TimeEntry::create([
+        $this->recorder->record([
             'uuid'       => (string) Str::uuid(),
             'hotel_id'   => $hotel->id,
             'user_id'    => $user->id,
@@ -374,7 +414,7 @@ class TimeClockController extends WorkspaceBaseController
             return $this->error('Este mês já foi fechado para a folha. Peça ao dono para reabri-lo.', [], 422);
         }
 
-        $entry = TimeEntry::create([
+        $entry = $this->recorder->record([
             'uuid'       => (string) Str::uuid(),
             'hotel_id'   => $hotel->id,
             'user_id'    => $target->user_id,
@@ -504,7 +544,7 @@ class TimeClockController extends WorkspaceBaseController
         );
 
         if ($data['decision'] === 'approved') {
-            TimeEntry::create([
+            $this->recorder->record([
                 'uuid'       => (string) Str::uuid(),
                 'hotel_id'   => $hotel->id,
                 'user_id'    => $adjustment->user_id,

@@ -88,3 +88,11 @@
   .badge-amber   { @apply badge bg-amber-100 text-amber-700; }
   .badge-gray    { @apply badge bg-gray-100 text-gray-600; }
 }
+
+/* Impressão: só o que estiver em .print-area (comprovantes, espelho) */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; border: 0 !important; }
+  .no-print { display: none !important; }
+}
