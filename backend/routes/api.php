@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\Api\V1\WorkspaceSearchController;
 use App\Http\Controllers\Api\V1\AccountSecurityController;
 use App\Http\Controllers\Api\V1\AreaController;
+use App\Http\Controllers\Api\V1\PrivacyController;
 use App\Http\Controllers\Api\V1\OnboardingController;
 use App\Http\Controllers\Api\V1\CalendarController;
 use App\Http\Controllers\Api\V1\TimeBankController;
@@ -225,6 +226,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/invites/{token}/accept',      [CompanyInviteController::class, 'accept']);
 
     Route::prefix('workspaces/{hotel:slug}')->middleware('workspace.2fa')->group(function () {
+
+        // LGPD
+        Route::get('/me/privacy',          [PrivacyController::class, 'status']);
+        Route::post('/me/privacy/consent', [PrivacyController::class, 'consent']);
+        Route::get('/me/export',           [PrivacyController::class, 'export']);
 
         // Ponto
         Route::get('/time/today',      [TimeClockController::class, 'today_']);
