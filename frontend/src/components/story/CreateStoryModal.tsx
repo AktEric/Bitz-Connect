@@ -161,7 +161,7 @@ export function CreateStoryModal({ open, onClose }: CreateStoryModalProps) {
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">Vaga</label>
                   {jobs.length === 0 ? (
-                    <p className="text-sm text-gray-400">Nenhuma vaga ativa neste hotel.</p>
+                    <p className="text-sm text-gray-400">Nenhuma vaga ativa nesta empresa.</p>
                   ) : (
                     <select
                       value={itemUuid}

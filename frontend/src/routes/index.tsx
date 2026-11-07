@@ -4,6 +4,8 @@ import PrivateRoute from './PrivateRoute'
 import GuestRoute from './GuestRoute'
 import HotelPrivateRoute from './HotelPrivateRoute'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import HomeGate from './HomeGate'
+import WorkspaceRoute from './WorkspaceRoute'
 
 // Auth pages (lazy loaded) — Pessoa
 const LoginPessoaPage = lazy(() => import('@/pages/auth/LoginPessoaPage'))
@@ -13,6 +15,7 @@ const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'))
 
 // Auth pages (lazy loaded) — Hotel
+const LoginFuncionarioPage = lazy(() => import('@/pages/auth/LoginFuncionarioPage'))
 const LoginHotelPage = lazy(() => import('@/pages/auth/LoginHotelPage'))
 const RegisterHotelPage = lazy(() => import('@/pages/auth/RegisterHotelPage'))
 
@@ -48,6 +51,18 @@ const HotelSettingsPage = lazy(() => import('@/pages/hotel/HotelSettingsPage'))
 const HotelAdminsPage = lazy(() => import('@/pages/hotel/HotelAdminsPage'))
 const HotelMessagesPage = lazy(() => import('@/pages/hotel/HotelMessagesPage'))
 
+const WorkspacesPage = lazy(() => import('@/pages/workspace/WorkspacesPage'))
+const WorkspaceLayout = lazy(() => import('@/pages/workspace/WorkspaceLayout'))
+const WorkspaceHomePage = lazy(() => import('@/pages/workspace/WorkspaceHomePage'))
+const WorkspaceFeedPage = lazy(() => import('@/pages/workspace/WorkspaceFeedPage'))
+const WorkspaceTeamPage = lazy(() => import('@/pages/workspace/WorkspaceTeamPage'))
+const WorkspaceRequestsPage = lazy(() => import('@/pages/workspace/WorkspaceRequestsPage'))
+const WorkspacePayslipsPage = lazy(() => import('@/pages/workspace/WorkspacePayslipsPage'))
+const WorkspaceGoalsPage = lazy(() => import('@/pages/workspace/WorkspaceGoalsPage'))
+const WorkspaceDevelopmentPage = lazy(() => import('@/pages/workspace/WorkspaceDevelopmentPage'))
+const WorkspaceTimePage = lazy(() => import('@/pages/workspace/WorkspaceTimePage'))
+const InviteAcceptPage = lazy(() => import('@/pages/workspace/InviteAcceptPage'))
+
 function Loading() {
   return (
     <div className="flex h-screen items-center justify-center">
@@ -76,9 +91,31 @@ export default function AppRoutes() {
           <Route path="/register/hotel" element={<RegisterHotelPage />} />
         </Route>
 
+        {/* Login do funcionário: fora do GuestRoute, pois ele mesmo redireciona após o login */}
+        <Route path="/entrar" element={<LoginFuncionarioPage />} />
+        <Route path="/login/funcionario" element={<Navigate to="/entrar" replace />} />
+
+        {/* Convite por link (página pública) */}
+        <Route path="/convite/:token" element={<InviteAcceptPage />} />
+
+        {/* Workspace (intranet + RH): casca própria, fora do AppLayout da rede profissional */}
+        <Route element={<WorkspaceRoute />}>
+          <Route path="/w" element={<WorkspacesPage />} />
+          <Route path="/w/:slug" element={<WorkspaceLayout />}>
+            <Route index element={<WorkspaceHomePage />} />
+            <Route path="ponto" element={<WorkspaceTimePage />} />
+            <Route path="mural" element={<WorkspaceFeedPage />} />
+            <Route path="equipe" element={<WorkspaceTeamPage />} />
+            <Route path="solicitacoes" element={<WorkspaceRequestsPage />} />
+            <Route path="recebimentos" element={<WorkspacePayslipsPage />} />
+            <Route path="metas" element={<WorkspaceGoalsPage />} />
+            <Route path="desenvolvimento" element={<WorkspaceDevelopmentPage />} />
+          </Route>
+        </Route>
+
         {/* Protected Pessoa routes */}
         <Route element={<PrivateRoute />}>
-          <Route path="/" element={<FeedPage />} />
+          <Route path="/" element={<HomeGate />} />
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/network" element={<NetworkPage />} />
           <Route path="/profile" element={<ProfilePage />} />

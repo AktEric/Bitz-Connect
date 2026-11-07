@@ -38,3 +38,7 @@ docker/volumes/
 # Claude Code local state
 .claude/scheduled_tasks.lock
 .claude/worktrees/
+
+# Bootstrap de desenvolvimento (credenciais geradas)
+backend/storage/app/dev-*
+frontend/dev-verify/

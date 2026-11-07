@@ -1,15 +1,17 @@
-import { NavLink, Outlet, useNavigate, Link, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom'
 import {
   Home, Briefcase, Search, MessageSquare, Users, Bell,
   LogOut, Settings, Bookmark, User, ChevronDown,
   Building2, Sparkles, Menu, X, Calendar, UsersRound,
-  Video as VideoIcon, GraduationCap, Handshake, LayoutDashboard,
+  Video as VideoIcon, GraduationCap, Handshake, LayoutDashboard, MessagesSquare,
 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import { useUnreadCount } from '@/hooks/useNotifications'
 import { useUnreadMessages, chatKeys } from '@/hooks/useChat'
+import { useChatGroupsUnread } from '@/hooks/useChatGroups'
+import ChatSidebar from '@/components/chat/ChatSidebar'
 import { usePendingConnections } from '@/hooks/useConnections'
 import { useMyHotels } from '@/hooks/useHotel'
 import { Avatar } from '@/components/ui/Avatar'
@@ -33,6 +35,7 @@ const NAV_MAIN = [
   { to: '/videos',  label: 'Vídeos',      Icon: VideoIcon },
   { to: '/jobs',    label: 'Vagas',       Icon: Briefcase },
   { to: '/chat',    label: 'Mensagens',   Icon: MessageSquare },
+  { to: '/w',       label: 'Minha empresa', Icon: Building2 },
   { to: '/profile', label: 'Perfil',      Icon: User },
 ] as const
 
@@ -61,7 +64,8 @@ const DRAWER_ITEMS = [
   { to: '/courses',  label: 'Cursos',        Icon: GraduationCap, enabled: true },
   { to: '/mentorships', label: 'Mentorias',  Icon: Handshake,  enabled: true },
   { to: '/plans',    label: 'ConnectHotel PRO', Icon: Sparkles, enabled: true },
-  { to: '/hotels',   label: 'Meus Hotéis',   Icon: Building2,  enabled: true },
+  { to: '/w',        label: 'Minha empresa', Icon: Building2,  enabled: true },
+  { to: '/hotels',   label: 'Minhas Empresas',   Icon: Building2,  enabled: true },
   { to: '/saved',    label: 'Itens salvos',  Icon: Bookmark,   enabled: false },
   { to: '/events',   label: 'Eventos',       Icon: Calendar,   enabled: false },
   { to: '/groups',   label: 'Grupos',        Icon: UsersRound, enabled: false },
@@ -241,8 +245,8 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
             <SideNavItem to="/saved" label="Itens Salvos" Icon={Bookmark} />
 
             <div className="my-3 h-px bg-gray-100" />
-            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Empresas / Hotéis</p>
-            <SideNavItem to="/hotels" label="Meus Hotéis" Icon={Building2} />
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Empresas</p>
+            <SideNavItem to="/hotels" label="Minhas Empresas" Icon={Building2} />
           </>
         )}
       </nav>
@@ -440,13 +444,35 @@ function HotelPanelButton() {
   return (
     <Link
       to={`/hotel/${proHotel.slug}/dashboard`}
-      title={`Painel do hotel — ${proHotel.name}`}
+      title={`Painel da empresa — ${proHotel.name}`}
       className="relative flex items-center justify-center h-9 w-9 rounded-xl text-amber-600 hover:bg-amber-50 transition-colors"
-      aria-label="Painel do hotel"
+      aria-label="Painel da empresa"
     >
       <LayoutDashboard className="h-5 w-5" />
       <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-amber-500" />
     </Link>
+  )
+}
+
+/** Abre a barra lateral de chat da empresa (grupos e avisos). */
+function GroupChatButton({ onClick }: { onClick: () => void }) {
+  const { data } = useChatGroupsUnread()
+  const count = data?.count ?? 0
+
+  return (
+    <button
+      onClick={onClick}
+      className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+      aria-label="Chat da empresa"
+      title="Chat da empresa"
+    >
+      <MessagesSquare className="h-5 w-5" />
+      {count > 0 && (
+        <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">
+          {count > 9 ? '9+' : count}
+        </span>
+      )}
+    </button>
   )
 }
 
@@ -479,7 +505,7 @@ function MessagesBadgeButton() {
 // Topbar — desktop only (hidden below lg: 1024px)
 // ──────────────────────────────────────────────────────────
 
-function Topbar({ sidebarWidth }: { sidebarWidth: number }) {
+function Topbar({ sidebarWidth, onOpenChat }: { sidebarWidth: number; onOpenChat: () => void }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [userOpen, setUserOpen] = useState(false)
@@ -503,7 +529,7 @@ function Topbar({ sidebarWidth }: { sidebarWidth: number }) {
         className="flex flex-1 max-w-sm items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400 hover:border-violet-300 hover:bg-white transition-all"
       >
         <Search className="h-4 w-4 flex-shrink-0" />
-        <span>Pesquisar usuários, hotéis, vagas...</span>
+        <span>Pesquisar pessoas, empresas, vagas...</span>
       </Link>
 
       <div className="flex-1" />
@@ -511,6 +537,7 @@ function Topbar({ sidebarWidth }: { sidebarWidth: number }) {
       <div className="flex items-center gap-1">
         <HotelPanelButton />
         <NotificationBell />
+        <GroupChatButton onClick={onOpenChat} />
         <MessagesBadgeButton />
 
         {user && (
@@ -557,7 +584,7 @@ function Topbar({ sidebarWidth }: { sidebarWidth: number }) {
 // Mobile topbar — compact header for small screens
 // ──────────────────────────────────────────────────────────
 
-function MobileTopbar({ onOpenDrawer }: { onOpenDrawer: () => void }) {
+function MobileTopbar({ onOpenDrawer, onOpenChat }: { onOpenDrawer: () => void; onOpenChat: () => void }) {
   const { data: unreadData } = useUnreadCount()
   const unread = unreadData?.count ?? 0
 
@@ -581,6 +608,8 @@ function MobileTopbar({ onOpenDrawer }: { onOpenDrawer: () => void }) {
       <div className="flex-1" />
 
       <HotelPanelButton />
+
+      <GroupChatButton onClick={onOpenChat} />
 
       <Link
         to="/search"
@@ -614,7 +643,15 @@ export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const sidebarWidth = collapsed ? 64 : 256
+  const [chatOpen, setChatOpen] = useState(false)
+  const [searchParams] = useSearchParams()
+  const requestedGroup = searchParams.get('group')
   const location = useLocation()
+
+  // Notificações de grupo levam a /chat?group=<uuid>: abre a barra lateral nesse grupo.
+  useEffect(() => {
+    if (requestedGroup) setChatOpen(true)
+  }, [requestedGroup])
 
   // Close drawer on navigation
   useEffect(() => {
@@ -625,12 +662,15 @@ export default function AppLayout() {
     <div className="min-h-screen bg-gray-50/80">
       {/* Desktop chrome */}
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
-      <Topbar sidebarWidth={sidebarWidth} />
+      <Topbar sidebarWidth={sidebarWidth} onOpenChat={() => setChatOpen(true)} />
 
       {/* Mobile chrome */}
-      <MobileTopbar onOpenDrawer={() => setDrawerOpen(true)} />
+      <MobileTopbar onOpenDrawer={() => setDrawerOpen(true)} onOpenChat={() => setChatOpen(true)} />
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <BottomNav />
+
+      {/* Barra lateral de chat da empresa */}
+      <ChatSidebar open={chatOpen} onClose={() => setChatOpen(false)} requestedGroup={requestedGroup} />
 
       {/* Main content */}
       <div

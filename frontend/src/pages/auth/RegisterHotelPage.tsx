@@ -23,13 +23,13 @@ const step1Schema = z
   })
 
 const step2Schema = z.object({
-  hotel_name: z.string().min(2, 'Nome do hotel deve ter ao menos 2 caracteres'),
+  hotel_name: z.string().min(2, 'Nome da empresa deve ter ao menos 2 caracteres'),
   cnpj: z
     .string()
     .min(14, 'CNPJ inválido')
     .max(18, 'CNPJ inválido'),
-  hotel_email: z.string().email('E-mail do hotel inválido'),
-  hotel_password: z.string().min(8, 'Senha do hotel deve ter ao menos 8 caracteres'),
+  hotel_email: z.string().email('E-mail da empresa inválido'),
+  hotel_password: z.string().min(8, 'Senha da empresa deve ter ao menos 8 caracteres'),
   city: z.string().optional(),
   website: z.string().url('URL inválida').optional().or(z.literal('')),
 })
@@ -79,7 +79,7 @@ const step2Fields: {
   placeholder?: string
   optional?: boolean
 }[] = [
-  { id: 'hotel_name', label: 'Nome do hotel', type: 'text', autocomplete: 'organization' },
+  { id: 'hotel_name', label: 'Nome da empresa', type: 'text', autocomplete: 'organization' },
   {
     id: 'cnpj',
     label: 'CNPJ',
@@ -89,13 +89,13 @@ const step2Fields: {
   },
   {
     id: 'hotel_email',
-    label: 'E-mail do hotel',
+    label: 'E-mail da empresa',
     type: 'email',
     autocomplete: 'email',
   },
   {
     id: 'hotel_password',
-    label: 'Senha de acesso do hotel',
+    label: 'Senha de acesso da empresa',
     type: 'password',
     autocomplete: 'new-password',
   },
@@ -329,7 +329,7 @@ export default function RegisterHotelPage() {
       <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow">
         <h1 className="mb-2 text-2xl font-bold text-amber-900">Cadastrar Hotel</h1>
         <p className="mb-4 text-sm text-amber-600">
-          {step === 1 ? 'Dados da sua conta de administrador' : 'Dados do seu hotel'}
+          {step === 1 ? 'Dados da sua conta de administrador' : 'Dados da sua empresa'}
         </p>
 
         <StepIndicator step={step} />

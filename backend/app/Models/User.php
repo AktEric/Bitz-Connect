@@ -165,6 +165,7 @@ class User extends Authenticatable implements Subscribable
         return $this->hotelUsers()
             ->where('hotel_id', $hotelId)
             ->where('role', 'admin')
+            ->where('status', 'approved')
             ->exists();
     }
 
@@ -173,6 +174,7 @@ class User extends Authenticatable implements Subscribable
         return $this->hotelUsers()
             ->whereHas('hotel', fn ($q) => $q->where('uuid', $hotelUuid))
             ->where('role', 'admin')
+            ->where('status', 'approved')
             ->exists();
     }
 }

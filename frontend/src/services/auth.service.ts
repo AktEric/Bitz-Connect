@@ -24,6 +24,16 @@ const authService = {
     return res.data
   },
 
+  async providers(): Promise<{ google_client_id: string | null }> {
+    const res = await api.get<ApiResponse<{ google_client_id: string | null }>>('/auth/providers')
+    return res.data.data
+  },
+
+  async google(credential: string): Promise<ApiResponse<AuthTokenResponse>> {
+    const res = await api.post<ApiResponse<AuthTokenResponse>>('/auth/google', { credential })
+    return res.data
+  },
+
   async logout(): Promise<void> {
     await api.post('/auth/logout')
   },

@@ -25,7 +25,7 @@ export default function HotelAdminsPage() {
     <div className="p-6 space-y-8">
       <div>
         <h1 className="text-2xl font-semibold">Administradores</h1>
-        <p className="mt-2 text-muted-foreground">Gerencie quem pode administrar o perfil e as vagas deste hotel.</p>
+        <p className="mt-2 text-muted-foreground">Gerencie quem pode administrar o perfil e as vagas desta empresa.</p>
       </div>
 
       <section>
@@ -41,7 +41,7 @@ export default function HotelAdminsPage() {
         {!isLoading && admins.length === 0 && (
           <EmptyState
             title="Nenhum administrador encontrado"
-            description="Administradores com uma experiência vinculada e em andamento neste hotel aparecem aqui."
+            description="Administradores com uma experiência vinculada e em andamento nesta empresa aparecem aqui."
             icon={<Shield className="h-8 w-8" />}
           />
         )}

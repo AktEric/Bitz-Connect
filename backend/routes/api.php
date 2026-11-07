@@ -2,6 +2,16 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ChatController;
+use App\Http\Controllers\Api\V1\ChatGroupController;
+use App\Http\Controllers\Api\V1\CompanyDirectoryController;
+use App\Http\Controllers\Api\V1\CompanyInviteController;
+use App\Http\Controllers\Api\V1\WorkspaceController;
+use App\Http\Controllers\Api\V1\TimeClockController;
+use App\Http\Controllers\Api\V1\WorkspaceFeedController;
+use App\Http\Controllers\Api\V1\WorkspaceRequestController;
+use App\Http\Controllers\Api\V1\PayslipController;
+use App\Http\Controllers\Api\V1\GoalController;
+use App\Http\Controllers\Api\V1\DevelopmentPlanController;
 use App\Http\Controllers\Api\V1\CompanyAnalyticsController;
 use App\Http\Controllers\Api\V1\ConnectionController;
 use App\Http\Controllers\Api\V1\CourseController;
@@ -31,9 +41,11 @@ Route::get('/health', fn () => response()->json(['success' => true, 'message' =>
 // ──────────────────────────────────────────────────────────────
 // Auth — public
 // ──────────────────────────────────────────────────────────────
-Route::prefix('auth')->group(function () {
+Route::prefix('auth')->middleware('throttle:auth')->group(function () {
     Route::post('/register',        [AuthController::class, 'register']);
     Route::post('/login',           [AuthController::class, 'login']);
+    Route::get('/providers',        [AuthController::class, 'providers']);
+    Route::post('/google',          [AuthController::class, 'google']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password',  [AuthController::class, 'resetPassword']);
     Route::post('/hotel-login',     [AuthController::class, 'hotelLogin']);
@@ -50,6 +62,9 @@ Route::get('/users/{user}',                    [UserController::class, 'show']);
 // Diretório de hotéis (aba Hotéis do feed) — deve vir ANTES de /hotels/{hotel}
 Route::get('/hotels/directory',                [HotelController::class, 'directory']);
 Route::get('/hotels/{hotel}',                  [HotelController::class, 'show']);
+
+// Convite para a empresa — pré-visualização pública (por token, com rate limit)
+Route::get('/invites/{token}', [CompanyInviteController::class, 'preview'])->middleware('throttle:30,1');
 
 // Subscription plan catalog (public — for the pricing page)
 Route::get('/plans',                           [SubscriptionController::class, 'plans']);
@@ -97,6 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/hotels/{hotel}/logo',       [HotelController::class, 'uploadLogo']);
     Route::post('/hotels/{hotel}/cover',      [HotelController::class, 'uploadCover']);
     Route::get('/me/hotels',                  [HotelController::class, 'myHotels']);
+    Route::get('/segment-templates',          [CompanyDirectoryController::class, 'segmentTemplates']);
 
     // Hotel — follow, employees, claim, roles
     Route::prefix('hotels/{hotel:slug}')->group(function () {
@@ -112,6 +128,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/analytics',                         [CompanyAnalyticsController::class, 'show']);
         Route::get('/analytics/export',                  [CompanyAnalyticsController::class, 'export']);
         Route::get('/jobs/manage',                       [HotelController::class, 'manageJobs']);
+
+        // Gestão interna da empresa — setores, membros e grupos de chat
+        Route::get('/departments',                       [CompanyDirectoryController::class, 'departments']);
+        Route::post('/segment-template',                 [CompanyDirectoryController::class, 'applySegmentTemplate']);
+        Route::post('/departments',                      [CompanyDirectoryController::class, 'storeDepartment']);
+        Route::put('/departments/{department}',          [CompanyDirectoryController::class, 'updateDepartment']);
+        Route::delete('/departments/{department}',       [CompanyDirectoryController::class, 'destroyDepartment']);
+        Route::get('/members',                           [CompanyDirectoryController::class, 'members']);
+        Route::patch('/members/{user}/department',       [CompanyDirectoryController::class, 'setMemberDepartment']);
+        Route::get('/members/{user}',                    [CompanyDirectoryController::class, 'memberProfile']);
+        Route::patch('/members/{user}',                  [CompanyDirectoryController::class, 'updateMemberProfile']);
+        Route::post('/chat-groups',                      [ChatGroupController::class, 'store']);
 
         // Caixa de entrada compartilhada do hotel (qualquer admin aprovado)
         Route::get('/chat/unread-count',                 [ChatController::class, 'hotelUnreadCount']);
@@ -164,6 +192,83 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{user}/messages',       [ChatController::class, 'send']);
         Route::patch('/{user}/read',          [ChatController::class, 'markRead']);
     });
+
+    // ── Workspace (intranet da empresa) ───────────────────────
+    Route::get('/me/workspaces',                [WorkspaceController::class, 'mine']);
+    Route::post('/invites/{token}/accept',      [CompanyInviteController::class, 'accept']);
+
+    Route::prefix('workspaces/{hotel:slug}')->group(function () {
+
+        // Ponto
+        Route::get('/time/today',      [TimeClockController::class, 'today_']);
+        Route::post('/time/punch',     [TimeClockController::class, 'punch']);
+        Route::get('/time/timesheet',  [TimeClockController::class, 'timesheet']);
+        Route::get('/time/team',       [TimeClockController::class, 'team']);
+        Route::post('/time/entries',   [TimeClockController::class, 'manual']);
+        Route::get('/time/adjustments',                          [TimeClockController::class, 'adjustments']);
+        Route::post('/time/adjustments',                         [TimeClockController::class, 'requestAdjustment']);
+        Route::post('/time/adjustments/{adjustment}/decision',   [TimeClockController::class, 'decideAdjustment']);
+        Route::get('/',                         [WorkspaceController::class, 'show']);
+        Route::get('/invites',                  [CompanyInviteController::class, 'index']);
+        Route::post('/invites',                 [CompanyInviteController::class, 'store']);
+        Route::delete('/invites/{invite}',      [CompanyInviteController::class, 'destroy']);
+        //WORKSPACE_ROUTES
+        // Mural
+        Route::get('/feed',                          [WorkspaceFeedController::class, 'index']);
+        Route::post('/feed',                         [WorkspaceFeedController::class, 'store']);
+        Route::delete('/feed/{post}',                [WorkspaceFeedController::class, 'destroy']);
+        Route::post('/feed/{post}/pin',              [WorkspaceFeedController::class, 'pin']);
+        Route::post('/feed/{post}/like',             [WorkspaceFeedController::class, 'like']);
+        Route::get('/feed/{post}/comments',          [WorkspaceFeedController::class, 'comments']);
+        Route::post('/feed/{post}/comments',         [WorkspaceFeedController::class, 'comment']);
+
+        // Solicitações
+        Route::get('/requests',                      [WorkspaceRequestController::class, 'index']);
+        Route::post('/requests',                     [WorkspaceRequestController::class, 'store']);
+        Route::get('/requests/{uuid}',               [WorkspaceRequestController::class, 'show']);
+        Route::post('/requests/{uuid}/decision',     [WorkspaceRequestController::class, 'decide']);
+        Route::post('/requests/{uuid}/cancel',       [WorkspaceRequestController::class, 'cancel']);
+        Route::post('/requests/{uuid}/comments',     [WorkspaceRequestController::class, 'comment']);
+
+        // Recebimentos
+        Route::get('/payslips',                      [PayslipController::class, 'index']);
+        Route::post('/payslips',                     [PayslipController::class, 'store'])->middleware('throttle:60,1');
+        Route::get('/payslips/{uuid}/download',      [PayslipController::class, 'download']);
+        Route::delete('/payslips/{uuid}',            [PayslipController::class, 'destroy']);
+
+        // Metas
+        Route::get('/goals',                         [GoalController::class, 'index']);
+        Route::get('/goals/summary',                 [GoalController::class, 'summary']);
+        Route::post('/goals',                        [GoalController::class, 'store']);
+        Route::get('/goals/{uuid}',                  [GoalController::class, 'show']);
+        Route::patch('/goals/{uuid}',                [GoalController::class, 'update']);
+        Route::post('/goals/{uuid}/updates',         [GoalController::class, 'addUpdate']);
+
+        // PDI
+        Route::get('/development',                   [DevelopmentPlanController::class, 'index']);
+        Route::post('/development',                  [DevelopmentPlanController::class, 'store']);
+        Route::get('/development/{uuid}',            [DevelopmentPlanController::class, 'show']);
+        Route::patch('/development/{uuid}',          [DevelopmentPlanController::class, 'update']);
+        Route::post('/development/{uuid}/items',     [DevelopmentPlanController::class, 'addItem']);
+        Route::patch('/development/{uuid}/items/{item}',  [DevelopmentPlanController::class, 'updateItem']);
+        Route::delete('/development/{uuid}/items/{item}', [DevelopmentPlanController::class, 'destroyItem']);
+        Route::post('/development/{uuid}/notes',     [DevelopmentPlanController::class, 'addNote']);
+    });
+
+    // Grupos de chat corporativo — literal routes MUST come before {group}
+    Route::get('/chat-groups',                               [ChatGroupController::class, 'index']);
+    Route::get('/chat-groups/unread-count',                  [ChatGroupController::class, 'unreadCount']);
+    Route::get('/chat-groups/{group}',                       [ChatGroupController::class, 'show']);
+    Route::patch('/chat-groups/{group}',                     [ChatGroupController::class, 'update']);
+    Route::delete('/chat-groups/{group}',                    [ChatGroupController::class, 'destroy']);
+    Route::post('/chat-groups/{group}/members',              [ChatGroupController::class, 'addMembers']);
+    Route::delete('/chat-groups/{group}/members/{user}',     [ChatGroupController::class, 'removeMember']);
+    Route::patch('/chat-groups/{group}/members/{user}/role', [ChatGroupController::class, 'setMemberRole']);
+    Route::delete('/chat-groups/{group}/membership',         [ChatGroupController::class, 'leave']);
+    Route::patch('/chat-groups/{group}/mute',                [ChatGroupController::class, 'mute']);
+    Route::get('/chat-groups/{group}/messages',              [ChatGroupController::class, 'messages']);
+    Route::post('/chat-groups/{group}/messages',             [ChatGroupController::class, 'send']);
+    Route::patch('/chat-groups/{group}/read',                [ChatGroupController::class, 'markRead']);
 
     // Connections — literal routes MUST come before parameterized {user} routes
     Route::get('/connections',                       [ConnectionController::class, 'index']);

@@ -16,7 +16,12 @@ class HotelUser extends Model
         'hotel_id',
         'user_id',
         'role',
+        'access_role',
         'status',
+        'department_id',
+        'job_title',
+        'hired_at',
+        'manager_id',
     ];
 
     protected function casts(): array
@@ -24,6 +29,7 @@ class HotelUser extends Model
         return [
             'status' => 'string', // 'pending' | 'approved' | 'rejected'
             'role'   => 'string', // 'admin' | 'employee'
+            'hired_at' => 'date',
         ];
     }
 
@@ -53,5 +59,15 @@ class HotelUser extends Model
     public function hotel(): BelongsTo
     {
         return $this->belongsTo(Hotel::class);
+    }
+
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
     }
 }

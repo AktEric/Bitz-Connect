@@ -27,6 +27,14 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        \Illuminate\Support\Facades\RateLimiter::for('auth', fn ($request) => \Illuminate\Cache\RateLimiting\Limit::perMinute($this->app->environment('testing') ? 10000 : 10)->by($request->ip()));
+
+        // Somente desenvolvimento: ver App\Support\DevBootstrap.
+        if (! $this->app->runningInConsole() && $this->app->environment('local') && env('DEV_AUTO_BOOTSTRAP')) {
+            // Após o boot completo, para que os comandos em app/Console/Commands já estejam registrados.
+            $this->app->booted(fn () => \App\Support\DevBootstrap::run());
+        }
+
         Gate::policy(Hotel::class, HotelPolicy::class);
         Gate::policy(HotelClaim::class, HotelClaimPolicy::class);
         Gate::policy(Post::class, PostPolicy::class);

@@ -249,7 +249,7 @@ function MessageWindow({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isHotelInbox ? 'Responder como o hotel...' : 'Escreva uma mensagem...'}
+          placeholder={isHotelInbox ? 'Responder como a empresa...' : 'Escreva uma mensagem...'}
           rows={1}
           className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary max-h-32 overflow-auto"
           style={{ lineHeight: '1.5' }}

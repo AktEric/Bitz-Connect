@@ -61,6 +61,16 @@ class Hotel extends Model implements Subscribable
         return $this->hasMany(HotelUser::class);
     }
 
+    public function departments(): HasMany
+    {
+        return $this->hasMany(Department::class);
+    }
+
+    public function chatGroups(): HasMany
+    {
+        return $this->hasMany(ChatGroup::class);
+    }
+
     /** Pivot: users who are admins of this hotel */
     public function admins(): BelongsToMany
     {

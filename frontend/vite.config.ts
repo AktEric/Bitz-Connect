@@ -16,6 +16,9 @@ export default defineConfig({
     // Permite acessar via domínio/túnel externo (Vite bloqueia Host headers
     // desconhecidos por padrão) — ok manter em true enquanto for só teste interno.
     allowedHosts: true,
+    // Docker no Windows/OneDrive não repassa eventos de arquivo ao container: sem polling o Vite
+    // serve versões antigas dos arquivos editados.
+    watch: { usePolling: true, interval: 300 },
     proxy: {
       '/api': {
         // O nginx do compose é quem fala com o php-fpm; ele escuta 8000 na rede

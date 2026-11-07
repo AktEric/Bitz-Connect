@@ -27,6 +27,10 @@ type FormData = z.infer<typeof schema>
 export default function RegisterPessoaPage() {
   const { register: registerUser } = useAuth()
   const navigate = useNavigate()
+  const redirectTo = (() => {
+    const r = new URLSearchParams(window.location.search).get('redirect')
+    return r && r.startsWith('/') && !r.startsWith('//') ? r : '/feed'
+  })()
   const [serverError, setServerError] = useState<string | null>(null)
 
   const {
@@ -39,7 +43,7 @@ export default function RegisterPessoaPage() {
     setServerError(null)
     try {
       await registerUser(data)
-      navigate('/feed', { replace: true })
+      navigate(redirectTo, { replace: true })
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
