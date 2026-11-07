@@ -36,6 +36,7 @@ class Hotel extends Model implements Subscribable
         'contact_email',
         'followers_count',
         'time_settings',
+        'security_settings',
     ];
 
     protected function casts(): array
@@ -43,6 +44,7 @@ class Hotel extends Model implements Subscribable
         return [
             'deleted_at' => 'datetime',
             'time_settings' => 'array',
+            'security_settings' => 'array',
         ];
     }
 

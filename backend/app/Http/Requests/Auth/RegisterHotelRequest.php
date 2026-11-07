@@ -18,7 +18,7 @@ class RegisterHotelRequest extends FormRequest
             // Passo 1 — dados do usuário
             'name'                  => ['required', 'string', 'max:255'],
             'email'                 => ['required', 'email', 'unique:users,email'],
-            'password'              => ['required', 'string', 'min:8', 'confirmed'],
+            'password'              => ['required', 'string', \App\Support\PasswordRules::policy(), 'confirmed'],
 
             // Passo 2 — dados do hotel
             'hotel_name'            => ['required', 'string', 'max:255'],
@@ -29,7 +29,7 @@ class RegisterHotelRequest extends FormRequest
                 Rule::unique('hotels', 'cnpj'),
             ],
             'hotel_email'           => ['required', 'email'],
-            'hotel_password'        => ['required', 'string', 'min:8'],
+            'hotel_password'        => ['required', 'string', \App\Support\PasswordRules::policy()],
             'city'                  => ['nullable', 'string', 'max:255'],
             'website'               => ['nullable', 'url', 'max:255'],
         ];

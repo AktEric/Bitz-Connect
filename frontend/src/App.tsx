@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import AppRoutes from '@/routes'
+import TwoFactorPrompt from '@/components/auth/TwoFactorPrompt'
 import { HotelAuthProvider } from '@/contexts/HotelAuthContext'
 import { useToast } from '@/contexts/ToastContext'
 
@@ -23,6 +24,7 @@ export default function App() {
     <BrowserRouter>
       <HotelAuthProvider>
         <AppRoutes />
+        <TwoFactorPrompt />
       </HotelAuthProvider>
     </BrowserRouter>
   )

@@ -101,6 +101,44 @@ class WorkspaceController extends Controller
         ]);
     }
 
+    private function privilegedMembers(Hotel $hotel)
+    {
+        return HotelUser::with('user')->where('hotel_id', $hotel->id)->where('status', 'approved')->get()
+            ->filter(fn (HotelUser $hu) => $hu->user && in_array($this->access->accessRole($hu, $hotel), ['owner', 'hr', 'finance'], true));
+    }
+
+    /** GET /workspaces/{hotel:slug}/security — política de segurança da empresa (dono e RH). */
+    public function security(Request $request, Hotel $hotel): JsonResponse
+    {
+        $m = $this->access->membership($request->user(), $hotel);
+        if (! $this->access->isAdmin($m)) {
+            return $this->forbidden('Somente o dono ou o RH veem a política de segurança.');
+        }
+        $privileged = $this->privilegedMembers($hotel);
+
+        return $this->success('Segurança carregada com sucesso.', [
+            'require_2fa'            => (bool) ($hotel->security_settings['require_2fa'] ?? false),
+            'privileged_total'       => $privileged->count(),
+            'privileged_without_2fa' => $privileged->filter(fn ($hu) => ! $hu->user->hasTwoFactor())
+                ->map(fn ($hu) => $this->access->person($hu->user, $hu))->values(),
+            'can_edit'               => $this->access->isOwner($m),
+        ]);
+    }
+
+    /** PUT /workspaces/{hotel:slug}/security  { require_2fa } — somente o dono. */
+    public function updateSecurity(Request $request, Hotel $hotel): JsonResponse
+    {
+        $m = $this->access->membership($request->user(), $hotel);
+        if (! $this->access->isOwner($m)) {
+            return $this->forbidden('Somente o dono altera a política de segurança.');
+        }
+        $data = $request->validate(['require_2fa' => ['required', 'boolean']]);
+        $hotel->forceFill(['security_settings' => array_merge($hotel->security_settings ?? [], ['require_2fa' => (bool) $data['require_2fa']])])->save();
+        \App\Models\AuditLog::record($request, $hotel, 'security.policy_changed', null, ['require_2fa' => (bool) $data['require_2fa']]);
+
+        return $this->success('Política atualizada.', ['require_2fa' => (bool) $data['require_2fa']]);
+    }
+
     /** GET /workspaces/{hotel:slug}/audit — trilha de auditoria (dono e RH). */
     public function audit(Request $request, Hotel $hotel): JsonResponse
     {
@@ -166,6 +204,9 @@ class WorkspaceController extends Controller
                 'is_admin'     => $isAdmin,
                 'access_role'  => $this->access->accessRole($membership, $hotel),
                 'is_manager'   => $isManager,
+                'two_factor'   => $user->hasTwoFactor(),
+                'needs_two_factor' => (bool) ($hotel->security_settings['require_2fa'] ?? false) && ! $user->hasTwoFactor()
+                    && in_array($this->access->accessRole($membership, $hotel), ['owner', 'hr', 'finance'], true),
                 'team_size'    => count($this->access->reportIds($user, $hotel)),
                 'areas_headed' => \App\Models\Department::where('hotel_id', $hotel->id)->where('head_id', $user->id)->orderBy('name')->pluck('name')->all(),
                 'can_post'     => $isAdmin || $isManager,

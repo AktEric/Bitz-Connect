@@ -91,6 +91,17 @@ Verificação: 154 testes de backend passando, 9 de front, type-check e shellche
 
 **Limite honesto:** o navegador não informa o *nome do computador* (hostname). O nome exibido é o que o RH/colaborador deu ao dispositivo cadastrado. Se limparem os dados do navegador, o aparelho precisa ser recadastrado. Passkey/biometria, quiosque e agente instalado seguem como P1/P2 da §5.2.
 
+### Segurança da conta (feito — P1 S8/S9/S10)
+
+| Item | Status | O que foi feito / como foi verificado |
+|------|--------|---------------------------------------|
+| S10 senha | **Feito e testado** | 10+ caracteres com maiúscula, minúscula e número; em produção também recusa senhas vazadas (HIBP, k-anonimato) |
+| **Mensagens de erro** | **Corrigido** | Os formulários mostravam chaves cruas ("validation.email"); agora há tradução completa em `lang/pt_BR/validation.php` |
+| S9 2FA | **Feito, testado e verificado no navegador** | TOTP (RFC 6238, vetores oficiais testados), QR code, 10 códigos de recuperação de uso único (só hash guardado), anti-replay do código, limite de tentativas por conta, segredo criptografado. Pede o código no login de todas as telas (pessoa, funcionário e empresa) por uma caixa global |
+| 2FA obrigatório | **Feito e testado** | O dono pode exigir 2FA de dono/RH/financeiro; quem não ativou só acessa o aviso e a tela de Segurança |
+| S8 sessões | **Parcial** | Tela "Onde você está conectado" (aparelho, IP, último uso), encerrar uma ou todas as outras; trocar a senha encerra tudo. **Falta:** mover o token do `localStorage` para cookie httpOnly |
+| **APP_KEY** | **Corrigido** | O `.env` de desenvolvimento não tinha APP_KEY (quebraria qualquer segredo criptografado); gerada, e o `deploy.sh` agora se recusa a subir sem ela |
+
 Pendente: aviso/publicação automática de parabéns (precisa de opt-in da empresa), feriados estaduais/municipais por localidade (hoje o RH cadastra como "feriado da empresa"), feriados alimentando banco de horas e fechamento (C5), cobertura/conflito de férias (C6) e edição de evento pela interface (a API já permite).
 
 Pendente do M1/S5: antivírus (ClamAV) nas fotos, miniaturas geradas no servidor (hoje só o redimensionamento no aparelho) e vídeo (M2).

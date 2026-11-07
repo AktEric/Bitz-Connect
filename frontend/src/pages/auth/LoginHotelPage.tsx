@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User as UserIcon, Sparkles, IdCard } from 'lucide-react'
+import { withTwoFactor } from '@/services/twoFactorLogin'
 import api from '@/services/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useHotelAuth } from '@/hooks/useHotelAuth'
@@ -51,11 +52,12 @@ export default function LoginHotelPage() {
   const onSubmit = async (data: FormData) => {
     setServerError(null)
     try {
-      const response = await api.post<HotelLoginResponse>('/auth/hotel-login', {
+      const response = await withTwoFactor((extra) => api.post<HotelLoginResponse>('/auth/hotel-login', {
         email: data.email,
         password: data.password,
         cnpj: data.cnpj,
-      })
+        ...extra,
+      }))
 
       const { token, user, hotel } = response.data.data
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, CalendarDays, ArrowLeftRight, LogOut, Globe, CheckCircle2, type LucideIcon,
+  Menu, X, Settings2, CalendarDays, ShieldCheck, ArrowLeftRight, LogOut, Globe, CheckCircle2, type LucideIcon,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import { useAuth } from '@/hooks/useAuth'
@@ -145,6 +145,7 @@ export default function WorkspaceLayout() {
                   <p className="truncate text-sm font-semibold text-gray-900">{user?.name}</p>
                   <p className="truncate text-xs text-gray-400">{roleLabel}</p>
                 </div>
+                <Link to={`/w/${slug}/seguranca`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ShieldCheck className="h-4 w-4" /> Segurança</Link>
                 <Link to="/w" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ArrowLeftRight className="h-4 w-4" /> Trocar de empresa</Link>
                 <Link to="/feed" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Globe className="h-4 w-4" /> Rede profissional</Link>
                 <button
@@ -165,7 +166,14 @@ export default function WorkspaceLayout() {
           <div className="sticky top-20">{renderGroups()}</div>
         </aside>
         <main className="min-w-0 flex-1">
-          <Outlet context={{ slug, info }} />
+          {info.me.needs_two_factor && (
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
+              <ShieldCheck className="h-5 w-5 flex-shrink-0" />
+              <span className="min-w-0 flex-1">Sua empresa exige a <b>verificação em duas etapas</b> para o seu perfil. Ative para continuar usando o Workspace.</span>
+              {!location.pathname.endsWith('/seguranca') && <Link to={`/w/${slug}/seguranca`} className="rounded-xl bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-700">Ativar agora</Link>}
+            </div>
+          )}
+          {info.me.needs_two_factor && !location.pathname.endsWith('/seguranca') ? null : <Outlet context={{ slug, info }} />}
         </main>
         <aside className="hidden w-[340px] flex-shrink-0 xl:block" aria-label="Chat">
           <div className="sticky top-20 h-[calc(100vh-6.5rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Support\DeviceInfo;
 
 /**
  * Handles all authentication business logic.
@@ -30,9 +31,21 @@ class AuthService
             'password' => $dto->password, // auto-hashed via cast
         ]);
 
-        $token = $user->createToken('api')->plainTextToken;
+        $token = $this->issueToken($user);
 
         return compact('user', 'token');
+    }
+
+    /** Cria o token da sessão registrando IP e aparelho (para a tela "Meus dispositivos"). */
+    public function issueToken(User $user): string
+    {
+        $new = $user->createToken('api');
+        $new->accessToken->forceFill([
+            'ip'    => request()->ip(),
+            'label' => DeviceInfo::parse(request()->userAgent())['label'],
+        ])->save();
+
+        return $new->plainTextToken;
     }
 
     /**
@@ -49,7 +62,19 @@ class AuthService
             ]);
         }
 
-        $token = $user->createToken('api')->plainTextToken;
+        // Segunda etapa: quem ativou a verificação em duas etapas precisa do código do app (ou de um de recuperação).
+        if ($user->hasTwoFactor()) {
+            if (! $dto->code && ! $dto->recoveryCode) {
+                throw ValidationException::withMessages([
+                    'two_factor_required' => ['Informe o código de 6 dígitos do seu aplicativo autenticador.'],
+                ]);
+            }
+            if (! app(TwoFactorService::class)->verifyLogin($user, $dto->code, $dto->recoveryCode)) {
+                throw ValidationException::withMessages(['code' => ['Código inválido ou expirado.']]);
+            }
+        }
+
+        $token = $this->issueToken($user);
 
         return compact('user', 'token');
     }

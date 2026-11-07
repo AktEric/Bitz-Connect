@@ -21,6 +21,8 @@ export interface WorkspaceInfo {
     is_admin: boolean
     access_role?: 'owner' | 'hr' | 'finance' | 'manager' | 'employee'
     is_manager: boolean
+    two_factor?: boolean
+    needs_two_factor?: boolean
     team_size?: number
     areas_headed?: string[]
     can_post: boolean
@@ -448,4 +450,11 @@ export interface CalendarEventInput {
   location: string | null
   description: string | null
   department_uuid: string | null
+}
+
+export interface CompanySecurity {
+  require_2fa: boolean
+  privileged_total: number
+  privileged_without_2fa: ({ uuid: string; name: string; avatar_url: string | null; job_title: string | null } | null)[]
+  can_edit: boolean
 }

@@ -6,7 +6,7 @@ import type {
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem,
+  CalendarPayload, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -167,6 +167,10 @@ const workspaceService = {
   updateMyBirthday: (slug: string, body: { birth_date: string | null; birthday_visible: boolean }) => patch<unknown>(`${w(slug)}/calendar/me`, body),
   icsLink: (slug: string) => get<{ url: string }>(`${w(slug)}/calendar/ics-link`),
   rotateIcsLink: (slug: string) => post<{ url: string }>(`${w(slug)}/calendar/ics-link`),
+
+  // Segurança da empresa (exigir 2FA para dono, RH e financeiro)
+  security: (slug: string) => get<CompanySecurity>(`${w(slug)}/security`),
+  saveSecurity: (slug: string, require_2fa: boolean) => api.put<ApiResponse<{ require_2fa: boolean }>>(`${w(slug)}/security`, { require_2fa }).then((r) => r.data.data),
 
   // Metas
   goals: (slug: string, params: { scope?: string; status?: string; user?: string }) => get<Goal[]>(`${w(slug)}/goals`, params),

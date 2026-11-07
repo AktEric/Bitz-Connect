@@ -59,6 +59,6 @@ class GoogleAuthService
             $created = true;
         }
 
-        return ['user' => $user, 'token' => $user->createToken('api')->plainTextToken, 'created' => $created];
+        return ['user' => $user, 'token' => app(AuthService::class)->issueToken($user), 'created' => $created];
     }
 }

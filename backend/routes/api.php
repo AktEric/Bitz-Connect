@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ChatGroupController;
 use App\Http\Controllers\Api\V1\CompanyDirectoryController;
 use App\Http\Controllers\Api\V1\CompanyInviteController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
+use App\Http\Controllers\Api\V1\AccountSecurityController;
 use App\Http\Controllers\Api\V1\AreaController;
 use App\Http\Controllers\Api\V1\CalendarController;
 use App\Http\Controllers\Api\V1\TimeBankController;
@@ -102,6 +103,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('/logout',   [AuthController::class, 'logout']);
         Route::put('/password',  [AuthController::class, 'changePassword']);
+
+        // Segurança da conta: verificação em duas etapas e sessões
+        Route::get('/security',                  [AccountSecurityController::class, 'overview']);
+        Route::post('/2fa/setup',                [AccountSecurityController::class, 'setup'])->middleware('throttle:auth');
+        Route::post('/2fa/enable',               [AccountSecurityController::class, 'enable'])->middleware('throttle:auth');
+        Route::post('/2fa/disable',              [AccountSecurityController::class, 'disable'])->middleware('throttle:auth');
+        Route::post('/2fa/recovery-codes',       [AccountSecurityController::class, 'regenerate'])->middleware('throttle:auth');
+        Route::delete('/sessions/{id}',          [AccountSecurityController::class, 'revoke'])->whereNumber('id');
+        Route::post('/sessions/revoke-others',   [AccountSecurityController::class, 'revokeOthers']);
     });
 
     // User profile
@@ -212,7 +222,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/workspaces',                [WorkspaceController::class, 'mine']);
     Route::post('/invites/{token}/accept',      [CompanyInviteController::class, 'accept']);
 
-    Route::prefix('workspaces/{hotel:slug}')->group(function () {
+    Route::prefix('workspaces/{hotel:slug}')->middleware('workspace.2fa')->group(function () {
 
         // Ponto
         Route::get('/time/today',      [TimeClockController::class, 'today_']);
@@ -260,6 +270,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/schedules/assign',       [WorkScheduleController::class, 'assign']);
         Route::patch('/schedules/{uuid}',       [WorkScheduleController::class, 'update']);
         Route::delete('/schedules/{uuid}',      [WorkScheduleController::class, 'destroy']);
+        Route::get('/security',                 [WorkspaceController::class, 'security']);
+        Route::put('/security',                 [WorkspaceController::class, 'updateSecurity']);
         Route::get('/audit',                    [WorkspaceController::class, 'audit']);
         Route::get('/roles',                    [WorkspaceController::class, 'roles']);
         Route::patch('/roles/{uuid}',           [WorkspaceController::class, 'updateRole']);

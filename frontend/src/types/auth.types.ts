@@ -58,3 +58,8 @@ export interface ChangePasswordData {
   password: string
   password_confirmation: string
 }
+
+export interface SecurityOverview {
+  two_factor: { enabled: boolean; confirmed_at: string | null; recovery_left: number }
+  sessions: { id: number; label: string; ip: string | null; created_at: string | null; last_used_at: string | null; current: boolean }[]
+}

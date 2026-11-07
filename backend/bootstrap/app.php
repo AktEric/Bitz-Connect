@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'auth.sanctum' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
+            'workspace.2fa' => \App\Http\Middleware\RequireTwoFactorForPrivileged::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
