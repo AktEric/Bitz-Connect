@@ -62,14 +62,14 @@ export default function LoginPessoaPage() {
         <div className="relative z-10 max-w-md">
           <div className="mb-5 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur-sm ring-1 ring-white/20">
             <Sparkles className="h-3.5 w-3.5 text-yellow-300" />
-            A rede da hotelaria brasileira
+            A rede de pessoas e empresas
           </div>
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
-            O primeiro ecossistema da hotelaria no Brasil!
+            RH e rede social para o seu trabalho.
           </h1>
           <p className="mt-4 text-base leading-relaxed text-violet-100">
-            Profissionais, hotéis e especialistas em um só lugar — sua próxima
-            grande oportunidade na hotelaria começa aqui.
+            Profissionais, empresas e especialistas em um só lugar — sua próxima
+            grande oportunidade começa aqui.
           </p>
 
           <div className="mt-10 flex items-center gap-8">
@@ -80,7 +80,7 @@ export default function LoginPessoaPage() {
             <div className="h-8 w-px bg-white/20" />
             <div>
               <p className="text-2xl font-bold">+800</p>
-              <p className="text-sm text-violet-200">hotéis parceiros</p>
+              <p className="text-sm text-violet-200">empresas parceiras</p>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div>
@@ -193,6 +193,14 @@ export default function LoginPessoaPage() {
             <span className="text-xs text-gray-400">ou</span>
             <div className="h-px flex-1 bg-gray-100" />
           </div>
+
+          <Link
+            to="/entrar"
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-violet-200 bg-violet-50 py-2.5 text-sm font-medium text-violet-700 transition-colors hover:bg-violet-100"
+          >
+            <Building2 className="h-4 w-4" />
+            Sou funcionário de uma empresa
+          </Link>
 
           <Link
             to="/login/hotel"

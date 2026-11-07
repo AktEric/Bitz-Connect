@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User as UserIcon, Sparkles, IdCard } from 'lucide-react'
+import { withTwoFactor } from '@/services/twoFactorLogin'
 import api from '@/services/api'
 import { useAuth } from '@/hooks/useAuth'
 import { useHotelAuth } from '@/hooks/useHotelAuth'
@@ -32,7 +33,7 @@ interface HotelLoginResponse {
 
 /**
  * Página de login para contas de Hotel.
- * Exige e-mail, senha e CNPJ do hotel administrado.
+ * Exige e-mail, senha e CNPJ da empresa administrado.
  * Requirements: 1.2, 1.4, 1.9
  */
 export default function LoginHotelPage() {
@@ -51,11 +52,12 @@ export default function LoginHotelPage() {
   const onSubmit = async (data: FormData) => {
     setServerError(null)
     try {
-      const response = await api.post<HotelLoginResponse>('/auth/hotel-login', {
+      const response = await withTwoFactor((extra) => api.post<HotelLoginResponse>('/auth/hotel-login', {
         email: data.email,
         password: data.password,
         cnpj: data.cnpj,
-      })
+        ...extra,
+      }))
 
       const { token, user, hotel } = response.data.data
 
@@ -94,20 +96,20 @@ export default function LoginHotelPage() {
         <div className="relative z-10 max-w-md">
           <div className="mb-5 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur-sm ring-1 ring-white/20">
             <Sparkles className="h-3.5 w-3.5 text-yellow-200" />
-            Painel para hotéis e redes
+            Painel para empresas e redes
           </div>
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
-            O primeiro ecossistema da hotelaria no Brasil!
+            RH e rede social interna para a sua empresa.
           </h1>
           <p className="mt-4 text-base leading-relaxed text-amber-50">
             Encontre talentos, gerencie vagas e equipe e construa a reputação
-            da sua marca em um painel feito sob medida para a hotelaria.
+            da sua marca em um painel feito sob medida para o seu negócio.
           </p>
 
           <div className="mt-10 flex items-center gap-8">
             <div>
               <p className="text-2xl font-bold">+800</p>
-              <p className="text-sm text-amber-100">hotéis parceiros</p>
+              <p className="text-sm text-amber-100">empresas parceiras</p>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div>

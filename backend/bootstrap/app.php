@@ -11,13 +11,29 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         apiPrefix: 'api/v1',
     )
+    ->withCommands([__DIR__ . '/../app/Console/Commands'])
     ->withMiddleware(function (Middleware $middleware) {
+        // Atrás de CDN/balanceador (Cloudflare, ALB…): TRUSTED_PROXIES="*" ou lista de IPs/CIDRs separados por vírgula.
+        // Sem isso o IP gravado no ponto e nos logs seria o do proxy.
+        if ($proxies = env('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(
+                at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)),
+                headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR
+                    | \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST
+                    | \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT
+                    | \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO,
+            );
+        }
+
+        $middleware->throttleApi();
+
         $middleware->api(prepend: [
             \App\Http\Middleware\ForceJsonResponse::class,
         ]);
 
         $middleware->alias([
             'auth.sanctum' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
+            'workspace.2fa' => \App\Http\Middleware\RequireTwoFactorForPrivileged::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

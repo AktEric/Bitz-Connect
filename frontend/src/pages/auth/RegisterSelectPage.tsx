@@ -49,7 +49,7 @@ export default function RegisterSelectPage() {
             <div>
               <h2 className="text-base font-semibold text-gray-900">Criar conta de Hotel</h2>
               <p className="mt-1 text-sm text-gray-500">
-                Para hotéis que desejam publicar vagas, gerenciar equipes e conectar profissionais.
+                Para empresas de qualquer segmento que desejam publicar vagas, gerenciar equipes e conectar profissionais.
               </p>
             </div>
           </button>

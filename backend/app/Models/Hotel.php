@@ -35,12 +35,16 @@ class Hotel extends Model implements Subscribable
         'phone',
         'contact_email',
         'followers_count',
+        'time_settings',
+        'security_settings',
     ];
 
     protected function casts(): array
     {
         return [
             'deleted_at' => 'datetime',
+            'time_settings' => 'array',
+            'security_settings' => 'array',
         ];
     }
 
@@ -59,6 +63,16 @@ class Hotel extends Model implements Subscribable
     public function hotelUsers(): HasMany
     {
         return $this->hasMany(HotelUser::class);
+    }
+
+    public function departments(): HasMany
+    {
+        return $this->hasMany(Department::class);
+    }
+
+    public function chatGroups(): HasMany
+    {
+        return $this->hasMany(ChatGroup::class);
     }
 
     /** Pivot: users who are admins of this hotel */

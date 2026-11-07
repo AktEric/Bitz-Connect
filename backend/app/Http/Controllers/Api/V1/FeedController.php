@@ -87,7 +87,7 @@ class FeedController extends Controller
         // Save image if provided
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('posts', 'public');
+            $imagePath = \App\Support\ImageSanitizer::store($request->file('image'), 'posts', 'public');
         }
 
         $validated               = $request->validated();
@@ -245,7 +245,7 @@ class FeedController extends Controller
             \Illuminate\Support\Facades\Storage::disk('public')->delete($post->image_path);
         }
 
-        $path = $request->file('image')->store('posts', 'public');
+        $path = \App\Support\ImageSanitizer::store($request->file('image'), 'posts', 'public');
         $post->update(['image_path' => $path]);
 
         return $this->success('Imagem enviada com sucesso.', new PostResource($post->load(['user.subscriptions', 'hotel'])));

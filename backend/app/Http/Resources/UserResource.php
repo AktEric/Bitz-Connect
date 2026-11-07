@@ -15,12 +15,23 @@ class UserResource extends JsonResource
     /** Optional connection_status resolved by the controller. */
     public ?string $connectionStatus = null;
 
+    /** Respostas de auth (login/cadastro) devolvem o e-mail ao próprio usuário. */
+    public bool $exposeEmail = false;
+
+    public function withOwnEmail(): static
+    {
+        $this->exposeEmail = true;
+
+        return $this;
+    }
+
     public function toArray(Request $request): array
     {
         $data = [
             'uuid'         => $this->uuid,
             'name'         => $this->name,
-            'email'        => $this->email,
+            // PII: o e-mail só é exposto ao próprio usuário (perfis públicos não vazam e-mail).
+            'email'        => $this->when($this->exposeEmail || $request->user('sanctum')?->id === $this->id, fn () => $this->email),
             'avatar_url'   => $this->avatar_path
                 ? asset('storage/' . $this->avatar_path)
                 : null,

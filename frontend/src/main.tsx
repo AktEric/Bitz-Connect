@@ -6,6 +6,12 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import '@/styles/globals.css'
 import App from './App'
+import { reloadForNewVersion } from '@/utils/staleChunk'
+
+// Chunk de rota que sumiu após um novo deploy: recarrega para pegar a versão atual.
+window.addEventListener('vite:preloadError', (event) => {
+  if (reloadForNewVersion()) event.preventDefault()
+})
 
 const queryClient = new QueryClient({
   defaultOptions: {

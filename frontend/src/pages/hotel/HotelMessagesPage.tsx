@@ -120,7 +120,7 @@ function MessageWindow({ hotelSlug, conversation }: { hotelSlug: string; convers
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Responder como o hotel..."
+          placeholder="Responder como a empresa..."
           rows={1}
           className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 max-h-32 overflow-auto"
           style={{ lineHeight: '1.5' }}

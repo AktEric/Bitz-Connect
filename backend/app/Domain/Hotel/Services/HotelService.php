@@ -56,7 +56,7 @@ class HotelService
     public function updateLogo(Hotel $hotel, UploadedFile $file): Hotel
     {
         $this->deleteOldFile($hotel->logo_path);
-        $path = $file->store('hotels/logos', 'public');
+        $path = \App\Support\ImageSanitizer::store($file, 'hotels/logos', 'public');
 
         return $this->hotelRepository->updateLogo($hotel, $path);
     }
@@ -68,7 +68,7 @@ class HotelService
     public function updateCover(Hotel $hotel, UploadedFile $file): Hotel
     {
         $this->deleteOldFile($hotel->cover_path);
-        $path = $file->store('hotels/covers', 'public');
+        $path = \App\Support\ImageSanitizer::store($file, 'hotels/covers', 'public');
 
         return $this->hotelRepository->updateCover($hotel, $path);
     }

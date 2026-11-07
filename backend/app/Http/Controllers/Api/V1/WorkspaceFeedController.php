@@ -1,0 +1,474 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Models\Hotel;
+use App\Models\HotelUser;
+use App\Models\WorkspacePost;
+use App\Models\WorkspacePostAck;
+use App\Models\WorkspacePostComment;
+use App\Models\WorkspacePostLike;
+use App\Models\WorkspacePostMedia;
+use App\Support\ImageSanitizer;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+/** Mural interno: novidades da empresa, com fotos privadas, reações, menções e público-alvo por setor. */
+class WorkspaceFeedController extends WorkspaceBaseController
+{
+    public const REACTIONS = ['like', 'love', 'celebrate', 'clap'];
+    public const MAX_PHOTOS = 6;
+    /** Menção no texto: @[Nome](uuid). O nome exibido vem sempre do servidor. */
+    private const MENTION_RE = '/@\[([^\]\n]{1,80})\]\(([0-9a-fA-F-]{36})\)/';
+
+    private function visible(Builder $q, Hotel $hotel, HotelUser $m): Builder
+    {
+        $q->where('hotel_id', $hotel->id);
+
+        if (! $this->access->isAdmin($m)) {
+            $q->where(function (Builder $w) use ($m) {
+                $w->whereNull('department_id')->orWhere('author_id', $m->user_id);
+                if ($m->department_id) {
+                    $w->orWhere('department_id', $m->department_id);
+                }
+            });
+        }
+
+        return $q;
+    }
+
+    private function canPost(Hotel $hotel, HotelUser $m, Request $request): bool
+    {
+        return $this->access->isAdmin($m) || $this->access->isManager($request->user(), $hotel);
+    }
+
+    // ── Menções ───────────────────────────────────────────────
+
+    /** @return string[] uuids (minúsculos) mencionados no texto */
+    private function mentionUuids(?string $text): array
+    {
+        preg_match_all(self::MENTION_RE, (string) $text, $m);
+
+        return array_values(array_unique(array_map('strtolower', $m[2])));
+    }
+
+    /** @return array<string, string> uuid => nome, só de membros aprovados da empresa */
+    private function mentionNames(Hotel $hotel, array $uuids): array
+    {
+        if (! $uuids) {
+            return [];
+        }
+
+        return HotelUser::with('user')->where('hotel_id', $hotel->id)->where('status', 'approved')
+            ->whereHas('user', fn ($q) => $q->whereIn('uuid', $uuids))->get()
+            ->mapWithKeys(fn (HotelUser $hu) => [$hu->user->uuid => $hu->user->name])->all();
+    }
+
+    private function plainText(string $text): string
+    {
+        return (string) preg_replace(self::MENTION_RE, '@$1', $text);
+    }
+
+    private function notifyMentions(Request $request, Hotel $hotel, string $text, ?int $departmentId, string $what): void
+    {
+        $uuids = array_slice($this->mentionUuids($text), 0, 10);
+        foreach ($uuids as $uuid) {
+            $member = $this->access->memberByUuid($hotel, $uuid);
+            if (! $member || $member->user_id === $request->user()->id) {
+                continue;
+            }
+            // Publicação de um setor só avisa quem pode vê-la.
+            if ($departmentId && $member->department_id !== $departmentId && ! $this->access->isAdmin($member)) {
+                continue;
+            }
+            $this->notifications->workspaceNotice(
+                $member->user, $request->user(), 'workspace_mention',
+                "{$request->user()->name} mencionou você {$what}", Str::limit($this->plainText($text), 100), $this->link($hotel, 'mural'),
+            );
+        }
+    }
+
+    // ── Formatação ────────────────────────────────────────────
+
+    private function mediaPayload(WorkspacePostMedia $m): array
+    {
+        return [
+            'uuid' => $m->uuid,
+            // URL relativa assinada (30 min): a foto não é pública nem listável; o mural gera um link novo a cada carga.
+            'url'  => URL::temporarySignedRoute('workspace.media', now()->addMinutes(30), ['uuid' => $m->uuid], absolute: false),
+        ];
+    }
+
+    private function format(WorkspacePost $p, int $meId, bool $isAdmin, array $reactions = [], ?string $mine = null, array $names = []): array
+    {
+        $counts = array_fill_keys(self::REACTIONS, 0);
+        foreach ($reactions as $type => $n) {
+            if (isset($counts[$type])) {
+                $counts[$type] = (int) $n;
+            }
+        }
+        $mentioned = array_intersect_key($names, array_flip($this->mentionUuids($p->body)));
+
+        return [
+            'uuid'           => $p->uuid,
+            'body'           => $p->body,
+            'pinned'         => $p->pinned,
+            'created_at'     => $p->created_at?->toISOString(),
+            'author'         => $this->access->person($p->author),
+            'department'     => $p->department?->name,
+            'media'          => $p->media->map(fn ($m) => $this->mediaPayload($m))->values(),
+            'mentions'       => $mentioned,
+            'reactions'      => $counts,
+            'my_reaction'    => $mine,
+            'likes_count'    => array_sum($counts),
+            'comments_count' => (int) ($p->comments_count ?? 0),
+            'liked_by_me'    => $mine !== null,
+            'can_delete'     => $isAdmin || $p->author_id === $meId,
+            'requires_ack'   => (bool) $p->requires_ack,
+            'acked_at'       => $p->getAttribute('ack_mine_at'),
+            'ack_count'      => $p->requires_ack && ($isAdmin || $p->author_id === $meId) ? (int) $p->getAttribute('ack_count') : null,
+            'ack_total'      => $p->requires_ack && ($isAdmin || $p->author_id === $meId) ? $this->audienceQuery($p)->count() : null,
+        ];
+    }
+
+    /** Pessoas que precisam confirmar a leitura: o público da publicação (empresa toda ou o setor), menos o autor. */
+    private function audienceQuery(WorkspacePost $p): \Illuminate\Database\Eloquent\Builder
+    {
+        return HotelUser::where('hotel_id', $p->hotel_id)->where('status', 'approved')->where('user_id', '!=', $p->author_id)
+            ->when($p->department_id, fn ($q) => $q->where('department_id', $p->department_id));
+    }
+
+    /** Anexa às publicações a minha confirmação e a contagem total (só serve a quem vai ver o painel). */
+    private function attachAcks(\Illuminate\Support\Collection $posts, int $meId): void
+    {
+        $ids = $posts->where('requires_ack', true)->pluck('id');
+        if ($ids->isEmpty()) {
+            return;
+        }
+        $counts = WorkspacePostAck::whereIn('workspace_post_id', $ids)->select('workspace_post_id', DB::raw('count(*) as c'))->groupBy('workspace_post_id')->pluck('c', 'workspace_post_id');
+        $mine   = WorkspacePostAck::whereIn('workspace_post_id', $ids)->where('user_id', $meId)->pluck('acked_at', 'workspace_post_id');
+        foreach ($posts as $p) {
+            $p->setAttribute('ack_count', (int) ($counts[$p->id] ?? 0));
+            $p->setAttribute('ack_mine_at', isset($mine[$p->id]) ? \Illuminate\Support\Carbon::parse($mine[$p->id])->toISOString() : null);
+        }
+    }
+
+    /** @return array{0: array<int, array<string,int>>, 1: array<int,string>} reações por publicação e a minha */
+    private function reactionData(\Illuminate\Support\Collection $postIds, int $meId): array
+    {
+        $rows = WorkspacePostLike::whereIn('workspace_post_id', $postIds)
+            ->select('workspace_post_id', 'reaction', DB::raw('count(*) as c'))->groupBy('workspace_post_id', 'reaction')->get();
+        $byPost = [];
+        foreach ($rows as $r) {
+            $byPost[$r->workspace_post_id][$r->reaction] = (int) $r->c;
+        }
+        $mine = WorkspacePostLike::whereIn('workspace_post_id', $postIds)->where('user_id', $meId)->pluck('reaction', 'workspace_post_id')->all();
+
+        return [$byPost, $mine];
+    }
+
+    public function index(Request $request, Hotel $hotel): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        if (! $m) {
+            return $this->forbidden('Você não faz parte desta empresa.');
+        }
+
+        $meId = $request->user()->id;
+        $q = $this->visible(WorkspacePost::query(), $hotel, $m)
+            ->with(['author', 'department', 'media'])
+            ->withCount(['comments'])
+            ->orderByDesc('pinned')->orderByDesc('created_at')->orderByDesc('id');
+
+        $page = $q->paginate(15);
+        $isAdmin = $this->access->isAdmin($m);
+        $posts = $page->getCollection();
+
+        [$byPost, $mine] = $this->reactionData($posts->pluck('id'), $meId);
+        $this->attachAcks($posts, $meId);
+        $names = $this->mentionNames($hotel, $posts->flatMap(fn ($p) => $this->mentionUuids($p->body))->unique()->values()->all());
+
+        return $this->success('Mural carregado com sucesso.', [
+            'items'     => $posts->map(fn ($p) => $this->format($p, $meId, $isAdmin, $byPost[$p->id] ?? [], $mine[$p->id] ?? null, $names))->values(),
+            'page'      => $page->currentPage(),
+            'last_page' => $page->lastPage(),
+            'can_post'  => $this->canPost($hotel, $m, $request),
+        ]);
+    }
+
+    public function store(Request $request, Hotel $hotel): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        if (! $m || ! $this->canPost($hotel, $m, $request)) {
+            return $this->forbidden('Somente RH/gestores podem publicar no mural.');
+        }
+
+        $data = $request->validate([
+            'body'            => ['nullable', 'string', 'max:3000'],
+            'pinned'          => ['sometimes', 'boolean'],
+            'department_uuid' => ['nullable', 'uuid'],
+            'requires_ack'    => ['sometimes', 'boolean'],
+            'photos'          => ['nullable', 'array', 'max:' . self::MAX_PHOTOS],
+            'photos.*'        => ['file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+        ]);
+        $body = trim((string) ($data['body'] ?? ''));
+        if ($body === '' && ! $request->hasFile('photos')) {
+            return $this->error('Escreva algo ou anexe uma foto.', ['body' => ['Escreva algo ou anexe uma foto.']], 422);
+        }
+
+        $deptId = null;
+        if (! empty($data['department_uuid'])) {
+            $dept = $hotel->departments()->where('uuid', $data['department_uuid'])->first();
+            if (! $dept) {
+                return $this->error('Setor inválido.', ['department_uuid' => ['Setor não encontrado.']], 422);
+            }
+            $deptId = $dept->id;
+        }
+
+        $post = DB::transaction(function () use ($request, $hotel, $m, $body, $data, $deptId) {
+            $post = WorkspacePost::create([
+                'uuid'          => (string) Str::uuid(),
+                'hotel_id'      => $hotel->id,
+                'author_id'     => $request->user()->id,
+                'department_id' => $deptId,
+                'body'          => $body,
+                'pinned'        => $this->access->isAdmin($m) && ($data['pinned'] ?? false),
+                'requires_ack'  => (bool) ($data['requires_ack'] ?? false),
+            ]);
+            foreach (array_values($request->file('photos', [])) as $i => $file) {
+                WorkspacePostMedia::create([
+                    'uuid' => (string) Str::uuid(), 'workspace_post_id' => $post->id,
+                    // EXIF/GPS removidos; disco privado.
+                    'path' => ImageSanitizer::store($file, "workspace-posts/{$hotel->id}", 'local'),
+                    'mime' => $file->getMimeType() ?: 'image/jpeg', 'size' => $file->getSize(), 'position' => $i,
+                ]);
+            }
+
+            return $post;
+        });
+        $post->load(['author', 'department', 'media']);
+
+        // Comunicado com confirmação de leitura: avisa todo o público (fila de notificações; poucos registros por comunicado).
+        if ($post->requires_ack) {
+            foreach ($this->audienceQuery($post)->with('user')->get() as $hu) {
+                if (! $hu->user) {
+                    continue;
+                }
+                $this->notifications->workspaceNotice(
+                    $hu->user, $request->user(), 'workspace_ack_required', 'Comunicado: confirme a leitura',
+                    Str::limit($this->plainText($body) ?: 'Comunicado com fotos', 100), $this->link($hotel, 'mural'),
+                );
+            }
+        }
+
+        $this->notifyMentions($request, $hotel, $body, $deptId, 'em uma publicação');
+        $names = $this->mentionNames($hotel, $this->mentionUuids($body));
+
+        return $this->created('Publicação criada com sucesso.', $this->format($post, $request->user()->id, $this->access->isAdmin($m), [], null, $names));
+    }
+
+    public function destroy(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? $this->visible(WorkspacePost::query(), $hotel, $m)->where('uuid', $post)->first() : null;
+        if (! $p) {
+            return $this->notFound('Publicação não encontrada.');
+        }
+        if (! $this->access->isAdmin($m) && $p->author_id !== $request->user()->id) {
+            return $this->forbidden('Você não pode remover esta publicação.');
+        }
+
+        // As fotos saem do disco junto com a publicação.
+        foreach ($p->media as $media) {
+            Storage::disk('local')->delete($media->path);
+        }
+        $p->media()->delete();
+        $p->delete();
+
+        return $this->success('Publicação removida com sucesso.');
+    }
+
+    public function pin(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        if (! $m || ! $this->access->isAdmin($m)) {
+            return $this->forbidden('Somente o RH pode fixar publicações.');
+        }
+        $p = WorkspacePost::where('hotel_id', $hotel->id)->where('uuid', $post)->first();
+        if (! $p) {
+            return $this->notFound('Publicação não encontrada.');
+        }
+        $p->update(['pinned' => ! $p->pinned]);
+
+        return $this->success('Publicação atualizada com sucesso.', ['pinned' => $p->pinned]);
+    }
+
+    /** POST /feed/{post}/ack — "li e estou ciente" (idempotente; guarda data e IP). */
+    public function ack(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? $this->visible(WorkspacePost::query(), $hotel, $m)->where('uuid', $post)->where('requires_ack', true)->first() : null;
+        if (! $p) {
+            return $this->notFound('Comunicado não encontrado.');
+        }
+
+        $ack = WorkspacePostAck::firstOrCreate(
+            ['workspace_post_id' => $p->id, 'user_id' => $request->user()->id],
+            ['acked_at' => now(), 'ip' => $request->ip()],
+        );
+
+        return $this->success('Leitura confirmada.', ['acked_at' => $ack->acked_at?->toISOString()]);
+    }
+
+    /** GET /feed/{post}/acks — quem já confirmou e quem falta (autor ou RH). */
+    public function acks(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? WorkspacePost::where('hotel_id', $hotel->id)->where('uuid', $post)->where('requires_ack', true)->first() : null;
+        if (! $p || ($p->author_id !== $request->user()->id && ! $this->access->isAdmin($m))) {
+            return $this->notFound('Comunicado não encontrado.');
+        }
+
+        $acked   = WorkspacePostAck::with('user')->where('workspace_post_id', $p->id)->orderBy('acked_at')->get()->keyBy('user_id');
+        $members = $this->audienceQuery($p)->with(['user', 'department'])->get();
+
+        return $this->success('Confirmações carregadas.', [
+            'total'   => $members->count(),
+            'readers' => $members->filter(fn ($hu) => $acked->has($hu->user_id))->map(fn ($hu) => [
+                'person' => $this->access->person($hu->user, $hu), 'acked_at' => $acked[$hu->user_id]->acked_at?->toISOString(),
+            ])->sortBy('acked_at')->values(),
+            'pending' => $members->reject(fn ($hu) => $acked->has($hu->user_id))->map(fn ($hu) => $this->access->person($hu->user, $hu) + ['department' => $hu->department?->name])->values(),
+        ]);
+    }
+
+    /** GET /workspace-media/{uuid}?expires=&signature= — entrega a foto (rota pública, mas só com URL assinada e válida). */
+    public function media(string $uuid): StreamedResponse|JsonResponse
+    {
+        $media = WorkspacePostMedia::with('post')->where('uuid', $uuid)->first();
+        if (! $media || ! $media->post || ! Storage::disk('local')->exists($media->path)) {
+            return $this->notFound('Foto não encontrada.');
+        }
+
+        return Storage::disk('local')->response($media->path, null, [
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control'          => 'private, max-age=1500',
+        ]);
+    }
+
+    private function reactionPayload(WorkspacePost $p, int $meId): array
+    {
+        [$byPost, $mine] = $this->reactionData(collect([$p->id]), $meId);
+        $counts = array_merge(array_fill_keys(self::REACTIONS, 0), $byPost[$p->id] ?? []);
+
+        return ['reactions' => $counts, 'my_reaction' => $mine[$p->id] ?? null, 'likes_count' => array_sum($counts)];
+    }
+
+    /** POST /feed/{post}/react  { reaction: like|love|celebrate|clap|null } — null remove a reação. */
+    public function react(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? $this->visible(WorkspacePost::query(), $hotel, $m)->where('uuid', $post)->first() : null;
+        if (! $p) {
+            return $this->notFound('Publicação não encontrada.');
+        }
+        $data = $request->validate(['reaction' => ['nullable', 'string', 'in:' . implode(',', self::REACTIONS)]]);
+        $meId = $request->user()->id;
+
+        $existing = WorkspacePostLike::where('workspace_post_id', $p->id)->where('user_id', $meId)->first();
+        if (empty($data['reaction'])) {
+            $existing?->delete();
+        } elseif ($existing) {
+            $existing->update(['reaction' => $data['reaction']]);
+        } else {
+            WorkspacePostLike::create(['workspace_post_id' => $p->id, 'user_id' => $meId, 'reaction' => $data['reaction']]);
+            if ($p->author && $p->author_id !== $meId) {
+                $this->notifications->workspaceNotice(
+                    $p->author, $request->user(), 'workspace_reaction',
+                    "{$request->user()->name} reagiu à sua publicação", Str::limit($this->plainText((string) $p->body), 100), $this->link($hotel, 'mural'),
+                );
+            }
+        }
+
+        return $this->success('Reação atualizada.', $this->reactionPayload($p, $meId));
+    }
+
+    /** Compatibilidade: alterna a reação "like". */
+    public function like(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? $this->visible(WorkspacePost::query(), $hotel, $m)->where('uuid', $post)->first() : null;
+        if (! $p) {
+            return $this->notFound('Publicação não encontrada.');
+        }
+
+        $existing = WorkspacePostLike::where('workspace_post_id', $p->id)->where('user_id', $request->user()->id)->first();
+        if ($existing) {
+            $existing->delete();
+            $liked = false;
+        } else {
+            WorkspacePostLike::create(['workspace_post_id' => $p->id, 'user_id' => $request->user()->id, 'reaction' => 'like']);
+            $liked = true;
+        }
+
+        return $this->success('Curtida atualizada.', [
+            'liked' => $liked,
+            'likes_count' => WorkspacePostLike::where('workspace_post_id', $p->id)->count(),
+        ]);
+    }
+
+    public function comments(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? $this->visible(WorkspacePost::query(), $hotel, $m)->where('uuid', $post)->first() : null;
+        if (! $p) {
+            return $this->notFound('Publicação não encontrada.');
+        }
+
+        $comments = $p->comments()->with('author')->orderBy('created_at')->limit(200)->get();
+        $names = $this->mentionNames($hotel, $comments->flatMap(fn ($c) => $this->mentionUuids($c->body))->unique()->values()->all());
+        $items = $comments->map(fn ($c) => [
+            'uuid' => $c->uuid, 'body' => $c->body, 'created_at' => $c->created_at?->toISOString(),
+            'author' => $this->access->person($c->author),
+            'mentions' => array_intersect_key($names, array_flip($this->mentionUuids($c->body))),
+        ])->values();
+
+        return $this->success('Comentários carregados com sucesso.', $items);
+    }
+
+    public function comment(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? $this->visible(WorkspacePost::query(), $hotel, $m)->where('uuid', $post)->first() : null;
+        if (! $p) {
+            return $this->notFound('Publicação não encontrada.');
+        }
+
+        $data = $request->validate(['body' => ['required', 'string', 'max:1000']]);
+        $c = WorkspacePostComment::create([
+            'uuid' => (string) Str::uuid(), 'workspace_post_id' => $p->id,
+            'author_id' => $request->user()->id, 'body' => $data['body'],
+        ]);
+        $c->load('author');
+
+        if ($p->author && $p->author_id !== $request->user()->id) {
+            $this->notifications->workspaceNotice(
+                $p->author, $request->user(), 'workspace_comment',
+                "{$request->user()->name} comentou na sua publicação",
+                Str::limit($this->plainText($data['body']), 100), $this->link($hotel, 'mural'),
+            );
+        }
+        $this->notifyMentions($request, $hotel, $data['body'], $p->department_id, 'em um comentário');
+        $names = $this->mentionNames($hotel, $this->mentionUuids($data['body']));
+
+        return $this->created('Comentário criado com sucesso.', [
+            'uuid' => $c->uuid, 'body' => $c->body, 'created_at' => $c->created_at?->toISOString(),
+            'author' => $this->access->person($c->author), 'mentions' => $names,
+        ]);
+    }
+}

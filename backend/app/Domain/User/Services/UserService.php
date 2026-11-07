@@ -35,7 +35,7 @@ class UserService
     public function updateAvatar(User $user, UploadedFile $file): User
     {
         $this->deleteOldFile($user->avatar_path);
-        $path = $file->store('avatars', 'public');
+        $path = \App\Support\ImageSanitizer::store($file, 'avatars', 'public');
 
         return $this->userRepository->updateAvatar($user, $path);
     }
@@ -47,7 +47,7 @@ class UserService
     public function updateBanner(User $user, UploadedFile $file): User
     {
         $this->deleteOldFile($user->banner_path);
-        $path = $file->store('banners', 'public');
+        $path = \App\Support\ImageSanitizer::store($file, 'banners', 'public');
 
         return $this->userRepository->updateBanner($user, $path);
     }

@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { AlertTriangle } from 'lucide-react'
+import { isStaleChunkError, reloadForNewVersion } from '@/utils/staleChunk'
 
 interface Props {
   children: ReactNode
@@ -24,6 +25,8 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Log para aparecer no console do navegador.
     console.error('[ErrorBoundary]', error, info.componentStack)
+    // Aba aberta numa versão antiga do site: busca a versão nova em vez de mostrar o erro.
+    if (isStaleChunkError(error)) reloadForNewVersion()
   }
 
   handleReset = () => {

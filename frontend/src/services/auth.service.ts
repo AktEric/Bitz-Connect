@@ -8,6 +8,8 @@ import type {
   ChangePasswordData,
 } from '@/types/auth.types'
 import type { ApiResponse } from '@/types/api.types'
+import type { SecurityOverview } from '@/types/auth.types'
+import { withTwoFactor } from './twoFactorLogin'
 
 /**
  * Auth service — wraps all /auth API calls.
@@ -20,8 +22,47 @@ const authService = {
   },
 
   async login(data: LoginCredentials): Promise<ApiResponse<AuthTokenResponse>> {
-    const res = await api.post<ApiResponse<AuthTokenResponse>>('/auth/login', data)
+    // Se a conta tem verificação em duas etapas, o servidor pede o código e a caixa global pergunta ao usuário.
+    const res = await withTwoFactor((extra) => api.post<ApiResponse<AuthTokenResponse>>('/auth/login', { ...data, ...extra }))
     return res.data
+  },
+
+  async providers(): Promise<{ google_client_id: string | null }> {
+    const res = await api.get<ApiResponse<{ google_client_id: string | null }>>('/auth/providers')
+    return res.data.data
+  },
+
+  async google(credential: string): Promise<ApiResponse<AuthTokenResponse>> {
+    const res = await api.post<ApiResponse<AuthTokenResponse>>('/auth/google', { credential })
+    return res.data
+  },
+
+  async security(): Promise<SecurityOverview> {
+    return (await api.get<ApiResponse<SecurityOverview>>('/auth/security')).data.data
+  },
+
+  async setup2fa(): Promise<{ secret: string; uri: string }> {
+    return (await api.post<ApiResponse<{ secret: string; uri: string }>>('/auth/2fa/setup')).data.data
+  },
+
+  async enable2fa(code: string): Promise<{ recovery_codes: string[] }> {
+    return (await api.post<ApiResponse<{ recovery_codes: string[] }>>('/auth/2fa/enable', { code })).data.data
+  },
+
+  async disable2fa(body: { password: string; code?: string; recovery_code?: string }): Promise<void> {
+    await api.post('/auth/2fa/disable', body)
+  },
+
+  async regenerateCodes(body: { password: string; code?: string; recovery_code?: string }): Promise<{ recovery_codes: string[] }> {
+    return (await api.post<ApiResponse<{ recovery_codes: string[] }>>('/auth/2fa/recovery-codes', body)).data.data
+  },
+
+  async revokeSession(id: number): Promise<void> {
+    await api.delete(`/auth/sessions/${id}`)
+  },
+
+  async revokeOtherSessions(): Promise<void> {
+    await api.post('/auth/sessions/revoke-others')
   },
 
   async logout(): Promise<void> {

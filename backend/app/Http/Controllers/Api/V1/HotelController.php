@@ -181,7 +181,12 @@ class HotelController extends Controller
 
         // Wrap items in HotelResource before passing to paginated()
         $paginator->setCollection(
-            $paginator->getCollection()->map(fn ($hotel) => new HotelResource($hotel))
+            $paginator->getCollection()->map(function ($hotel) {
+                // findByAdmin only returns companies where the viewer is admin.
+                $hotel->setAttribute('is_viewer_admin', true);
+
+                return new HotelResource($hotel);
+            })
         );
 
         return $this->paginated('Hotéis carregados com sucesso.', $paginator);

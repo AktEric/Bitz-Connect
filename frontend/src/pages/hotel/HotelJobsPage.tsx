@@ -31,7 +31,7 @@ const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
 }
 
 /**
- * HotelJobsPage — gestão das vagas do hotel: criar, editar, pausar/reativar/
+ * HotelJobsPage — gestão das vagas da empresa: criar, editar, pausar/reativar/
  * encerrar e ver/gerenciar candidaturas por vaga.
  */
 export default function HotelJobsPage() {
@@ -56,7 +56,7 @@ export default function HotelJobsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Gerenciar Vagas</h1>
-          <p className="mt-2 text-muted-foreground">Publique, edite e acompanhe as candidaturas das vagas do hotel.</p>
+          <p className="mt-2 text-muted-foreground">Publique, edite e acompanhe as candidaturas das vagas da empresa.</p>
         </div>
         {!showCreate && (
           <button

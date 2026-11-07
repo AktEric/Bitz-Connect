@@ -25,7 +25,7 @@ const TABS: { key: FeedTab; label: string }[] = [
   { key: 'publicacoes', label: 'Publicações' },
   { key: 'videos',      label: 'Vídeos' },
   { key: 'vagas',       label: 'Vagas' },
-  { key: 'hoteis',      label: 'Hotéis' },
+  { key: 'hoteis',      label: 'Empresas' },
   { key: 'eventos',     label: 'Eventos' },
 ]
 
@@ -177,7 +177,7 @@ function HotelsTab() {
   const hotels = data?.data ?? []
 
   if (isLoading) return <div className="space-y-3">{Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}</div>
-  if (hotels.length === 0) return <EmptyState title="Nenhum hotel cadastrado" description="Os hotéis da plataforma aparecerão aqui." icon={<Building2 className="h-8 w-8" />} />
+  if (hotels.length === 0) return <EmptyState title="Nenhuma empresa cadastrada" description="As empresas da plataforma aparecerão aqui." icon={<Building2 className="h-8 w-8" />} />
 
   return (
     <div className="space-y-3">

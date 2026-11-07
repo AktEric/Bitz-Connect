@@ -13,6 +13,13 @@ if [ ! -f backend/.env ]; then
   exit 1
 fi
 
+# A chave da aplicação criptografa o 2FA e outros segredos: sem ela o app quebra. Gere UMA vez e guarde um backup dela.
+if ! grep -qE '^APP_KEY=base64:.+' backend/.env; then
+  echo "Falta a APP_KEY em backend/.env. Gere com: docker run --rm php:8.4-cli php -r 'echo \"base64:\".base64_encode(random_bytes(32)), PHP_EOL;'" >&2
+  echo "Guarde essa chave fora do servidor: perdê-la invalida os segredos já criptografados (2FA, por exemplo)." >&2
+  exit 1
+fi
+
 echo "==> Buildando frontend (Vite)"
 docker run --rm \
   -v "$(pwd)/frontend:/app" \
@@ -28,5 +35,17 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T php php a
 docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T php php artisan config:cache
 docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T php php artisan route:cache
 docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T php php artisan storage:link || true
+
+echo "==> Reiniciando fila e agendador para carregar o código novo"
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T php php artisan queue:restart || true
+docker compose --env-file .env.prod -f docker-compose.prod.yml restart queue scheduler
+
+DOMAIN_NAME="$(grep '^DOMAIN=' .env.prod | cut -d= -f2)"
+echo "==> Verificando saúde (https://$DOMAIN_NAME/up)"
+for i in 1 2 3 4 5 6; do
+  if curl -fsS "https://$DOMAIN_NAME/up" > /dev/null 2>&1; then echo "    OK"; break; fi
+  [ "$i" = 6 ] && echo "    AVISO: /up não respondeu; confira os logs (docker compose logs php caddy)" >&2
+  sleep 5
+done
 
 echo "==> Pronto! Confira em https://$(grep DOMAIN .env.prod | cut -d= -f2)"

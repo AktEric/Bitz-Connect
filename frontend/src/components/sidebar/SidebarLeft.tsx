@@ -9,7 +9,7 @@ const QUICK_LINKS = [
   { label: 'Meu Perfil',           to: '/profile',      Icon: User },
   { label: 'Minhas Publicações',   to: '/profile',      Icon: FileText },
   { label: 'Minhas Candidaturas',  to: '/jobs',         Icon: Briefcase },
-  { label: 'Hotéis Vinculados',    to: '/network',      Icon: Building2 },
+  { label: 'Empresas Vinculadas',    to: '/network',      Icon: Building2 },
   { label: 'Configurações',        to: '/profile/edit', Icon: Settings },
 ]
 
@@ -58,7 +58,7 @@ export default function SidebarLeft() {
   const { data: connections } = useMyConnections()
   if (!user) return null
 
-  const subtitle = user.experiences?.length ? user.experiences[0].title : 'Profissional de Hotelaria'
+  const subtitle = user.experiences?.length ? user.experiences[0].title : 'Profissional'
   const connectionsCount = Array.isArray(connections) ? connections.length : 0
 
   return (

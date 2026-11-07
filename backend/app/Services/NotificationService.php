@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\MessageType;
+use App\Models\ChatGroup;
 use App\Models\Hotel;
 use App\Models\Notification;
 use App\Models\User;
@@ -223,6 +224,36 @@ class NotificationService
             description: $description,
             link:        "/hotel/{$hotel->slug}/messages?user={$sender->uuid}",
         );
+    }
+
+    /**
+     * Notifica um membro sobre nova mensagem em grupo da empresa. Faz upsert da
+     * notificação não lida do mesmo grupo para não inundar o sino.
+     */
+    public function groupMessage(User $recipient, User $sender, ChatGroup $group, string $content, bool $announcement = false): void
+    {
+        if ($recipient->id === $sender->id) {
+            return;
+        }
+
+        $description = mb_strlen($content) > 100 ? mb_substr($content, 0, 100) . '…' : $content;
+        $link        = "/chat?group={$group->uuid}";
+        $title       = $announcement
+            ? "Novo aviso em {$group->name}"
+            : "{$sender->name} em {$group->name}";
+
+        $existing = Notification::where('user_id', $recipient->id)
+            ->where('type', 'group_message')
+            ->where('link', $link)
+            ->where('read', false)
+            ->first();
+
+        if ($existing) {
+            $existing->update(['title' => $title, 'description' => $description, 'updated_at' => now()]);
+            return;
+        }
+
+        $this->create($recipient, $sender, 'group_message', 'message', $title, $description, $link);
     }
 
     // ──────────────────────────────────────────────────────────
@@ -481,5 +512,11 @@ class NotificationService
             'Adicione experiências, foto e bio',
             "/me",
         );
+    }
+
+    /** Aviso genérico do Workspace (solicitações, recebimentos, metas, PDI…). */
+    public function workspaceNotice(User $recipient, ?User $actor, string $type, string $title, ?string $description, string $link): void
+    {
+        $this->create($recipient, $actor, $type, 'hotel', $title, $description, $link);
     }
 }

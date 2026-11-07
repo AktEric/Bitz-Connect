@@ -37,7 +37,6 @@ class User extends Authenticatable implements Subscribable
         'state',
         'website',
         'social_links',
-        'role',
     ];
 
     /**
@@ -47,6 +46,9 @@ class User extends Authenticatable implements Subscribable
         'id',
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_last_step',
     ];
 
     /**
@@ -58,8 +60,17 @@ class User extends Authenticatable implements Subscribable
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
             'social_links'      => 'array',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_recovery_codes' => 'array',
             'deleted_at'        => 'datetime',
         ];
+    }
+
+    /** Verificação em duas etapas ativa (segredo confirmado). */
+    public function hasTwoFactor(): bool
+    {
+        return $this->two_factor_confirmed_at !== null && $this->two_factor_secret !== null;
     }
 
     /**
@@ -165,6 +176,7 @@ class User extends Authenticatable implements Subscribable
         return $this->hotelUsers()
             ->where('hotel_id', $hotelId)
             ->where('role', 'admin')
+            ->where('status', 'approved')
             ->exists();
     }
 
@@ -173,6 +185,7 @@ class User extends Authenticatable implements Subscribable
         return $this->hotelUsers()
             ->whereHas('hotel', fn ($q) => $q->where('uuid', $hotelUuid))
             ->where('role', 'admin')
+            ->where('status', 'approved')
             ->exists();
     }
 }

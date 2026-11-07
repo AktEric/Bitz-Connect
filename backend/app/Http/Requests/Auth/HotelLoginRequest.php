@@ -16,6 +16,8 @@ class HotelLoginRequest extends FormRequest
         return [
             'email'    => ['required', 'email'],
             'password' => ['required', 'string'],
+            'code'          => ['nullable', 'string', 'max:12'],
+            'recovery_code' => ['nullable', 'string', 'max:20'],
             'cnpj'     => ['required', 'string', 'min:14', 'max:18'],
         ];
     }

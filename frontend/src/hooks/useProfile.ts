@@ -8,11 +8,11 @@ import type { UpdateProfileData, CreateExperienceData, Experience } from '@/type
 function hotelLinkMessage(experience?: Experience): string {
   switch (experience?.hotel_link_status) {
     case 'approved':
-      return 'Você já possui um vínculo aprovado com este hotel.'
+      return 'Você já possui um vínculo aprovado com esta empresa.'
     case 'pending':
-      return 'Solicitação de vínculo enviada. Aguarde a aprovação do administrador do hotel.'
+      return 'Solicitação de vínculo enviada. Aguarde a aprovação do administrador da empresa.'
     case 'rejected':
-      return 'Experiência salva. O vínculo com este hotel havia sido recusado anteriormente.'
+      return 'Experiência salva. O vínculo com esta empresa havia sido recusado anteriormente.'
     default:
       return 'Experiência salva com sucesso.'
   }

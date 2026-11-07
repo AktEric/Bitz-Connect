@@ -16,6 +16,7 @@ use App\Http\Requests\Auth\RegisterHotelRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Resources\HotelResource;
+use App\Domain\Auth\Services\GoogleAuthService;
 use App\Http\Resources\UserResource;
 use App\Http\Traits\ApiResponseTrait;
 use App\Models\Hotel;
@@ -49,7 +50,7 @@ class AuthController extends Controller
 
         return $this->created('Cadastro realizado com sucesso.', [
             'token' => $result['token'],
-            'user'  => new UserResource($result['user']),
+            'user'  => (new UserResource($result['user']))->withOwnEmail(),
         ]);
     }
 
@@ -65,7 +66,30 @@ class AuthController extends Controller
 
         return $this->success('Login realizado com sucesso.', [
             'token' => $result['token'],
-            'user'  => new UserResource($result['user']),
+            'user'  => (new UserResource($result['user']))->withOwnEmail(),
+        ]);
+    }
+
+    /** GET /auth/providers — quais logins sociais estão disponíveis (o client id do Google é público). */
+    public function providers(GoogleAuthService $google): JsonResponse
+    {
+        return $this->success('Provedores carregados com sucesso.', ['google_client_id' => $google->clientId()]);
+    }
+
+    /** POST /auth/google — entra (ou cria a conta) com o ID token do Google. */
+    public function google(Request $request, GoogleAuthService $google): JsonResponse
+    {
+        $data = $request->validate(['credential' => ['required', 'string', 'max:4096']]);
+
+        try {
+            $result = $google->authenticate($data['credential']);
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), [], 503);
+        }
+
+        return $this->success('Login realizado com sucesso.', [
+            'token' => $result['token'],
+            'user'  => (new UserResource($result['user']))->withOwnEmail(),
         ]);
     }
 
@@ -86,7 +110,12 @@ class AuthController extends Controller
      */
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $this->authService->forgotPassword($request->validated('email'));
+        // Resposta idêntica exista ou não a conta (evita enumeração de e-mails).
+        try {
+            $this->authService->forgotPassword($request->validated('email'));
+        } catch (\Illuminate\Validation\ValidationException) {
+            // ignorado de propósito
+        }
 
         return $this->success('Link de recuperação enviado para o e-mail informado.');
     }
@@ -149,7 +178,7 @@ class AuthController extends Controller
 
         return $this->success('Login realizado com sucesso.', [
             'token' => $result['token'],
-            'user'  => new UserResource($result['user']),
+            'user'  => (new UserResource($result['user']))->withOwnEmail(),
             'hotel' => new HotelResource($hotel),
         ]);
     }
@@ -191,7 +220,7 @@ class AuthController extends Controller
 
         return $this->created('Cadastro realizado com sucesso.', [
             'token' => $result['token'],
-            'user'  => new UserResource($result['user']),
+            'user'  => (new UserResource($result['user']))->withOwnEmail(),
             'hotel' => new HotelResource($hotel),
         ]);
     }

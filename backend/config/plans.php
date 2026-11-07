@@ -82,7 +82,7 @@ return [
 
         SubscriptionPlan::ProEmpresa->value => [
             'name'        => 'ConnectHotel PRO — Empresa',
-            'tagline'     => 'Para hotéis e empresas que recrutam e se destacam.',
+            'tagline'     => 'Para empresas de qualquer segmento que recrutam e se destacam.',
             'price_cents' => 9990,
             'interval'    => 'month',
             'audience'    => 'hotel',

@@ -15,7 +15,7 @@ const MOCK_NEWS = [
   { id: 1, title: 'Setor hoteleiro cresce 12% no 1º trimestre', ago: '2h' },
   { id: 2, title: 'Tecnologia transforma a recepção de hóspedes', ago: '4h' },
   { id: 3, title: 'Brasil lidera turismo de negócios na América Latina', ago: '6h' },
-  { id: 4, title: 'Sustentabilidade é prioridade nos hotéis em 2025', ago: '9h' },
+  { id: 4, title: 'Sustentabilidade é prioridade nas empresas em 2025', ago: '9h' },
 ]
 
 export function NewsWidget() {
@@ -25,7 +25,7 @@ export function NewsWidget() {
     <Card className="mb-3">
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp className="h-4 w-4 text-violet-500" />
-        <CardTitle>Notícias da Hotelaria</CardTitle>
+        <CardTitle>Novidades do mercado</CardTitle>
       </div>
       <ul className="space-y-3">
         {visible.map((n) => (
@@ -56,7 +56,7 @@ export function HotelHighlights() {
   const hotels = (data?.data?.length ? data.data : FALLBACK_HOTELS) as Hotel[]
   return (
     <Card className="mb-3">
-      <CardTitle className="mb-3">Hotéis em Destaque</CardTitle>
+      <CardTitle className="mb-3">Empresas em Destaque</CardTitle>
       <ul className="space-y-2.5">
         {hotels.slice(0, 4).map((h) => (
           <li key={h.uuid}>
