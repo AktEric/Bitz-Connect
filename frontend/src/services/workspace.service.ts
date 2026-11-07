@@ -53,6 +53,9 @@ const workspaceService = {
     const res = await api.get(`${w(slug)}/time/entries/${uuid}/photo`, { responseType: 'blob' })
     return URL.createObjectURL(res.data as Blob)
   },
+  privacy: (slug: string) => get<{ punch_consent_at: string | null }>(`${w(slug)}/me/privacy`),
+  givePunchConsent: (slug: string) => post<{ punch_consent_at: string }>(`${w(slug)}/me/privacy/consent`, {}),
+  exportMyData: (slug: string) => get<Record<string, unknown>>(`${w(slug)}/me/export`),
   timeReceipt: (slug: string, uuid: string) => get<TimeReceipt>(`${w(slug)}/time/entries/${uuid}/receipt`),
   timeIntegrity: (slug: string) => get<IntegrityResult>(`${w(slug)}/time/integrity`),
   timesheet: (slug: string, params: { month?: string; user?: string }) => get<Timesheet>(`${w(slug)}/time/timesheet`, params),

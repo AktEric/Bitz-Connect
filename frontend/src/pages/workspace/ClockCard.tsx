@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import workspaceService from '@/services/workspace.service'
 import { Coffee, LogIn, LogOut, Play } from 'lucide-react'
 import { useTimeToday, usePunch } from '@/hooks/useWorkspace'
 import { cn } from '@/utils/cn'
 import type { TimeType } from '@/types/workspace.types'
 import { ACTION_LABEL, TYPE_LABEL, fmtClock, fmtMinutes } from './timeUtils'
-import { errMsg } from './ui'
+import { Modal, btnGhost, btnPrimary, errMsg } from './ui'
 import CameraModal from './CameraModal'
 import DeviceNameModal from './DeviceNameModal'
 
@@ -42,6 +42,13 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
   const [locating, setLocating] = useState(false)
   const [askDevice, setAskDevice] = useState<{ type: TimeType; photo: Blob | null } | null>(null)
   const qc = useQueryClient()
+  const [askConsent, setAskConsent] = useState<TimeType | null>(null)
+  const { data: privacy } = useQuery({ queryKey: ['ws', slug, 'privacy'], queryFn: () => workspaceService.privacy(slug), staleTime: 60_000 })
+  const giveConsent = useMutation({
+    mutationFn: () => workspaceService.givePunchConsent(slug),
+    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['ws', slug, 'privacy'] }); const t = askConsent; setAskConsent(null); if (t) doPunchNow(t) },
+    onError: (e) => { setAskConsent(null); setError(errMsg(e)) },
+  })
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -97,10 +104,17 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
     else void send(type, photo)
   }
 
-  const doPunch = (type: TimeType) => {
+  const doPunchNow = (type: TimeType) => {
     setError(null)
     if (req && req.photo !== 'off') setAskPhoto(type)
     else proceed(type, null)
+  }
+
+  // LGPD: foto/localização só depois do aceite da pessoa (uma vez por empresa).
+  const doPunch = (type: TimeType) => {
+    const sensitive = !!req && (req.photo !== 'off' || req.geo !== 'off')
+    if (sensitive && privacy && !privacy.punch_consent_at) setAskConsent(type)
+    else doPunchNow(type)
   }
 
   return (
@@ -161,6 +175,15 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
             ? 'Este dispositivo foi bloqueado pelo RH. Use outro aparelho cadastrado ou fale com o RH.'
             : `O dispositivo “${device?.name ?? 'deste aparelho'}” aguarda a aprovação do RH para marcar o ponto.`}
         </p>
+      )}
+      {askConsent && (
+        <Modal title="Foto e localização no ponto" onClose={() => setAskConsent(null)}>
+          <p className="text-sm text-gray-700">Esta empresa pode registrar a sua localização e/ou uma foto quando você marca o ponto, para comprovar onde a jornada foi feita. Esses dados ficam visíveis só para você, seu gestor e o RH, e são apagados automaticamente após o prazo de retenção da empresa (12 meses por padrão). Você pode baixar uma cópia dos seus dados em Segurança.</p>
+          <div className="mt-4 flex justify-end gap-2">
+            <button type="button" className={btnGhost} onClick={() => setAskConsent(null)}>Agora não</button>
+            <button type="button" className={btnPrimary} disabled={giveConsent.isPending} onClick={() => giveConsent.mutate()}>Li e concordo</button>
+          </div>
+        </Modal>
       )}
       {askDevice && (
         <DeviceNameModal

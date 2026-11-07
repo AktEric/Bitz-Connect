@@ -33,6 +33,7 @@ class HotelUser extends Model
             'status' => 'string', // 'pending' | 'approved' | 'rejected'
             'role'   => 'string', // 'admin' | 'employee'
             'hired_at' => 'date',
+            'punch_consent_at' => 'datetime',
             'birth_date' => 'date',
             'birthday_visible' => 'boolean',
         ];

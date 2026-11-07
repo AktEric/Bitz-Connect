@@ -284,6 +284,34 @@ function CompanyPolicyCard() {
   )
 }
 
+/** LGPD: a pessoa baixa uma cópia dos próprios dados desta empresa. */
+function MyDataCard() {
+  const { slug } = useWs()
+  const [error, setError] = useState('')
+  const exp = useMutation({
+    mutationFn: () => workspaceService.exportMyData(slug),
+    onSuccess: (data) => {
+      setError('')
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `meus-dados-${slug}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    },
+    onError: (e) => setError(errMsg(e)),
+  })
+
+  return (
+    <Panel>
+      <h2 className="text-sm font-semibold text-gray-900">Meus dados (LGPD)</h2>
+      <p className="mt-1 text-sm text-gray-600">Baixe uma cópia dos dados que esta empresa guarda sobre você: perfil, marcações de ponto (com IP e localização, se houver) e pedidos de ajuste.</p>
+      <button type="button" className={`${btnGhost} mt-3`} disabled={exp.isPending} onClick={() => exp.mutate()}><Download size={15} /> Baixar meus dados</button>
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+    </Panel>
+  )
+}
+
 export default function WorkspaceSecurityPage() {
   return (
     <div className="space-y-5">
@@ -292,6 +320,7 @@ export default function WorkspaceSecurityPage() {
       <SessionsCard />
       <PasswordCard />
       <CompanyPolicyCard />
+      <MyDataCard />
     </div>
   )
 }

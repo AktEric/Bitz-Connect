@@ -350,3 +350,15 @@ Papéis personalizados completos, kiosk/passkeys/agente, conformidade legal do p
 3. **Mídia:** aceitam vídeo no primeiro lançamento ou só fotos (recomendado: só fotos agora)?
 4. **Dispositivo do ponto:** basta "dispositivo cadastrado" (§5.2 b) ou o cliente exige quiosque/passkey?
 5. **Marca branca:** cada cliente terá subdomínio e marca própria já na venda?
+
+## Status — atualização (ponto, LGPD, PWA)
+
+Entregue desde a última revisão:
+
+- **Auditoria:** tela de auditoria (dono/RH) com filtros e exportação CSV.
+- **Busca global** (Ctrl+K), **feriados e férias** zerando a jornada esperada, **comunicado com confirmação de leitura**, **painel da diretoria** (papel somente leitura) e **assistente de implantação** (Primeiros passos).
+- **Ponto à prova de adulteração:** NSR por empresa + hash SHA-256 encadeado; comprovante imprimível; verificação de integridade (Papéis e estrutura). É evidência de adulteração — **não** é certificação de REP/Portaria 671; tratar como controle gerencial.
+- **LGPD:** aceite de foto/localização antes da primeira marcação (registrado e auditado); "Baixar meus dados" (Segurança); retenção automática — `ponto:purge-sensitive` apaga foto/coordenadas com mais de 12 meses (`PUNCH_SENSITIVE_RETENTION_MONTHS`).
+- **PWA básico:** manifest + service worker mínimo (instalável, aviso offline). Não guarda dados em cache.
+
+Ainda pendente: tema escuro, acessibilidade (focus trap/contraste), sessão por cookie httpOnly, matriz de permissões customizada, parabéns automático, antivírus/miniaturas/vídeo, Reverb (tempo real), Playwright/Sentry, revisão jurídica (Portaria 671, termos LGPD), SMTP, backup offsite e passphrase de backup em produção.
