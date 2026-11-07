@@ -4,7 +4,7 @@ import type {
   DevelopmentItem, DevelopmentPlan, FeedComment, FeedPost, Goal, GoalSummaryRow, InvitePreview,
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
-  RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem,
+  RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -88,7 +88,16 @@ const workspaceService = {
 
   // Mural
   feed: (slug: string, page = 1) => get<Paged<FeedPost>>(`${w(slug)}/feed`, { page }),
-  createPost: (slug: string, body: { body: string; pinned?: boolean; department_uuid?: string | null }) => post<FeedPost>(`${w(slug)}/feed`, body),
+  createPost: (slug: string, input: { body: string; pinned?: boolean; department_uuid?: string | null; photos?: Blob[] }) => {
+    const form = new FormData()
+    form.append('body', input.body)
+    if (input.pinned) form.append('pinned', '1')
+    if (input.department_uuid) form.append('department_uuid', input.department_uuid)
+    input.photos?.forEach((b, i) => form.append('photos[]', b, `foto-${i + 1}.jpg`))
+    return api.post<ApiResponse<FeedPost>>(`${w(slug)}/feed`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.data)
+  },
+  reactPost: (slug: string, uuid: string, reaction: ReactionType | null) =>
+    post<{ reactions: Record<ReactionType, number>; my_reaction: ReactionType | null; likes_count: number }>(`${w(slug)}/feed/${uuid}/react`, { reaction }),
   deletePost: (slug: string, uuid: string) => del(`${w(slug)}/feed/${uuid}`),
   pinPost: (slug: string, uuid: string) => post<{ pinned: boolean }>(`${w(slug)}/feed/${uuid}/pin`),
   likePost: (slug: string, uuid: string) => post<{ liked: boolean; likes_count: number }>(`${w(slug)}/feed/${uuid}/like`),

@@ -71,6 +71,9 @@ Route::get('/hotels/{hotel}',                  [HotelController::class, 'show'])
 // Convite para a empresa — pré-visualização pública (por token, com rate limit)
 Route::get('/invites/{token}', [CompanyInviteController::class, 'preview'])->middleware('throttle:30,1');
 
+// Fotos do mural do Workspace: privadas, entregues só com URL assinada (relativa) de curta duração
+Route::get('/workspace-media/{uuid}', [WorkspaceFeedController::class, 'media'])->name('workspace.media')->middleware(['signed:relative', 'throttle:120,1']);
+
 // Subscription plan catalog (public — for the pricing page)
 Route::get('/plans',                           [SubscriptionController::class, 'plans']);
 
@@ -248,6 +251,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/feed',                         [WorkspaceFeedController::class, 'store']);
         Route::delete('/feed/{post}',                [WorkspaceFeedController::class, 'destroy']);
         Route::post('/feed/{post}/pin',              [WorkspaceFeedController::class, 'pin']);
+        Route::post('/feed/{post}/react',            [WorkspaceFeedController::class, 'react']);
         Route::post('/feed/{post}/like',             [WorkspaceFeedController::class, 'like']);
         Route::get('/feed/{post}/comments',          [WorkspaceFeedController::class, 'comments']);
         Route::post('/feed/{post}/comments',         [WorkspaceFeedController::class, 'comment']);

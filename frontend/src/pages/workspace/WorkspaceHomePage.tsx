@@ -81,7 +81,10 @@ export default function WorkspaceHomePage() {
                         <span className="text-xs text-gray-400">{timeAgo(p.created_at)}</span>{' '}
                         {p.pinned && <Pill tone="amber">Fixado</Pill>}
                       </p>
-                      <p className="line-clamp-2 text-sm text-gray-600">{p.body}</p>
+                      <p className="line-clamp-2 text-sm text-gray-600">
+                        {p.body ? p.body.replace(/@\[([^\]\n]{1,80})\]\([0-9a-fA-F-]{36}\)/g, '@$1') : 'Publicou fotos'}
+                        {p.media?.length > 0 && <span className="ml-1 text-xs text-violet-600">· {p.media.length} {p.media.length === 1 ? 'foto' : 'fotos'}</span>}
+                      </p>
                     </div>
                   </li>
                 ))}

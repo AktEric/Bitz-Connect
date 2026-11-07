@@ -60,6 +60,17 @@ Verificação: 154 testes de backend passando, 9 de front, type-check e shellche
 | Tela | **Feito** | Seção "Áreas e chefias" em Papéis e estrutura (chefe por área e substituições) |
 | Auditoria | **Feito** | Troca de chefe e criação/remoção de substituição ficam no log |
 
+### Dia 2 — Mural com fotos, reações e menções (feito)
+
+| Item | Status | O que foi feito / como foi verificado |
+|------|--------|---------------------------------------|
+| M1 fotos | **Feito e testado** | Até 6 fotos por publicação; redimensionadas no aparelho (1600 px, JPEG) e limpas de EXIF/GPS no servidor; **disco privado**, entregues por **URL assinada de 30 min** (sem login, mas só com assinatura válida; adulterar = 403); apagar a publicação apaga os arquivos e invalida o link. Verificado no navegador: 2 fotos publicadas, carregadas e removidas, 0 violações de CSP |
+| M3 reações | **Feito e testado** | 👍 ❤️ 🎉 👏 (uma por pessoa), contagem por tipo, aviso ao autor só na primeira reação |
+| M3 menções | **Feito e testado** | `@` abre sugestão de pessoas (teclado e mouse); menção em publicação e comentário avisa a pessoa; nome exibido vem do cadastro (não do texto); gente de fora da empresa ou de outro setor não é notificada |
+| Permissão | Mantida | Publicar continua para RH/gestores (colaborador reage e comenta). Liberar publicação para todos é uma decisão de produto |
+
+Pendente do M1/S5: antivírus (ClamAV) nas fotos, miniaturas geradas no servidor (hoje só o redimensionamento no aparelho) e vídeo (M2).
+
 Não coberto ainda: papéis personalizados com matriz de permissões (P1 da §8.3), escopo por unidade/filial e a tela de "minhas substituições" para o próprio gestor (a API já permite).
 
 ---

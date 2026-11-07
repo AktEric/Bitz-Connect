@@ -34,6 +34,11 @@ class WorkspacePost extends Model
         return $this->hasMany(WorkspacePostComment::class);
     }
 
+    public function media(): HasMany
+    {
+        return $this->hasMany(WorkspacePostMedia::class)->orderBy('position');
+    }
+
     public function likes(): HasMany
     {
         return $this->hasMany(WorkspacePostLike::class);

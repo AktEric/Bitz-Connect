@@ -71,9 +71,21 @@ export interface InvitePreview {
   usable: boolean
 }
 
+export type ReactionType = 'like' | 'love' | 'celebrate' | 'clap'
+
+export interface FeedMedia {
+  uuid: string
+  /** URL relativa assinada (expira em ~30 min); recarregar o mural gera outra. */
+  url: string
+}
+
 export interface FeedPost {
   uuid: string
   body: string
+  media: FeedMedia[]
+  mentions: Record<string, string>
+  reactions: Record<ReactionType, number>
+  my_reaction: ReactionType | null
   pinned: boolean
   created_at: string
   author: WorkspacePerson | null
@@ -87,6 +99,7 @@ export interface FeedPost {
 export interface FeedComment {
   uuid: string
   body: string
+  mentions?: Record<string, string>
   created_at: string
   author: WorkspacePerson | null
 }

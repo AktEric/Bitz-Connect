@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WorkspacePostLike extends Model
 {
-    protected $fillable = ['workspace_post_id','user_id'];
+    protected $fillable = ['workspace_post_id','user_id','reaction'];
 
     protected $table = 'workspace_post_likes';
 
