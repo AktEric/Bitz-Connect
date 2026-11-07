@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, ArrowLeftRight, LogOut, Globe, CheckCircle2, type LucideIcon,
+  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, ArrowLeftRight, LogOut, Moon, Sun, Globe, CheckCircle2, type LucideIcon,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import { useAuth } from '@/hooks/useAuth'
@@ -10,6 +10,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import NotificationBell from '@/components/common/NotificationBell'
 import ChatSidebar from '@/components/chat/ChatSidebar'
 import { cn } from '@/utils/cn'
+import { getTheme, setTheme, type Theme } from '@/utils/theme'
 import CommandPalette from './CommandPalette'
 import { Spinner } from './ui'
 
@@ -26,6 +27,7 @@ export default function WorkspaceLayout() {
   const [chatOpen, setChatOpen] = useState(false)
   const [drawer, setDrawer] = useState(false)
   const [menu, setMenu] = useState(false)
+  const [themeNow, setThemeNow] = useState<Theme>(getTheme)
   const [searchOpen, setSearchOpen] = useState(false)
 
   // Ctrl/Cmd+K abre a busca global em qualquer tela do Workspace
@@ -133,6 +135,7 @@ export default function WorkspaceLayout() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
       <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-gray-200 bg-white/90 px-3 backdrop-blur sm:px-5">
         <button type="button" className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden" onClick={() => setDrawer(true)} aria-label="Abrir menu">
           <Menu className="h-5 w-5" />
@@ -171,6 +174,9 @@ export default function WorkspaceLayout() {
                 <Link to={`/w/${slug}/seguranca`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ShieldCheck className="h-4 w-4" /> Segurança</Link>
                 <Link to="/w" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ArrowLeftRight className="h-4 w-4" /> Trocar de empresa</Link>
                 <Link to="/feed" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Globe className="h-4 w-4" /> Rede profissional</Link>
+                <button type="button" onClick={() => { const n = getTheme() === "dark" ? "light" : "dark"; setTheme(n); setThemeNow(n) }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  {themeNow === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />} {themeNow === "dark" ? "Tema claro" : "Tema escuro"}
+                </button>
                 <button
                   type="button"
                   onClick={async () => { await logout(); navigate('/entrar', { replace: true }) }}
@@ -188,7 +194,7 @@ export default function WorkspaceLayout() {
         <aside className="hidden w-60 flex-shrink-0 lg:block">
           <div className="sticky top-20">{renderGroups()}</div>
         </aside>
-        <main className="min-w-0 flex-1">
+        <main id="conteudo" tabIndex={-1} className="min-w-0 flex-1 outline-none">
           {info.me.needs_two_factor && (
             <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
               <ShieldCheck className="h-5 w-5 flex-shrink-0" />

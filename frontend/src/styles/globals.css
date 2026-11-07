@@ -96,3 +96,42 @@
   .print-area { position: absolute; left: 0; top: 0; width: 100%; border: 0 !important; }
   .no-print { display: none !important; }
 }
+
+/* ── Tema escuro: remapeia as cores neutras usadas nas telas ─────────────── */
+.dark { color-scheme: dark; }
+.dark body { background-color: #0f1117; color: #e5e7eb; }
+.dark .bg-white { background-color: #181b24; }
+.dark .bg-white\/90 { background-color: rgb(24 27 36 / 0.9); }
+.dark .bg-gray-50 { background-color: #131620; }
+.dark .bg-gray-100 { background-color: #232734; }
+.dark .bg-gray-200 { background-color: #2c3140; }
+.dark .hover\:bg-gray-50:hover { background-color: #1f2330; }
+.dark .hover\:bg-gray-100:hover { background-color: #2a2f3d; }
+.dark .text-gray-900, .dark .text-gray-800 { color: #f3f4f6; }
+.dark .text-gray-700 { color: #d1d5db; }
+.dark .text-gray-600 { color: #b6bcc8; }
+.dark .text-gray-500 { color: #9aa1af; }
+.dark .text-gray-400 { color: #8a91a1; }
+.dark .border-gray-50, .dark .border-gray-100 { border-color: #232734; }
+.dark .border-gray-200, .dark .border-gray-300 { border-color: #323849; }
+.dark .divide-gray-50 > :not([hidden]) ~ :not([hidden]), .dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #232734; }
+.dark .bg-violet-50 { background-color: rgb(124 58 237 / 0.16); }
+.dark .bg-violet-100 { background-color: rgb(124 58 237 / 0.24); }
+.dark .text-violet-600, .dark .text-violet-700 { color: #c4b5fd; }
+.dark .bg-red-50 { background-color: rgb(239 68 68 / 0.14); }
+.dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.14); }
+.dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.14); }
+.dark .text-red-600, .dark .text-red-700 { color: #fca5a5; }
+.dark .text-amber-800, .dark .text-amber-700 { color: #fcd34d; }
+.dark .text-emerald-700, .dark .text-emerald-600 { color: #6ee7b7; }
+.dark input, .dark textarea, .dark select { background-color: #131620; color: #f3f4f6; }
+.dark ::placeholder { color: #6b7280; }
+.dark .bg-slate-50 { background-color: #0f1117; }
+
+/* Acessibilidade: foco visível, link de pular e menos movimento */
+:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 2px; }
+.skip-link { position: absolute; left: 8px; top: -48px; z-index: 100; background: #6d28d9; color: #fff; padding: 8px 14px; border-radius: 10px; font-size: 14px; }
+.skip-link:focus { top: 8px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 import type { WorkspaceInfo } from '@/types/workspace.types'
@@ -79,9 +79,20 @@ export const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 
 export const labelCls = 'mb-1 block text-xs font-medium text-gray-600'
 
 export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement | null
+    if (!dialogRef.current?.contains(document.activeElement)) dialogRef.current?.focus()
+    return () => prev?.focus?.()
+  }, [])
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={onClose} onKeyDown={(e) => e.key === "Escape" && onClose()}>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        tabIndex={-1}
+        ref={dialogRef}
         className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:max-w-lg sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
