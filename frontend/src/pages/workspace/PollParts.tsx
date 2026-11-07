@@ -40,13 +40,13 @@ export function PollBlock({ slug, post }: { slug: string; post: FeedPost }) {
   )
 }
 
-export function PollModal({ slug, onClose }: { slug: string; onClose: () => void }) {
+export function PollModal({ slug, onClose, defaultDept = '' }: { slug: string; onClose: () => void; defaultDept?: string }) {
   const qc = useQueryClient()
   const { data: departments } = useQuery({ queryKey: ['ws', slug, 'departments'], queryFn: () => workspaceService.departments(slug) })
   const [question, setQuestion] = useState('')
   const [options, setOptions] = useState(['', ''])
   const [closes, setCloses] = useState('')
-  const [dept, setDept] = useState('')
+  const [dept, setDept] = useState(defaultDept)
   const [error, setError] = useState('')
   const create = useMutation({
     mutationFn: () => workspaceService.createPoll(slug, { question: question.trim(), options: options.map((o) => o.trim()).filter(Boolean), closes_on: closes || null, department_uuid: dept || null }),

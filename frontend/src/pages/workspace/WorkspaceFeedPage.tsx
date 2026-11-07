@@ -265,7 +265,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
         </div>
       )}
       {kudos && <KudosModal slug={slug} onClose={() => setKudos(false)} />}
-      {pollOpen && <PollModal slug={slug} onClose={() => setPollOpen(false)} />}
+      {pollOpen && <PollModal slug={slug} defaultDept={group !== 'company' ? group : ''} onClose={() => setPollOpen(false)} />}
 
       {info.me.can_post && (
         <Panel className="mb-4">
