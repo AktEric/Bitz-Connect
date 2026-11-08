@@ -10,6 +10,7 @@ use App\Http\Traits\ApiResponseTrait;
 use App\Models\Hotel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /** Central de ajuda: chat com a Vitória. */
@@ -63,7 +64,14 @@ class HelpChatController extends Controller
 
             $history = array_slice($messages, 0, -1); // memória: o que já foi conversado
 
-            return $this->success('OK', ['reply' => $this->local->reply($last, $note, $history)]);
+            $reply = $this->local->reply($last, $note, $history);
+
+            // Perguntas sem resposta ficam no log (storage/logs): é a lista do que falta ensinar à Vitória em resources/help/vitoria.md.
+            if (! $this->local->answered) {
+                Log::info('vitoria.sem_resposta', ['pergunta' => mb_substr($last, 0, 300), 'workspace' => $data['workspace'] ?? null]);
+            }
+
+            return $this->success('OK', ['reply' => $reply]);
         }
 
         try {

@@ -19,9 +19,13 @@ class VitoriaLocal
         'gostaria','preciso','precisa','fazer','faco','faz','vejo','ver','mais','muito','tambem','ja','nao','sim','la','favor',
         'ola','oi','ajuda','ajudar','sistema','empresa','dentro','quer','sei','saber','existe','mim','nosso','nossa','algum','alguma',
         'qualquer','tudo','todo','toda','todos','todas','cada','pelo','pela','num','numa','dele','dela',
-        'criar','crio','cria','fica','ficam','ficar','fico','vou','vai','vamos','tipo','coisa','coisas','tela','pagina','botao','clicar','clico','acho',
-        'encontro','encontrar','achar','acessar','entrar','abrir','abro','usar','uso','utilizar','funciona','funcionar',
+        'fica','ficam','ficar','fico','vou','vai','vamos','tipo','coisa','coisas','tela','pagina','botao','clicar','clico','acho',
+        'encontro','encontrar','achar','acessar','entrar','usar','uso','utilizar','funciona','funcionar',
+        'alguem','outra','outro','outras','outros','gente','pessoal',
     ];
+
+    /** Verbos de ação genéricos: ajudam a desempatar, mas valem menos que o assunto da pergunta. */
+    private const SOFT = ['criar', 'crio', 'cria', 'abrir', 'abro', 'novo', 'nova', 'fazer', 'faco'];
 
     /** Grupos de palavras com o mesmo sentido (já sem acento). */
     private const SYNONYMS = [
@@ -29,9 +33,15 @@ class VitoriaLocal
         ['postar', 'publicar', 'publicacao', 'post', 'mural', 'comunicado', 'enquete'],
         ['perfil', 'foto', 'bio', 'avatar', 'dados', 'cadastral'],
         ['pessoas', 'funcionario', 'funcionarios', 'colaborador', 'colaboradores', 'equipe', 'time', 'colega', 'colegas', 'membros'],
-        ['convite', 'convidar', 'adicionar', 'cadastrar', 'incluir', 'contratar', 'novo'],
-        ['ponto', 'bater', 'marcar', 'marcacao', 'batida', 'jornada', 'expediente', 'banco', 'horas'],
-        ['ferias', 'solicitacao', 'solicitacoes', 'afastamento', 'folga', 'chamado', 'ticket', 'reembolso'],
+        ['convite', 'convidar', 'adicionar', 'cadastrar', 'cadastro', 'incluir', 'contratar', 'admitir', 'novo'],
+        ['ponto', 'bater', 'marcar', 'marcacao', 'batida', 'jornada', 'expediente', 'banco', 'horas', 'horario', 'hora', 'extra', 'extras', 'atraso', 'falta', 'chegada', 'saida'],
+        ['ajuste', 'ajustar', 'corrigir', 'correcao', 'errei', 'errado', 'erro', 'esqueci', 'esqueceu', 'consertar', 'retificar'],
+        ['chefe', 'chefes', 'superior', 'lider', 'gestor', 'gerente', 'supervisor', 'coordenador'],
+        ['2fa', 'autenticador', 'etapas', 'verificacao', 'duas', 'fatores'],
+        ['conexao', 'conexoes', 'conectar', 'seguir', 'rede', 'networking', 'amigo', 'amizade'],
+        ['ciencia', 'leu', 'leitura', 'lido', 'visualizou', 'confirmou', 'confirmar', 'obrigatoria'],
+        ['lgpd', 'privacidade', 'exportar', 'exportacao', 'baixar', 'consentimento'],
+        ['ferias', 'solicitacao', 'solicitacoes', 'afastamento', 'folga', 'chamado', 'ticket', 'reembolso', 'licenca', 'atestado', 'abono'],
         ['holerite', 'contracheque', 'pagamento', 'recebimento', 'recebimentos', 'salario', 'comprovante'],
         ['clima', 'pesquisa', 'enps', 'satisfacao'],
         ['vaga', 'vagas', 'candidatar', 'candidatura', 'oportunidade', 'emprego'],
@@ -40,11 +50,11 @@ class VitoriaLocal
         ['meta', 'metas', 'objetivo', 'objetivos'],
         ['pdi', 'desenvolvimento', 'carreira'],
         ['calendario', 'agenda', 'evento', 'eventos', 'feriado', 'feriados', 'aniversario'],
-        ['chat', 'mensagem', 'mensagens', 'conversa', 'conversar', 'grupo', 'grupos'],
+        ['chat', 'mensagem', 'mensagens', 'conversa', 'conversar', 'grupo', 'grupos', 'mandar', 'enviar', 'falar', 'contato'],
         ['curso', 'cursos', 'video', 'videos', 'mentoria', 'mentorias', 'consultor'],
         ['aprovar', 'aprovacao', 'aprovacoes', 'recusar', 'decidir'],
         ['relatorio', 'relatorios', 'painel', 'diretoria', 'dashboard'],
-        ['papel', 'papeis', 'permissao', 'permissoes', 'acesso', 'cargo', 'dono', 'rh'],
+        ['papel', 'papeis', 'permissao', 'permissoes', 'acesso', 'cargo', 'dono', 'rh', 'diferenca', 'nivel', 'niveis'],
         ['auditoria', 'historico', 'log'],
     ];
 
@@ -56,6 +66,9 @@ class VitoriaLocal
     /** @var array<string, int> */
     private array $df = [];
     private float $avgLen = 1.0;
+
+    /** false quando a última pergunta não teve resposta na base (para registrar e melhorar a base depois). */
+    public bool $answered = true;
 
     public function __construct(private readonly ?string $knowledgePath = null) {}
 
@@ -69,6 +82,7 @@ class VitoriaLocal
      */
     public function reply(string $message, ?string $roleNote = null, array $history = []): string
     {
+        $this->answered = true;
         $small = $this->smallTalk($message);
         if ($small !== null) {
             return $small;
@@ -98,6 +112,12 @@ class VitoriaLocal
         }
 
         if (! $hits) {
+            $this->answered = false;
+            $near = $this->suggestions($message);
+            if ($near) {
+                return "Hmm, não encontrei isso exatamente. 🤔 Será que você quis saber sobre:\n" . implode("\n", array_map(fn ($t) => '• ' . $t, $near)) . "\n\nMe diga qual (ou escreva de outro jeito) que eu explico. Se for algo específico da sua empresa, fale com o RH ou abra um chamado em Férias e solicitações.";
+            }
+
             return "Hmm, não encontrei isso aqui na minha base. 😕 Tenta me perguntar de outro jeito, por exemplo: \"como monto o organograma?\", \"como edito meu perfil?\" ou \"o que posso postar no mural?\".\n\nSe for algo específico da sua empresa, fale com o RH ou abra um chamado em Férias e solicitações.";
         }
 
@@ -228,11 +248,71 @@ class VitoriaLocal
             return [];
         }
 
-        $weights = $this->queryWeights($message);
+        [$weights, $cover] = $this->queryWeights($message);
         if (! $weights) {
             return [];
         }
 
+        $scored = $this->scoreChunks($weights);
+        if (! $scored) {
+            return [];
+        }
+        $top = (float) reset($scored);
+        if ($top < 1.6) {
+            return [];
+        }
+
+        // Pergunta com 3+ palavras em que o melhor trecho cobre só uma delas (nem por sinônimo) = fora do assunto.
+        if (count($cover) >= 3) {
+            $topTokens = array_flip($this->chunks[array_key_first($scored)]['tokens']);
+            $matched = count(array_filter($cover, function (array $alts) use ($topTokens) {
+                foreach ($alts as $a) {
+                    if (isset($topTokens[$a])) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }));
+            if ($matched / count($cover) < 0.4) {
+                return [];
+            }
+        }
+
+        $hits = [];
+        foreach ($scored as $i => $s) {
+            if (count($hits) >= 2 || $s < $top * 0.62) {
+                break;
+            }
+            $hits[] = ['heading' => $this->chunks[$i]['heading'], 'text' => $this->chunks[$i]['text']];
+        }
+
+        return $hits;
+    }
+
+    /** Assuntos mais próximos da pergunta (para sugerir quando não há resposta certa). @return array<int, string> */
+    private function suggestions(string $message): array
+    {
+        $this->load();
+        [$weights] = $this->queryWeights($message);
+        $scored = $weights ? $this->scoreChunks($weights) : [];
+        $titles = [];
+        foreach ($scored as $i => $s) {
+            if ($s < 0.9 || count($titles) >= 3) {
+                break;
+            }
+            $t = trim($this->chunks[$i]['title']);
+            if (! in_array($t, $titles, true)) {
+                $titles[] = $t;
+            }
+        }
+
+        return $titles;
+    }
+
+    /** Pontua cada trecho da base para a pergunta (BM25 + título). @return array<int, float> maior primeiro */
+    private function scoreChunks(array $weights): array
+    {
         $n = count($this->chunks);
         $k1 = 1.4;
         $b = 0.75;
@@ -267,41 +347,22 @@ class VitoriaLocal
             }
         }
 
-        if (! $scored) {
-            return [];
-        }
         arsort($scored);
-        $top = (float) reset($scored);
-        if ($top < 1.6) {
-            return [];
-        }
 
-        // Pergunta longa em que o melhor trecho só bate com uma palavra solta = fora do assunto (não inventar resposta).
-        $direct = array_keys(array_filter($weights, fn ($w) => $w >= 1.0));
-        if (count($direct) >= 3) {
-            $topTokens = array_flip($this->chunks[array_key_first($scored)]['tokens']);
-            $matched = count(array_filter($direct, fn ($t) => isset($topTokens[$t])));
-            if ($matched / count($direct) < 0.4) {
-                return [];
-            }
-        }
-
-        $hits = [];
-        foreach ($scored as $i => $s) {
-            if (count($hits) >= 2 || $s < $top * 0.62) {
-                break;
-            }
-            $hits[] = ['heading' => $this->chunks[$i]['heading'], 'text' => $this->chunks[$i]['text']];
-        }
-
-        return $hits;
+        return $scored;
     }
 
-    /** @return array<string, float> termo (já normalizado) => peso */
+    /**
+     * Termos da pergunta com peso, e, para cada palavra "de assunto", o conjunto de radicais que a cobrem
+     * (ela mesma + sinônimos), usado para saber se o trecho encontrado realmente trata da pergunta.
+     *
+     * @return array{0: array<string, float>, 1: array<int, array<int, string>>}
+     */
     private function queryWeights(string $message): array
     {
         $vocab = $this->df;
         $weights = [];
+        $cover = [];
         foreach ($this->tokens($message, false) as $raw) {
             $stem = $this->stem($raw);
             if (! isset($vocab[$stem])) {
@@ -310,26 +371,33 @@ class VitoriaLocal
                     $stem = $fix;
                 }
             }
-            $weights[$stem] = max($weights[$stem] ?? 0, 1.0);
+            $soft = in_array($raw, self::SOFT, true);
+            $weights[$stem] = max($weights[$stem] ?? 0, $soft ? 0.8 : 1.0);
+            $alts = [$stem];
 
             foreach (self::SYNONYMS as $group) {
                 if (in_array($raw, $group, true) || in_array($stem, array_map([$this, 'stem'], $group), true)) {
                     foreach ($group as $syn) {
                         $s = $this->stem($syn);
                         $weights[$s] = max($weights[$s] ?? 0, 0.45);
+                        $alts[] = $s;
                     }
                 }
             }
+
+            if (! $soft) {
+                $cover[] = array_values(array_unique($alts));
+            }
         }
 
-        return $weights;
+        return [$weights, $cover];
     }
 
     /** Corrige erro de digitação: palavra do vocabulário a até 1–2 letras de distância. */
     private function nearest(string $term, array $vocab): ?string
     {
         $len = strlen($term);
-        if ($len < 4) {
+        if ($len < 5) {
             return null;
         }
         $max = $len >= 7 ? 2 : 1;
@@ -450,17 +518,20 @@ class VitoriaLocal
     /** Radical bem simples (plural/verbo), igual para a pergunta e para a base. */
     private function stem(string $w): string
     {
+        if (str_starts_with($w, 'feriad')) {
+            return 'feriad'; // feriado ≠ férias
+        }
         $w = strtr($w, ['coes' => 'cao', 'oes' => 'ao', 'aes' => 'ao', 'ais' => 'al', 'eis' => 'el']);
         if (strlen($w) > 4 && str_ends_with($w, 's')) {
             $w = substr($w, 0, -1);
         }
-        foreach (['mente', 'ando', 'endo', 'indo', 'amos', 'ado', 'ada', 'ido', 'ida', 'ar', 'er', 'ir', 'ou', 'ei', 'am', 'em'] as $suf) {
-            if (strlen($w) > strlen($suf) + 3 && str_ends_with($w, $suf)) {
+        foreach (['mente', 'ando', 'endo', 'indo', 'amos', 'ado', 'ada', 'ar', 'er', 'ir', 'ou', 'ei', 'am', 'em'] as $suf) {
+            if (strlen($w) > strlen($suf) + (strlen($suf) <= 2 ? 2 : 3) && str_ends_with($w, $suf)) {
                 return substr($w, 0, -strlen($suf));
             }
         }
         // monto / monta / montar → mont ; colaboradore(s) → colaborador
-        if (strlen($w) > 4 && in_array($w[-1], ['a', 'e', 'o'], true)) {
+        if (strlen($w) >= 4 && in_array($w[-1], ['a', 'e', 'o'], true)) {
             $w = substr($w, 0, -1);
         }
 
