@@ -9,7 +9,10 @@ return [
 
     'guard' => ['web'],
 
-    'expiration' => 60 * 24 * 30, // 30 dias
+    'expiration' => 60 * 24 * 30, // 30 dias (teto absoluto)
+
+    // A sessão cai após este tempo SEM nenhuma requisição (padrão 2h). Cada uso do token renova o prazo.
+    'idle_timeout' => (int) env('SESSION_IDLE_MINUTES', 120),
 
     'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
 

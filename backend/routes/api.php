@@ -226,8 +226,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/{user}/read',          [ChatController::class, 'markRead']);
     });
 
+    // Central de ajuda (Vitória)
+    Route::post('/help/chat', [\App\Http\Controllers\Api\V1\HelpChatController::class, 'chat'])->middleware('throttle:20,1');
+
     // ── Workspace (intranet da empresa) ───────────────────────
-    Route::get('/me/workspaces',                [WorkspaceController::class, 'mine']);
+    Route::get('/me/workspaces',               [WorkspaceController::class, 'mine']);
     Route::post('/invites/{token}/accept',      [CompanyInviteController::class, 'accept']);
 
     Route::prefix('workspaces/{hotel:slug}')->middleware('workspace.2fa')->group(function () {

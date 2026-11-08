@@ -6,4 +6,14 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
     ],
+
+    // Vitória (central de ajuda): 'local' = motor gratuito, sem IA externa (padrão); 'claude' = usa a Claude API (gasta tokens).
+    'help' => ['driver' => env('HELP_DRIVER', 'local')],
+
+    // Vitória, a assistente da central de ajuda (Claude API). Sem ANTHROPIC_API_KEY o chat avisa que não está configurado.
+    'anthropic' => [
+        'key'     => env('ANTHROPIC_API_KEY'),
+        'model'   => env('ANTHROPIC_MODEL', 'claude-haiku-5-5'),
+        'timeout' => (int) env('ANTHROPIC_TIMEOUT', 30),
+    ],
 ];

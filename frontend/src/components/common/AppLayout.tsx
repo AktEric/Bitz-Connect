@@ -8,6 +8,7 @@ import {
 import { useState, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
+import VitoriaChat from '@/components/help/VitoriaChat'
 import { useUnreadCount } from '@/hooks/useNotifications'
 import { useUnreadMessages, chatKeys } from '@/hooks/useChat'
 import { useChatGroupsUnread } from '@/hooks/useChatGroups'
@@ -687,6 +688,8 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      <VitoriaChat />
     </div>
   )
 }
