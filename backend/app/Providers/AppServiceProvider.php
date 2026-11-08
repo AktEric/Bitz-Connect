@@ -17,6 +17,7 @@ use App\Policies\JobPolicy;
 use App\Policies\PostPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Sanctum\Sanctum;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +28,21 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Sessão deslizante: o token deixa de valer após `sanctum.idle_timeout` minutos sem uso
+        // (ex.: PC desligado ou aba esquecida). Cada requisição válida renova `last_used_at`.
+        Sanctum::authenticateAccessTokensUsing(function ($accessToken, bool $isValid) {
+            if (! $isValid) {
+                return false;
+            }
+            $idle = (int) config('sanctum.idle_timeout', 120);
+            if ($idle <= 0) {
+                return true;
+            }
+            $lastSeen = $accessToken->last_used_at ?? $accessToken->created_at;
+
+            return $lastSeen->gt(now()->subMinutes($idle));
+        });
+
         \Illuminate\Support\Facades\RateLimiter::for('auth', fn ($request) => \Illuminate\Cache\RateLimiting\Limit::perMinute($this->app->environment('testing') ? 10000 : 10)->by($request->ip()));
 
         // Limite geral da API: por usuário autenticado (ou por IP, se anônimo). Folga para o polling do chat/notificações.

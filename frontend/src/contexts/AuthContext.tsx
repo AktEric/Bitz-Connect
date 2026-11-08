@@ -8,6 +8,7 @@ import {
 } from 'react'
 import type { User, LoginCredentials, RegisterData } from '@/types/auth.types'
 import authService from '@/services/auth.service'
+import { watchIdle, markActivity, clearActivity, isIdleExpired } from '@/utils/sessionIdle'
 
 interface AuthContextValue {
   user: User | null
@@ -29,6 +30,14 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 function getStoredToken(): string | null {
+  // Ficou ocioso por mais de 2h (inclui PC desligado): descarta a sessão guardada.
+  if (localStorage.getItem('token') && isIdleExpired()) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('hotel_session')
+    clearActivity()
+    return null
+  }
   return localStorage.getItem('token')
 }
 
@@ -52,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const persistSession = useCallback((newToken: string, newUser: User) => {
     localStorage.setItem('token', newToken)
     localStorage.setItem('user', JSON.stringify(newUser))
+    markActivity()
     setToken(newToken)
     setUserState(newUser)
   }, [])
@@ -59,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearSession = useCallback(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    clearActivity()
     setToken(null)
     setUserState(null)
   }, [])
@@ -96,6 +107,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener('auth:unauthenticated', clearSession)
     return () => window.removeEventListener('auth:unauthenticated', clearSession)
   }, [clearSession])
+
+  // Inatividade de 2h com a aba aberta: encerra a sessão (no servidor também) e volta ao login.
+  useEffect(() => {
+    if (!token) return
+    return watchIdle(() => {
+      authService.logout().catch(() => undefined)
+      clearSession()
+      window.dispatchEvent(new CustomEvent('auth:unauthenticated'))
+    })
+  }, [token, clearSession])
 
   const setUser = useCallback((newUser: User) => {
     localStorage.setItem('user', JSON.stringify(newUser))
