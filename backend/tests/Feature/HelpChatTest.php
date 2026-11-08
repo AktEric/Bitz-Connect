@@ -70,6 +70,53 @@ it('responde outros assuntos do sistema', function (string $q, string $esperado)
     ['a pesquisa de clima é anônima?', 'anônima'],
 ]);
 
+it('reexplica passo a passo quando a pessoa diz que não entendeu (conversa do print)', function () {
+    $history = [
+        ['role' => 'user', 'content' => 'como monto o organograma?'],
+        ['role' => 'assistant', 'content' => '**Montar o organograma** ...'],
+    ];
+
+    $r = (new VitoriaLocal())->reply('mas eu n entendi bem', null, $history);
+
+    expect($r)->toContain('passo a passo')->toContain('1. O organograma')->toContain('Empresa → Organograma')
+        ->toContain('Gestor direto')->not->toContain('1. :')->not->toContain('não encontrei');
+});
+
+it('resume curto quando pede de novo e já foi explicado passo a passo', function () {
+    $history = [
+        ['role' => 'user', 'content' => 'como monto o organograma?'],
+        ['role' => 'assistant', 'content' => '**Montar o organograma** ...'],
+        ['role' => 'user', 'content' => 'não entendi'],
+        ['role' => 'assistant', 'content' => 'Sem problema! Vou explicar de outro jeito, passo a passo: ...'],
+    ];
+
+    $r = (new VitoriaLocal())->reply('ainda não entendi, explica melhor', null, $history);
+
+    expect($r)->toContain('resumir')->toContain('travou');
+});
+
+it('pergunta o assunto quando não há nada para reexplicar', function () {
+    expect((new VitoriaLocal())->reply('não entendi', null, []))->toContain('Sobre qual assunto');
+});
+
+it('entende pergunta curta de continuação usando o assunto anterior', function () {
+    $history = [
+        ['role' => 'user', 'content' => 'como edito meu perfil?'],
+        ['role' => 'assistant', 'content' => 'Editar meu perfil: ...'],
+    ];
+
+    expect((new VitoriaLocal())->reply('e a foto?', null, $history))->toMatch('/foto/i');
+});
+
+it('responde perguntas genéricas sobre o sistema com a visão geral', function (string $q) {
+    expect(ask($q))->toContain('Workspace')->toContain('Meu dia');
+})->with([
+    'como funciona o sistema?',
+    'não sei por onde começar',
+    'para que serve isso aqui',
+    'o que tem no sistema',
+]);
+
 it('admite quando não sabe, sem inventar', function () {
     expect(ask('qual a previsão do tempo amanhã em Marte'))->toContain('não encontrei');
     expect(ask('asdfgh qwerty'))->toContain('não encontrei');

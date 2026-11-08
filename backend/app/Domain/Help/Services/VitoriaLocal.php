@@ -59,15 +59,44 @@ class VitoriaLocal
 
     public function __construct(private readonly ?string $knowledgePath = null) {}
 
-    /** Resposta para a conversa. $roleNote = papel da pessoa na empresa (opcional). */
-    public function reply(string $message, ?string $roleNote = null): string
+    private const OVERVIEW = "O sistema tem duas áreas:\n\n**Workspace** (a intranet e o RH da sua empresa)\n• **Meu dia**: Início, Ponto, Mural e Calendário.\n• **Meu RH**: Férias e solicitações, Holerites, Metas, Desenvolvimento e Pesquisa de clima.\n• **Empresa**: Pessoas, Organograma e Vagas.\n• Quem é gestor, RH ou dono também vê Aprovações, Ponto do time, Relatórios e outras telas de gestão.\n\n**Rede profissional**: feed, vagas, cursos, vídeos, mentorias, conexões e chat.\n\nMe diga o que você quer fazer — por exemplo \"bater o ponto\", \"pedir férias\" ou \"ver o organograma\" — e eu explico o passo a passo. 😊";
+
+    /**
+     * Resposta para a conversa.
+     *
+     * @param  string|null  $roleNote  papel da pessoa na empresa (opcional)
+     * @param  array<int, array{role: string, content: string}>  $history  mensagens ANTERIORES à atual (memória da conversa)
+     */
+    public function reply(string $message, ?string $roleNote = null, array $history = []): string
     {
         $small = $this->smallTalk($message);
         if ($small !== null) {
             return $small;
         }
 
+        $t = $this->normalize($message);
+        $wordCount = count(preg_split('/\s+/', $t, -1, PREG_SPLIT_NO_EMPTY) ?: []);
+
+        // "Não entendi", "explica melhor", "mais simples": reexplica o último assunto de outro jeito.
+        if ($wordCount <= 9 && preg_match('/\b(n|nao) (entendi|compreendi|saquei|ficou claro|consegui)|\b(explica|explique|explicar|detalha|detalhe)\b|\bmais simples\b|\bpasso a passo\b|\bpode repetir\b|\brepete\b|\bcomo assim\b|\bficou confuso\b|\bnao entendo\b|\bn entendo\b|\bme perdi\b|\bnao sei fazer\b/', $t)) {
+            return $this->explainAgain($history);
+        }
+
+        // Visão geral / perguntas genéricas sobre o sistema.
+        if ($wordCount <= 10 && preg_match('/\b(como funciona (o )?(sistema|workspace|plataforma|isso aqui)|o que (tem|existe|da pra fazer|posso fazer) (no|aqui|nesse|neste)|para que serve|pra que serve|visao geral|por onde (eu )?(comeco|começo|iniciar|inicio)|nao sei (por onde|o que fazer)|me (explica|ensina|apresenta) (o )?sistema|tour|primeira vez)\b/', $t)) {
+            return self::OVERVIEW;
+        }
+
         $hits = $this->search($message);
+
+        // Pergunta curta de continuação ("e o perfil?", "e no celular?"): junta com o assunto anterior.
+        if (! $hits && $wordCount <= 6) {
+            $prev = $this->lastUserTopic($history);
+            if ($prev !== null) {
+                $hits = $this->search($prev . ' ' . $message);
+            }
+        }
+
         if (! $hits) {
             return "Hmm, não encontrei isso aqui na minha base. 😕 Tenta me perguntar de outro jeito, por exemplo: \"como monto o organograma?\", \"como edito meu perfil?\" ou \"o que posso postar no mural?\".\n\nSe for algo específico da sua empresa, fale com o RH ou abra um chamado em Férias e solicitações.";
         }
@@ -84,6 +113,62 @@ class VitoriaLocal
         }
 
         return $reply;
+    }
+
+    // ───────────────────────── Memória da conversa ─────────────────────────
+
+    /** Última pergunta da pessoa que teve resposta na base (ignora papo, "não entendi" etc.). */
+    private function lastUserTopic(array $history): ?string
+    {
+        foreach (array_reverse($history) as $m) {
+            if (($m['role'] ?? '') !== 'user') {
+                continue;
+            }
+            $text = (string) ($m['content'] ?? '');
+            if ($this->smallTalk($text) === null && $this->search($text)) {
+                return $text;
+            }
+        }
+
+        return null;
+    }
+
+    /** Reexplica a última resposta em passos curtos; se já foi explicado assim, resume e pergunta onde travou. */
+    private function explainAgain(array $history): string
+    {
+        $topic = $this->lastUserTopic($history);
+        $hit = $topic !== null ? ($this->search($topic)[0] ?? null) : null;
+        if (! $hit) {
+            return 'Claro, posso explicar melhor! 😊 Sobre qual assunto? Me diga o que você quer fazer — por exemplo "montar o organograma" ou "bater o ponto" — e eu explico passo a passo.';
+        }
+
+        $lastAssistant = '';
+        foreach (array_reverse($history) as $m) {
+            if (($m['role'] ?? '') === 'assistant') {
+                $lastAssistant = (string) $m['content'];
+                break;
+            }
+        }
+
+        // Tira o título em negrito, o que está entre parênteses e a marcação; separa em frases curtas.
+        $body = preg_replace('/^\*\*[^*]+\*\*:?\s*/u', '', $hit['text']) ?? $hit['text'];
+        // Parênteses explicativos saem, mas os que trazem o caminho do menu (com "→") ficam.
+        $body = preg_replace_callback('/\s*\(([^)]*)\)/u', fn ($m) => str_contains($m[1], '→') ? $m[0] : '', $body) ?? $body;
+        $body = str_replace(['**', '*'], '', $body);
+        $body = ltrim($body, " :\t");
+        $body = mb_strtoupper(mb_substr($body, 0, 1)) . mb_substr($body, 1);
+        $sentences = array_values(array_filter(array_map('trim', preg_split('/(?<=[.!?])\s+|\n+/u', $body) ?: [])));
+
+        if (str_contains($lastAssistant, 'passo a passo') && $sentences) {
+            return "Vou resumir bem curtinho:\n\n" . $sentences[0] . "\n\nEm que parte você travou? Me conta que eu explico só ela. 😊";
+        }
+
+        $steps = [];
+        foreach (array_slice($sentences, 0, 6) as $i => $s) {
+            $steps[] = ($i + 1) . '. ' . $s;
+        }
+
+        return "Sem problema! Vou explicar de outro jeito, passo a passo:\n\n" . implode("\n", $steps) . "\n\nFicou mais claro? Se ainda tiver dúvida, me diga em que parte. 😊";
     }
 
     // ───────────────────────── Papo simples ─────────────────────────

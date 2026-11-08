@@ -61,7 +61,9 @@ class HelpChatController extends Controller
             $last = end($messages)['content'];
             $note = $this->roleNote($request, $data['workspace'] ?? null);
 
-            return $this->success('OK', ['reply' => $this->local->reply($last, $note)]);
+            $history = array_slice($messages, 0, -1); // memória: o que já foi conversado
+
+            return $this->success('OK', ['reply' => $this->local->reply($last, $note, $history)]);
         }
 
         try {
