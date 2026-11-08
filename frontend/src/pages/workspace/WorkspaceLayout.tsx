@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Avatar } from '@/components/ui/Avatar'
 import NotificationBell from '@/components/common/NotificationBell'
 import ChatSidebar from '@/components/chat/ChatSidebar'
+import VitoriaChat from '@/components/help/VitoriaChat'
 import { cn } from '@/utils/cn'
 import { getTheme, setTheme, type Theme } from '@/utils/theme'
 import CommandPalette from './CommandPalette'
@@ -272,6 +273,8 @@ export default function WorkspaceLayout() {
       {searchOpen && <CommandPalette slug={slug} pages={groups.flatMap((g) => g.items.map((i) => ({ to: i.to, label: i.label })))} onClose={() => setSearchOpen(false)} />}
 
       <ChatSidebar open={chatOpen} onClose={() => setChatOpen(false)} />
+
+      <VitoriaChat workspace={slug} className="xl:right-[4.5rem]" />
     </div>
   )
 }
