@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CompanyInvite extends Model
 {
-    protected $fillable = ['uuid','hotel_id','created_by','token','email','department_id','job_title','max_uses','uses','expires_at','revoked_at'];
+    protected $fillable = ['uuid','hotel_id','created_by','token','email','department_id','job_title','max_uses','uses','expires_at','revoked_at','benefit_package_id'];
 
     protected $table = 'company_invites';
     protected function casts(): array

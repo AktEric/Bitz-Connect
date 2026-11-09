@@ -14,12 +14,14 @@ function InvitesPanel({ slug }: { slug: string }) {
   const [email, setEmail] = useState('')
   const [dept, setDept] = useState('')
   const [title, setTitle] = useState('')
+  const [pack, setPack] = useState('')
+  const { data: packages } = useQuery({ queryKey: ['ws', slug, 'benefit-packages'], queryFn: () => workspaceService.benefitPackages(slug) })
   const [copied, setCopied] = useState('')
   const [error, setError] = useState('')
 
   const create = useMutation({
-    mutationFn: () => workspaceService.createInvite(slug, { email: email.trim() || null, department_uuid: dept || null, job_title: title.trim() || null }),
-    onSuccess: () => { setEmail(''); setTitle(''); setDept(''); setError(''); qc.invalidateQueries({ queryKey: ['ws', slug, 'invites'] }) },
+    mutationFn: () => workspaceService.createInvite(slug, { email: email.trim() || null, department_uuid: dept || null, job_title: title.trim() || null, benefit_package_uuid: pack || null }),
+    onSuccess: () => { setEmail(''); setTitle(''); setDept(''); setPack(''); setError(''); qc.invalidateQueries({ queryKey: ['ws', slug, 'invites'] }) },
     onError: (e) => setError(errMsg(e)),
   })
   const revoke = useMutation({
@@ -48,6 +50,15 @@ function InvitesPanel({ slug }: { slug: string }) {
               {departments?.map((d) => <option key={d.uuid} value={d.uuid}>{d.name}</option>)}
             </select>
           </div>
+          {!!packages?.packages.length && (
+            <div className="sm:col-span-3">
+              <label className={labelCls} htmlFor="inv-pack">Pacote de benefícios (opcional)</label>
+              <select id="inv-pack" className={inputCls} value={pack} onChange={(e) => setPack(e.target.value)}>
+                <option value="">Nenhum</option>
+                {packages.packages.map((p) => <option key={p.uuid} value={p.uuid}>{p.name} ({p.items.length} {p.items.length === 1 ? 'benefício' : 'benefícios'})</option>)}
+              </select>
+            </div>
+          )}
         </div>
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         <button className={`${btnPrimary} mt-3`} disabled={create.isPending} onClick={() => create.mutate()}><Link2 className="h-4 w-4" /> Gerar link</button>
@@ -59,7 +70,7 @@ function InvitesPanel({ slug }: { slug: string }) {
           {invites.map((i) => (
             <Panel key={i.uuid} className="flex flex-wrap items-center gap-3 !p-3">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-gray-900">{i.email ?? 'Link aberto'} {i.job_title && <span className="text-gray-400">· {i.job_title}</span>}</p>
+                <p className="truncate text-sm font-medium text-gray-900">{i.email ?? 'Link aberto'} {i.job_title && <span className="text-gray-400">· {i.job_title}</span>} {i.benefit_package && <span className="text-gray-400">· pacote {i.benefit_package}</span>}</p>
                 <p className="text-xs text-gray-400">{i.uses ?? 0}/{i.max_uses} usos · expira {fmtDate(i.expires_at)}</p>
               </div>
               {i.usable ? <Pill tone="green">Ativo</Pill> : <Pill tone="gray">{i.revoked ? 'Revogado' : 'Encerrado'}</Pill>}

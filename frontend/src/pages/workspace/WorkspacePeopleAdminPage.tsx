@@ -1,15 +1,25 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ExternalLink, Search, ShieldCheck } from 'lucide-react'
+import { Gift, Briefcase, ExternalLink, FileText, Search, ShieldCheck, Wallet, Building2 } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
 import type { WorkspaceMember } from '@/types/workspace.types'
 import { cn } from '@/utils/cn'
 import { RecordSection } from './PersonCardModal'
 import ProfileCareer from './ProfileCareer'
+import PersonBenefits from './benefits/PersonBenefits'
 import { SalaryAdminField } from './ProfileSalary'
 import { Empty, PageHeader, Panel, Spinner, btnPrimary, errMsg, inputCls, labelCls, useWs } from './ui'
+
+type Tab = 'vinculo' | 'ficha' | 'salario' | 'beneficios' | 'carreira'
+const TABS: { key: Tab; label: string; Icon: typeof Briefcase }[] = [
+  { key: 'vinculo', label: 'Vínculo', Icon: Building2 },
+  { key: 'ficha', label: 'Ficha cadastral', Icon: FileText },
+  { key: 'salario', label: 'Salário', Icon: Wallet },
+  { key: 'beneficios', label: 'Benefícios', Icon: Gift },
+  { key: 'carreira', label: 'Carreira', Icon: Briefcase },
+]
 
 /** Vínculo: cargo, admissão, setor e gestor direto. */
 function JobForm({ slug, member, members }: { slug: string; member: WorkspaceMember; members: WorkspaceMember[] }) {
@@ -54,6 +64,7 @@ export default function WorkspacePeopleAdminPage() {
   const [params, setParams] = useSearchParams()
   const [q, setQ] = useState('')
   const selected = params.get('pessoa')
+  const [tab, setTab] = useState<Tab>('vinculo')
   const { data: members, isLoading } = useQuery({ queryKey: ['ws', slug, 'members'], queryFn: () => workspaceService.members(slug) })
   const filtered = useMemo(() => (members ?? []).filter((m) => !q.trim() || `${m.name} ${m.job_title ?? ''}`.toLowerCase().includes(q.trim().toLowerCase())), [members, q])
   const person = members?.find((m) => m.uuid === selected)
@@ -84,7 +95,7 @@ export default function WorkspacePeopleAdminPage() {
         </aside>
 
         {!person ? <Empty text="Escolha uma pessoa na lista para editar o cadastro." /> : (
-          <div className="space-y-5" key={person.uuid}>
+          <div className="min-w-0 space-y-4" key={person.uuid}>
             <Panel className="flex items-center gap-3">
               <Avatar src={person.avatar_url} name={person.name} size="xl" />
               <div className="min-w-0 flex-1">
@@ -93,13 +104,28 @@ export default function WorkspacePeopleAdminPage() {
               </div>
               <Link to={`/w/${slug}/pessoas/${person.uuid}`} className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline"><ExternalLink className="h-4 w-4" /> Ver perfil</Link>
             </Panel>
-            <Panel>{members && <JobForm slug={slug} member={person} members={members} />}</Panel>
-            <Panel>
-              <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-gray-900"><ShieldCheck className="h-4 w-4 text-brand-500" /> Ficha cadastral <span className="text-xs font-normal text-gray-400">(dados sensíveis; cada abertura fica na auditoria)</span></h3>
-              <RecordSection slug={slug} uuid={person.uuid} editable />
-              <div className="mt-5 border-t border-gray-100 pt-4"><SalaryAdminField slug={slug} uuid={person.uuid} /></div>
-            </Panel>
-            <ProfileCareer slug={slug} uuid={person.uuid} editable />
+
+            <div role="tablist" aria-label="Seções do cadastro" className="flex gap-1 overflow-x-auto border-b border-gray-200">
+              {TABS.map((t) => (
+                <button key={t.key} role="tab" type="button" id={`tab-${t.key}`} aria-selected={tab === t.key} aria-controls={`panel-${t.key}`} onClick={() => setTab(t.key)}
+                  className={cn('inline-flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition', tab === t.key ? 'border-brand-600 text-brand-700' : 'border-transparent text-gray-500 hover:text-gray-800')}>
+                  <t.Icon className="h-4 w-4" /> {t.label}
+                </button>
+              ))}
+            </div>
+
+            <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+              {tab === 'vinculo' && members && <Panel><JobForm slug={slug} member={person} members={members} /></Panel>}
+              {tab === 'ficha' && (
+                <Panel>
+                  <p className="mb-3 flex items-center gap-1.5 text-xs text-gray-400"><ShieldCheck className="h-4 w-4 text-brand-500" /> Dados sensíveis: cada abertura desta ficha fica registrada na auditoria.</p>
+                  <RecordSection slug={slug} uuid={person.uuid} editable />
+                </Panel>
+              )}
+              {tab === 'salario' && <Panel><SalaryAdminField slug={slug} uuid={person.uuid} /></Panel>}
+              {tab === 'beneficios' && <PersonBenefits uuid={person.uuid} />}
+              {tab === 'carreira' && <ProfileCareer slug={slug} uuid={person.uuid} editable />}
+            </div>
           </div>
         )}
       </div>

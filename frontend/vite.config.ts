@@ -5,6 +5,8 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  // carimbo da versão (aparece no menu da conta): ajuda a saber se a tela está na versão mais nova
+  define: { __BUILD_TIME__: JSON.stringify(new Date().toISOString()) },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

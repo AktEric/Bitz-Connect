@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BookOpen, Film, MapPin, Smile, Utensils } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import type { PersonRecord } from '@/types/workspace.types'
-import { Spinner, btnPrimary, errMsg, fmtDate, inputCls, labelCls } from './ui'
+import { Spinner, btnPrimary, errMsg, fmtDate, inputCls } from './ui'
 
 export function ProfileFacts({ profile }: { profile: Record<string, string | null> }) {
   const rows = [
@@ -57,23 +57,28 @@ export function RecordSection({ slug, uuid, editable = false }: { slug: string; 
 
   return (
     <div className="space-y-4">
-      {RECORD_SECTIONS.map((sec) => (
-        <fieldset key={sec.title}>
-          <legend className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">{sec.title}</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {sec.fields.map((f) => (
-              <div key={f.key} className={f.key === 'street' || f.key === 'pix' || f.key === 'emergency_name' ? 'col-span-2' : ''}>
-                <label className={labelCls} htmlFor={`rec-${f.key}`}>{f.label}</label>
-                {canEdit ? (
-                  <input id={`rec-${f.key}`} type={f.type ?? 'text'} className={inputCls} value={val(f.key) ?? ''} onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} />
-                ) : (
-                  <p className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-900">{f.key === 'birth_date' && val(f.key) ? fmtDate(val(f.key) as string) : val(f.key) || '—'}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </fieldset>
-      ))}
+      {/* cada bloco é uma tabela rótulo/valor; em telas largas ficam lado a lado, para não correr a tela para baixo */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {RECORD_SECTIONS.map((sec) => (
+          <fieldset key={sec.title} className="rounded-xl border border-gray-100">
+            <legend className="ml-3 px-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{sec.title}</legend>
+            <dl className="divide-y divide-gray-50 px-3 pb-1">
+              {sec.fields.map((f) => (
+                <div key={f.key} className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-3 py-1.5">
+                  <dt><label className="text-xs font-medium text-gray-500" htmlFor={`rec-${f.key}`}>{f.label}</label></dt>
+                  <dd>
+                    {canEdit ? (
+                      <input id={`rec-${f.key}`} type={f.type ?? 'text'} className={`${inputCls} !py-1.5`} value={val(f.key) ?? ''} onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} />
+                    ) : (
+                      <span id={`rec-${f.key}`} className="block truncate text-sm text-gray-900">{f.key === 'birth_date' && val(f.key) ? fmtDate(val(f.key) as string) : val(f.key) || '—'}</span>
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </fieldset>
+        ))}
+      </div>
       {canEdit ? (
         <div className="flex items-center justify-end gap-3">
           {msg && <span className="text-sm text-gray-500" role="status">{msg}</span>}

@@ -74,7 +74,32 @@ export default function ProfileCareer({ slug, uuid, editable = false }: { slug: 
         {canEdit && <button type="button" className={btnGhost} onClick={() => { setError(''); setForm('new') }}><Plus size={14} /> Adicionar etapa</button>}
       </div>
 
-      {!data.items.length ? <Empty text="Ainda não há histórico de carreira registrado." /> : (
+      {!data.items.length ? <Empty text="Ainda não há histórico de carreira registrado." /> : canEdit ? (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[34rem] text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <th scope="col" className="py-2 pr-3">Cargo</th><th scope="col" className="px-3 py-2">Setor</th><th scope="col" className="px-3 py-2">Período</th>
+                <th scope="col" className="px-3 py-2">Tempo</th><th scope="col" className="py-2 pl-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {data.items.map((e) => (
+                <tr key={e.uuid}>
+                  <td className="py-2.5 pr-3 font-medium text-gray-900">{e.title} {e.current && <Pill tone="green">Atual</Pill>} {e.source === 'job' && <Pill tone="blue">Vaga interna</Pill>}</td>
+                  <td className="px-3 py-2.5 text-gray-600">{e.department ?? '—'}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-gray-600">{period(e)}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-gray-500">{duration(e)}</td>
+                  <td className="whitespace-nowrap py-2.5 pl-3 text-right">
+                    <button type="button" className="mr-3 inline-flex items-center gap-1 text-gray-500 hover:text-brand-700" onClick={() => { setError(''); setForm(e) }}><Pencil size={13} /> Editar</button>
+                    <button type="button" className="inline-flex items-center gap-1 text-gray-400 hover:text-red-500" onClick={() => { if (confirm('Remover esta etapa do histórico?')) remove.mutate(e.uuid) }}><Trash2 size={13} /> Remover</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
         <ol className="relative ml-2 space-y-5 border-l-2 border-gray-100 pl-6">
           {data.items.map((e) => (
             <li key={e.uuid} className="relative">

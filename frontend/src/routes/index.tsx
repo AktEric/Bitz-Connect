@@ -64,6 +64,8 @@ const WorkspaceDevelopmentPage = lazy(() => import('@/pages/workspace/WorkspaceD
 const WorkspaceMarketplacePage = lazy(() => import('@/pages/workspace/WorkspaceMarketplacePage'))
 const WorkspacePeopleAdminPage = lazy(() => import('@/pages/workspace/WorkspacePeopleAdminPage'))
 const WorkspaceRequestFlowsPage = lazy(() => import('@/pages/workspace/WorkspaceRequestFlowsPage'))
+const WorkspaceBenefitsPage = lazy(() => import('@/pages/workspace/WorkspaceBenefitsPage'))
+const WorkspaceBenefitSettingsPage = lazy(() => import('@/pages/workspace/WorkspaceBenefitSettingsPage'))
 const WorkspaceAdminPage = lazy(() => import('@/pages/workspace/WorkspaceAdminPage'))
 const WorkspaceCalendarPage = lazy(() => import('@/pages/workspace/WorkspaceCalendarPage'))
 const WorkspaceSecurityPage = lazy(() => import('@/pages/workspace/WorkspaceSecurityPage'))
@@ -128,6 +130,8 @@ export default function AppRoutes() {
             <Route path="pesquisas" element={<WorkspaceClimatePage />} />
             <Route path="organograma" element={<WorkspaceOrgChartPage />} />
             <Route path="cadastro" element={<RequireCan cap="people.manage"><WorkspacePeopleAdminPage /></RequireCan>} />
+            <Route path="beneficios" element={<WorkspaceBenefitsPage />} />
+            <Route path="configuracoes/beneficios" element={<RequireCan cap="benefits.manage"><WorkspaceBenefitSettingsPage /></RequireCan>} />
             <Route path="vagas" element={<WorkspaceJobsPage />} />
             <Route path="marketplace" element={<RequireCan cap="marketplace.view"><WorkspaceMarketplacePage /></RequireCan>} />
             <Route path="perfil" element={<WorkspaceProfilePage />} />
