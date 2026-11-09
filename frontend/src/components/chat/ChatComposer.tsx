@@ -1,14 +1,16 @@
 import { useRef, useState } from 'react'
-import { Mic, Paperclip, Send, Smile, Trash2, X } from 'lucide-react'
+import { Mic, Paperclip, Send, Smile, Sticker, Trash2, X } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { EMOJI_GROUPS } from './emojis'
 import { useVoiceRecorder } from './useVoiceRecorder'
+import StickerGifPanel, { type RichPayload } from './StickerGifPanel'
 
 const MAX_FILE_MB = 10
 
 interface Props {
   onSendText: (text: string) => Promise<void> | void
   onSendFile: (file: File, opts: { voice?: boolean; duration?: number }) => Promise<void> | void
+  onSendRich: (payload: RichPayload) => Promise<void> | void
   onError: (message: string) => void
   placeholder?: string
   /** classes extras para o contêiner (ex.: borda) */
@@ -16,9 +18,10 @@ interface Props {
 }
 
 /** Campo de mensagem com emojis, anexo de arquivo/foto e gravação de voz. */
-export default function ChatComposer({ onSendText, onSendFile, onError, placeholder = 'Aa', className }: Props) {
+export default function ChatComposer({ onSendText, onSendFile, onSendRich, onError, placeholder = 'Aa', className }: Props) {
   const [text, setText] = useState('')
   const [emojis, setEmojis] = useState(false)
+  const [stickers, setStickers] = useState(false)
   const [group, setGroup] = useState(0)
   const [busy, setBusy] = useState(false)
   const area = useRef<HTMLTextAreaElement>(null)
@@ -83,6 +86,7 @@ export default function ChatComposer({ onSendText, onSendFile, onError, placehol
           </div>
         </div>
       )}
+      {stickers && <StickerGifPanel onClose={() => setStickers(false)} onPick={(p) => { setStickers(false); void run(() => onSendRich(p)) }} />}
       {voice.error && <p className="px-2 pb-1 text-xs text-red-600" role="alert">{voice.error}</p>}
       <div className="flex items-end gap-1">
         <button type="button" onClick={() => fileRef.current?.click()} disabled={busy} className="rounded-full p-2 text-brand-600 hover:bg-brand-50 disabled:opacity-40" aria-label="Anexar foto ou arquivo" title="Anexar foto ou arquivo"><Paperclip className="h-5 w-5" /></button>
@@ -94,7 +98,8 @@ export default function ChatComposer({ onSendText, onSendFile, onError, placehol
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText() } }}
           className="max-h-24 min-h-[36px] flex-1 resize-none rounded-2xl border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-1 focus:ring-brand-300"
         />
-        <button type="button" onClick={() => setEmojis((v) => !v)} className="rounded-full p-2 text-brand-600 hover:bg-brand-50" aria-label="Emojis" aria-expanded={emojis} title="Emojis"><Smile className="h-5 w-5" /></button>
+        <button type="button" onClick={() => { setStickers((v) => !v); setEmojis(false) }} className="rounded-full p-2 text-brand-600 hover:bg-brand-50" aria-label="Figurinhas e GIFs" aria-expanded={stickers} title="Figurinhas e GIFs"><Sticker className="h-5 w-5" /></button>
+        <button type="button" onClick={() => { setEmojis((v) => !v); setStickers(false) }} className="rounded-full p-2 text-brand-600 hover:bg-brand-50" aria-label="Emojis" aria-expanded={emojis} title="Emojis"><Smile className="h-5 w-5" /></button>
         <button type="button" onClick={sendText} disabled={!text.trim() || busy} className="rounded-full p-2 text-brand-600 hover:bg-brand-50 disabled:opacity-30" aria-label="Enviar"><Send className="h-5 w-5" /></button>
       </div>
     </div>

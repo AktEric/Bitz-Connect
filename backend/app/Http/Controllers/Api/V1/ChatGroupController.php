@@ -342,7 +342,7 @@ class ChatGroupController extends Controller
         }
 
         $data = $request->validate([
-            'content'         => ['required_without:file', 'nullable', 'string', 'max:5000'],
+            'content'         => ['required_without_all:file,metadata', 'nullable', 'string', 'max:5000'],
             'is_announcement' => ['sometimes', 'boolean'],
         ] + ChatAttachments::rules());
 
@@ -355,6 +355,11 @@ class ChatGroupController extends Controller
                 return $this->error($stored, ['file' => [$stored]], 422);
             }
             [$type, $data['content'], $metadata] = $stored;
+        } elseif (($rich = $attachments->rich($request->input('type'), $request->input('metadata'))) !== null) {
+            if (is_string($rich)) {
+                return $this->error($rich, [], 422);
+            }
+            [$type, $data['content'], $metadata] = $rich;
         }
 
         // Apenas administradores podem marcar uma mensagem como aviso.

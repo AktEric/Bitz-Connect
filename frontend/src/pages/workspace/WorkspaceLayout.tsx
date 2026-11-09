@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Moon, Sun, Globe, CheckCircle2, ChevronDown,
+  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Moon, Sun, Globe, CheckCircle2, ChevronDown, Store,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import type { Capability } from '@/types/workspace.types'
@@ -87,7 +87,7 @@ function WorkspaceShell() {
         { to: 'pesquisas', label: 'Pesquisa de clima', Icon: HeartPulse },
       ],
     },
-    { title: 'Empresa', items: [{ to: 'equipe', label: 'Pessoas', Icon: Users }, { to: 'organograma', label: 'Organograma', Icon: Network }, { to: 'vagas', label: 'Vagas', Icon: Briefcase }] },
+    { title: 'Empresa', items: [{ to: 'equipe', label: 'Pessoas', Icon: Users }, { to: 'organograma', label: 'Organograma', Icon: Network }, { to: 'vagas', label: 'Vagas', Icon: Briefcase }, ...(can('marketplace.view') ? [{ to: 'marketplace', label: 'Marketplace', Icon: Store }] : [])] },
   ]
   const company = groups[groups.length - 1].items
   if (can('dashboard.view')) {

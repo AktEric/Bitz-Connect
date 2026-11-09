@@ -90,6 +90,11 @@ const chatGroupService = {
     return res.data.data
   },
 
+  async sendRich(groupUuid: string, payload: { type: 'sticker' | 'gif'; metadata: Record<string, string> }): Promise<ChatGroupMessage> {
+    const res = await api.post<ApiResponse<ChatGroupMessage>>(`/chat-groups/${groupUuid}/messages`, payload)
+    return res.data.data
+  },
+
   async markRead(groupUuid: string): Promise<void> {
     await api.patch(`/chat-groups/${groupUuid}/read`)
   },

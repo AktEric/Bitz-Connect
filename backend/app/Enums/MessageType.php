@@ -14,4 +14,7 @@ enum MessageType: string
     case Image    = 'image';
     case Audio    = 'audio';
     case File     = 'file';
+    case Gif      = 'gif';
+    case Sticker  = 'sticker';
+    case Listing  = 'listing';
 }

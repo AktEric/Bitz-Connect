@@ -78,6 +78,32 @@ class ChatAttachments
         ]];
     }
 
+    /**
+     * Figurinha ou GIF enviados como JSON ({type: sticker|gif, metadata}). Devolve [type, content, metadata],
+     * null quando a requisição não é desse tipo, ou uma string de erro.
+     *
+     * @return array{0:string,1:string,2:array}|string|null
+     */
+    public function rich(?string $type, mixed $metadata): array|string|null
+    {
+        if ($type === 'sticker') {
+            $id = is_array($metadata) ? ($metadata['id'] ?? null) : null;
+
+            return is_string($id) && preg_match('/^[a-z0-9-]{2,30}$/', $id) ? ['sticker', '🏷️ Figurinha', ['id' => $id]] : 'Figurinha inválida.';
+        }
+        if ($type === 'gif') {
+            $m = is_array($metadata) ? $metadata : [];
+            $ok = fn ($u) => is_string($u) && strlen($u) <= 400 && preg_match('#^https://media[0-9]*\.giphy\.com/[A-Za-z0-9/_\-.]+$#', $u);
+            if (! $ok($m['url'] ?? null) || ! $ok($m['preview'] ?? $m['url'] ?? null)) {
+                return 'GIF inválido.';
+            }
+
+            return ['gif', '🎞️ GIF', ['url' => $m['url'], 'preview' => $m['preview'] ?? $m['url'], 'title' => mb_substr((string) ($m['title'] ?? 'GIF'), 0, 80)]];
+        }
+
+        return null;
+    }
+
     /** Metadata seguro para a API: sem o caminho em disco. */
     public static function publicMetadata(?array $metadata): ?array
     {

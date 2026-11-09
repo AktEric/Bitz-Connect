@@ -12,6 +12,8 @@ import { cn } from '@/utils/cn'
 import { extractApiError } from '@/utils/api-error'
 import ChatAttachment, { attachmentOf } from './ChatAttachment'
 import ChatComposer from './ChatComposer'
+import { stickerById } from './stickers'
+import type { RichPayload } from './StickerGifPanel'
 
 export interface DockTarget {
   kind: 'direct' | 'group'
@@ -77,27 +79,65 @@ interface BubbleMessage {
   is_announcement?: boolean
 }
 
-function Bubble({ m, group, slug }: { m: BubbleMessage; group: boolean; slug?: string }) {
+/** Figurinha (sem balão), GIF ou o balão normal. */
+function Bubble({ m, group, slug, showAvatar }: { m: BubbleMessage; group: boolean; slug?: string; showAvatar: boolean }) {
   const att = attachmentOf(m.type, m.metadata)
+  const sticker = m.type === 'sticker' ? stickerById(String((m.metadata as { id?: string } | null)?.id ?? '')) : null
+  const gif = m.type === 'gif' ? (m.metadata as { url?: string; title?: string } | null) : null
   const showSender = group && !m.is_mine && m.sender
   const profile = slug && m.sender?.uuid ? `/w/${slug}/pessoas/${m.sender.uuid}` : null
-  const caption = att && /^(📷 Foto|🎤 Mensagem de voz|📎 )/.test(m.content) ? '' : m.content
+  const caption = (att && /^(📷 Foto|🎤 Mensagem de voz|📎 )/.test(m.content)) || (m.type === 'listing' && m.content === '🛍️ Anúncio do marketplace') ? '' : m.content
+  const listing = m.type === 'listing' ? (m.metadata as { listing_uuid?: string; title?: string; price_cents?: number | null; hotel_slug?: string; status?: string } | null) : null
+  const bare = !!sticker || !!gif
+
+  // foto de quem fala, na última mensagem de cada sequência (como nas redes sociais); as demais deixam o espaço
+  const avatar = !m.is_mine && m.sender && (
+    showAvatar
+      ? (profile
+        ? <Link to={profile} aria-label={`Ver perfil de ${m.sender.name}`} className="flex-shrink-0 rounded-full"><Avatar src={m.sender.avatar_url} name={m.sender.name} size="xs" /></Link>
+        : <Avatar src={m.sender.avatar_url} name={m.sender.name} size="xs" className="flex-shrink-0" />)
+      : <span className="w-6 flex-shrink-0" aria-hidden />
+  )
 
   return (
     <div className={cn('flex items-end gap-1.5', m.is_mine && 'justify-end')}>
-      {showSender && (profile
-        ? <Link to={profile} aria-label={`Ver perfil de ${m.sender!.name}`}><Avatar src={m.sender!.avatar_url} name={m.sender!.name} size="xs" /></Link>
-        : <Avatar src={m.sender!.avatar_url} name={m.sender!.name} size="xs" />)}
-      <div className={cn('max-w-[78%] rounded-2xl px-3 py-1.5 text-sm', m.is_mine ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-900', m.is_announcement && 'border border-amber-300 bg-amber-50 text-amber-900')}>
-        {showSender && (profile
-          ? <Link to={profile} className="mb-0.5 block text-xs font-semibold text-brand-700 hover:underline">{m.sender!.name}</Link>
-          : <p className="mb-0.5 text-xs font-semibold text-brand-700">{m.sender!.name}</p>)}
-        {att && <div className="py-0.5"><ChatAttachment a={att} mine={m.is_mine} /></div>}
-        {(!att || caption) && <p className="whitespace-pre-wrap break-words">{att ? caption : m.content}</p>}
-        <p className={cn('text-right text-[10px]', m.is_mine && !m.is_announcement ? 'text-white/70' : 'text-gray-400')}>{formatTime(m.created_at)}</p>
-      </div>
+      {avatar}
+      {bare ? (
+        <div className="max-w-[78%]">
+          {sticker && (
+            <div className={cn('flex h-28 w-28 flex-col items-center justify-center rounded-3xl bg-gradient-to-br shadow-sm', sticker.bg)} title={sticker.label}>
+              <span className="text-5xl leading-none">{sticker.emoji}</span>
+              <span className="mt-1.5 text-xs font-bold text-gray-700">{sticker.label}</span>
+            </div>
+          )}
+          {gif?.url && <img src={gif.url} alt={gif.title ?? 'GIF'} className="max-h-44 max-w-full rounded-2xl" loading="lazy" />}
+          {sticker === undefined && m.type === 'sticker' && <p className="text-xs text-gray-400">Figurinha</p>}
+          <p className={cn('mt-0.5 text-[10px] text-gray-400', m.is_mine && 'text-right')}>{formatTime(m.created_at)}</p>
+        </div>
+      ) : (
+        <div className={cn('max-w-[78%] rounded-2xl px-3 py-1.5 text-sm', m.is_mine ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-900', m.is_announcement && 'border border-amber-300 bg-amber-50 text-amber-900')}>
+          {showSender && (profile
+            ? <Link to={profile} className="mb-0.5 block text-xs font-semibold text-brand-700 hover:underline">{m.sender!.name}</Link>
+            : <p className="mb-0.5 text-xs font-semibold text-brand-700">{m.sender!.name}</p>)}
+          {att && <div className="py-0.5"><ChatAttachment a={att} mine={m.is_mine} /></div>}
+          {listing?.listing_uuid && (
+            <Link to={`/w/${listing.hotel_slug ?? slug}/marketplace?anuncio=${listing.listing_uuid}`} className={cn('mb-1 flex items-center gap-2 rounded-xl p-2', m.is_mine ? 'bg-white/15' : 'bg-white')}>
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-brand-100 text-lg" aria-hidden>🛍️</span>
+              <span className="min-w-0"><span className="block truncate text-sm font-semibold">{listing.title}</span><span className="block text-xs opacity-80">{listing.price_cents == null ? 'A combinar' : (listing.price_cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}{listing.status === 'sold' ? ' · Vendido' : ''} · ver anúncio</span></span>
+            </Link>
+          )}
+          {(!att || caption) && (caption || !listing) && <p className="whitespace-pre-wrap break-words">{att || listing ? caption : m.content}</p>}
+          <p className={cn('text-right text-[10px]', m.is_mine && !m.is_announcement ? 'text-white/70' : 'text-gray-400')}>{formatTime(m.created_at)}</p>
+        </div>
+      )}
     </div>
   )
+}
+
+/** Mostra a foto só quando a próxima mensagem é de outra pessoa (ou não há próxima). */
+const lastOfRun = (list: BubbleMessage[], i: number) => {
+  const next = list[i + 1]
+  return !next || next.is_mine !== list[i].is_mine || (next.sender?.uuid ?? '') !== (list[i].sender?.uuid ?? '')
 }
 
 function ChatWindow({ win, className, onMinimize, onExpand, onClose }: { win: DockWindow; className?: string; onMinimize: () => void; onExpand: () => void; onClose: () => void }) {
@@ -157,19 +197,25 @@ function DirectBody({ person, slug }: { person: DockTarget; slug?: string }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: chatKeys.messages(person.uuid) }); qc.invalidateQueries({ queryKey: chatKeys.conversations }) },
   })
 
+  const sendRich = useMutation({
+    mutationFn: (p: RichPayload) => chatService.sendRich(person.uuid, p),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: chatKeys.messages(person.uuid) }); qc.invalidateQueries({ queryKey: chatKeys.conversations }) },
+  })
+
   useEffect(() => { if (latest && !latest.startsWith('optimistic-')) markRead.mutate() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [latest])
 
   return (
     <>
       <div className="flex-1 space-y-1.5 overflow-y-auto px-3 py-3">
         {!messages.length && <p className="py-10 text-center text-sm text-gray-400">Diga olá para {person.name.split(' ')[0]}.</p>}
-        {messages.map((m) => <Bubble key={m.uuid} m={m} group={false} slug={slug} />)}
+        {messages.map((m, i) => <Bubble key={m.uuid} m={m} group={false} slug={slug} showAvatar={lastOfRun(messages, i)} />)}
         <div ref={bottom} />
       </div>
       <ChatComposer
         onError={(e) => toast(e, 'error')}
         onSendText={async (t) => { try { await sendText.mutateAsync(t) } catch (e) { throw new Error(extractApiError(e)) } }}
         onSendFile={async (file, opts) => { try { await sendFile.mutateAsync({ file, opts }) } catch (e) { throw new Error(extractApiError(e)) } }}
+        onSendRich={async (p) => { try { await sendRich.mutateAsync(p) } catch (e) { throw new Error(extractApiError(e)) } }}
       />
     </>
   )
@@ -190,13 +236,18 @@ function GroupBody({ group: target, slug }: { group: DockTarget; slug?: string }
     onSuccess: () => { qc.invalidateQueries({ queryKey: groupKeys.messages(target.uuid) }); qc.invalidateQueries({ queryKey: groupKeys.list }) },
   })
 
+  const sendRich = useMutation({
+    mutationFn: (p: RichPayload) => chatGroupService.sendRich(target.uuid, p),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: groupKeys.messages(target.uuid) }); qc.invalidateQueries({ queryKey: groupKeys.list }) },
+  })
+
   useEffect(() => { if (latest) markRead.mutate() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [latest])
 
   return (
     <>
       <div className="flex-1 space-y-1.5 overflow-y-auto px-3 py-3">
         {!messages.length && <p className="py-10 text-center text-sm text-gray-400">Nenhuma mensagem ainda.</p>}
-        {messages.map((m) => <Bubble key={m.uuid} m={m} group slug={slug} />)}
+        {messages.map((m, i) => <Bubble key={m.uuid} m={m} group slug={slug} showAvatar={lastOfRun(messages, i)} />)}
         <div ref={bottom} />
       </div>
       {group && !group.can_post ? (
@@ -206,6 +257,7 @@ function GroupBody({ group: target, slug }: { group: DockTarget; slug?: string }
           onError={(e) => toast(e, 'error')}
           onSendText={async (content) => { try { await sendText.mutateAsync({ content }) } catch (e) { throw new Error(extractApiError(e)) } }}
           onSendFile={async (file, opts) => { try { await sendFile.mutateAsync({ file, opts }) } catch (e) { throw new Error(extractApiError(e)) } }}
+          onSendRich={async (p) => { try { await sendRich.mutateAsync(p) } catch (e) { throw new Error(extractApiError(e)) } }}
         />
       )}
     </>

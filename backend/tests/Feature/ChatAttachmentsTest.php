@@ -53,3 +53,21 @@ it('delivers the attachment only to the two participants', function () {
     Sanctum::actingAs($this->c);
     $this->get("/api/v1/chat/attachments/{$uuid}")->assertNotFound();
 });
+
+it('sends stickers and GIFs, and rejects forged ones', function () {
+    Sanctum::actingAs($this->a);
+    $u = "/api/v1/chat/{$this->b->uuid}/messages";
+
+    $this->postJson($u, ['type' => 'sticker', 'metadata' => ['id' => 'parabens']])->assertCreated()->assertJsonPath('data.type', 'sticker')->assertJsonPath('data.metadata.id', 'parabens');
+    $this->postJson($u, ['type' => 'sticker', 'metadata' => ['id' => '../x']])->assertUnprocessable();
+
+    $gif = 'https://media2.giphy.com/media/abc123/200.gif';
+    $this->postJson($u, ['type' => 'gif', 'metadata' => ['url' => $gif, 'title' => 'oi']])->assertCreated()->assertJsonPath('data.metadata.url', $gif);
+    $this->postJson($u, ['type' => 'gif', 'metadata' => ['url' => 'https://evil.example/x.gif']])->assertUnprocessable();
+});
+
+it('keeps GIF search off without an API key', function () {
+    config(['services.giphy.key' => null]);
+    Sanctum::actingAs($this->a);
+    $this->getJson('/api/v1/chat/gifs?q=oi')->assertOk()->assertJsonPath('data.enabled', false);
+});

@@ -133,7 +133,7 @@ class ChatController extends Controller
      */
     public function send(Request $request, User $user, ChatAttachments $attachments): JsonResponse
     {
-        $request->validate(['content' => ['required_without:file', 'nullable', 'string', 'max:5000']] + ChatAttachments::rules());
+        $request->validate(['content' => ['required_without_all:file,metadata', 'nullable', 'string', 'max:5000']] + ChatAttachments::rules());
 
         $authUser = $request->user();
 
@@ -148,10 +148,18 @@ class ChatController extends Controller
                 return $this->error($stored, ['file' => [$stored]], 422);
             }
             [$type, $content, $metadata] = $stored;
+        } elseif (($rich = $attachments->rich($request->input('type'), $request->input('metadata'))) !== null) {
+            if (is_string($rich)) {
+                return $this->error($rich, [], 422);
+            }
+            [$type, $content, $metadata] = $rich;
         } else {
-            [$type, $metadata, $error] = $this->resolveTypeAndMetadata($request);
+            [$type, $metadata, $error] = $this->resolveTypeAndMetadata($request, $authUser, $user);
             if ($error) {
                 return $error;
+            }
+            if ($content === '' && $type === 'listing') {
+                $content = '🛍️ Anúncio do marketplace';
             }
         }
 
@@ -434,9 +442,23 @@ class ChatController extends Controller
      * Resolve o `type`/`metadata` do payload (suporta compartilhamento de vaga).
      * Retorna [type, metadata, ?JsonResponse de erro].
      */
-    private function resolveTypeAndMetadata(Request $request): array
+    private function resolveTypeAndMetadata(Request $request, ?User $sender = null, ?User $receiver = null): array
     {
         $type = $request->input('type', 'text');
+
+        if ($type === 'listing') {
+            $request->validate(['metadata.listing_uuid' => 'required|string']);
+            $listing = \App\Models\MarketplaceListing::with('hotel')->where('uuid', $request->input('metadata.listing_uuid'))->first();
+            $member = fn (?User $u) => $u && $listing && \App\Models\HotelUser::where('hotel_id', $listing->hotel_id)->where('user_id', $u->id)->where('status', 'approved')->exists();
+            if (! $listing || $listing->status === 'hidden' || ! $member($sender) || ! $member($receiver)) {
+                return [$type, null, $this->error('Anúncio não encontrado.', [], 422)];
+            }
+
+            return [$type, [
+                'listing_uuid' => $listing->uuid, 'title' => $listing->title, 'price_cents' => $listing->price_cents,
+                'hotel_slug' => $listing->hotel->slug, 'status' => $listing->status,
+            ], null];
+        }
 
         if ($type !== 'job') {
             return [$type, null, null];

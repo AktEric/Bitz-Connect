@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ChatGroupController;
 use App\Http\Controllers\Api\V1\CompanyDirectoryController;
 use App\Http\Controllers\Api\V1\CompanyInviteController;
 use App\Http\Controllers\Api\V1\CareerController;
+use App\Http\Controllers\Api\V1\MarketplaceController;
 use App\Http\Controllers\Api\V1\SalaryController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\Api\V1\WorkspaceSearchController;
@@ -89,6 +90,7 @@ Route::get('/public/jobs/{token}', [WorkspaceJobController::class, 'publicShow']
 Route::get('/calendar-feed/{token}.ics', [CalendarController::class, 'feed'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1');
 
 // Fotos do mural do Workspace: privadas, entregues só com URL assinada (relativa) de curta duração
+Route::get('/marketplace-media/{uuid}', [\App\Http\Controllers\Api\V1\MarketplaceController::class, 'media'])->name('marketplace.media')->middleware(['signed:relative', 'throttle:240,1']);
 Route::get('/workspace-media/{uuid}', [WorkspaceFeedController::class, 'media'])->name('workspace.media')->middleware(['signed:relative', 'throttle:120,1']);
 
 // Subscription plan catalog (public — for the pricing page)
@@ -220,6 +222,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('chat')->group(function () {
         Route::get('/unread-count',           [ChatController::class, 'unreadCount']);
         Route::get('/attachments/{uuid}',     [ChatController::class, 'attachment']);
+        Route::get('/gifs',                   [\App\Http\Controllers\Api\V1\GifController::class, 'search'])->middleware('throttle:60,1');
         Route::get('/conversations',          [ChatController::class, 'conversations']);
         // Conversa pessoal com a caixa compartilhada de um hotel
         Route::get('/hotels/{hotel}/messages',  [ChatController::class, 'hotelThreadMessages']);
@@ -339,6 +342,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/audit',                    [WorkspaceController::class, 'audit']);
         Route::get('/roles',                    [WorkspaceController::class, 'roles']);
         Route::patch('/roles/{uuid}',           [WorkspaceController::class, 'updateRole']);
+        // Marketplace interno
+        Route::get('/marketplace',                          [MarketplaceController::class, 'index']);
+        Route::post('/marketplace',                         [MarketplaceController::class, 'store'])->middleware('throttle:30,1');
+        Route::get('/marketplace/{uuid}',                   [MarketplaceController::class, 'show']);
+        Route::patch('/marketplace/{uuid}',                 [MarketplaceController::class, 'update']);
+        Route::delete('/marketplace/{uuid}',                [MarketplaceController::class, 'destroy']);
+        Route::post('/marketplace/{uuid}/images',           [MarketplaceController::class, 'addImages'])->middleware('throttle:30,1');
+        Route::delete('/marketplace/{uuid}/images/{img}',   [MarketplaceController::class, 'removeImage']);
+        Route::post('/marketplace/{uuid}/like',             [MarketplaceController::class, 'like']);
+        Route::post('/marketplace/{uuid}/repost',           [MarketplaceController::class, 'repost']);
         //WORKSPACE_ROUTES
         // Mural
         Route::get('/feed',                          [WorkspaceFeedController::class, 'index']);

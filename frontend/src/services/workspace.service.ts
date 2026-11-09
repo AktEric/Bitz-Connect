@@ -131,10 +131,11 @@ const workspaceService = {
 
   // Mural
   feed: (slug: string, page = 1, group = '') => get<Paged<FeedPost> & { groups: { uuid: string; name: string }[] }>(`${w(slug)}/feed`, group ? { page, group } : { page }),
-  createPost: (slug: string, input: { body: string; pinned?: boolean; requires_ack?: boolean; department_uuid?: string | null; photos?: Blob[]; video?: File | null }) => {
+  createPost: (slug: string, input: { body: string; pinned?: boolean; as_company?: boolean; requires_ack?: boolean; department_uuid?: string | null; photos?: Blob[]; video?: File | null }) => {
     const form = new FormData()
     form.append('body', input.body)
     if (input.pinned) form.append('pinned', '1')
+    if (input.as_company) form.append('as_company', '1')
     if (input.requires_ack) form.append('requires_ack', '1')
     if (input.department_uuid) form.append('department_uuid', input.department_uuid)
     if (input.video) form.append('video', input.video)

@@ -36,6 +36,12 @@ const chatService = {
     return res.data.data
   },
 
+  /** POST /chat/:uuid/messages — figurinha ou GIF */
+  async sendRich(userUuid: string, payload: { type: 'sticker' | 'gif' | 'listing'; metadata: Record<string, string>; content?: string }): Promise<Message> {
+    const res = await api.post<ApiResponse<Message>>(`/chat/${userUuid}/messages`, payload)
+    return res.data.data
+  },
+
   /** PATCH /chat/:uuid/read — mark messages from a user as read */
   async markRead(userUuid: string): Promise<void> {
     await api.patch(`/chat/${userUuid}/read`)
