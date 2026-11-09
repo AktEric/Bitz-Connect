@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react'
-import { ArrowLeft, BellOff, Bell, Crown, LogOut, Megaphone, UserMinus, UserPlus } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import chatGroupService from '@/services/chatGroup.service'
+import { ArrowLeft, BellOff, Bell, Camera, Crown, Trash2, LogOut, Megaphone, UserMinus, UserPlus } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import {
   useAddGroupMembers,
@@ -41,6 +43,17 @@ export default function GroupInfoPanel({ groupUuid, onBack, onLeft }: Props) {
   const { data: companyMembers = [] } = useCompanyMembers(canManage ? hotelSlug : null)
   const { data: departments = [] } = useDepartments(canManage ? hotelSlug : null)
 
+  const qc = useQueryClient()
+  const photoRef = useRef<HTMLInputElement>(null)
+  const refreshGroups = () => { qc.invalidateQueries({ queryKey: ['chat-groups'] }) }
+  const setPhoto = useMutation({ mutationFn: (f: File) => chatGroupService.setAvatar(groupUuid, f), onSuccess: () => { refreshGroups(); toast('Foto do grupo atualizada.', 'success') }, onError: (e) => toast(extractApiError(e), 'error') })
+  const clearPhoto = useMutation({ mutationFn: () => chatGroupService.removeAvatar(groupUuid), onSuccess: () => { refreshGroups(); toast('Foto removida.', 'success') }, onError: (e) => toast(extractApiError(e), 'error') })
+  const pickPhoto = (f?: File) => {
+    if (!f) return
+    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) return toast('Use uma foto JPG, PNG ou WebP.', 'error')
+    if (f.size > 5 * 1024 * 1024) return toast('A foto pode ter até 5 MB.', 'error')
+    setPhoto.mutate(f)
+  }
   const [adding, setAdding] = useState(false)
   const [picked, setPicked] = useState<string[]>([])
   const [pickedDepts, setPickedDepts] = useState<string[]>([])
@@ -73,10 +86,22 @@ export default function GroupInfoPanel({ groupUuid, onBack, onLeft }: Props) {
       </div>
 
       <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
-        <div>
-          <p className="text-base font-semibold text-gray-900">{group.name}</p>
-          {group.description && <p className="mt-0.5 text-sm text-gray-500">{group.description}</p>}
-          {group.hotel && <p className="mt-1 text-xs text-gray-400">{group.hotel.name} · {group.members_count} participantes</p>}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-shrink-0">
+            <Avatar src={group.avatar_url ?? group.hotel?.avatar_url} name={group.name} size="2xl" />
+            {canManage && (
+              <>
+                <button type="button" onClick={() => photoRef.current?.click()} disabled={setPhoto.isPending} aria-label="Trocar foto do grupo" title="Trocar foto do grupo" className="absolute -bottom-1 -right-1 rounded-full bg-brand-600 p-2 text-white shadow hover:bg-brand-700 disabled:opacity-60"><Camera className="h-4 w-4" /></button>
+                <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { pickPhoto(e.target.files?.[0]); e.target.value = '' }} />
+              </>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-base font-semibold text-gray-900">{group.name}</p>
+            {group.description && <p className="mt-0.5 text-sm text-gray-500">{group.description}</p>}
+            {group.hotel && <p className="mt-1 text-xs text-gray-400">{group.hotel.name} · {group.members_count} participantes</p>}
+            {canManage && group.avatar_url && <button type="button" onClick={() => clearPhoto.mutate()} disabled={clearPhoto.isPending} className="mt-1 inline-flex items-center gap-1 text-xs text-gray-400 hover:text-red-500"><Trash2 className="h-3 w-3" /> Remover foto</button>}
+          </div>
         </div>
 
         {canManage && (

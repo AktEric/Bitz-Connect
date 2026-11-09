@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Search, X } from 'lucide-react'
+import { useRef } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ImagePlus, Search, Trash2, X } from 'lucide-react'
 import api from '@/services/api'
 import type { ApiResponse } from '@/types/api.types'
 import { cn } from '@/utils/cn'
+import chatService from '@/services/chat.service'
+import { extractApiError } from '@/utils/api-error'
 import { STICKERS } from './stickers'
+import StickerImage from './StickerImage'
+import { stickerKeys, useMyStickersList } from './useMyStickers'
 
 export interface GifItem { id: string; title: string; url: string; preview: string }
-export type RichPayload = { type: 'sticker'; metadata: { id: string } } | { type: 'gif'; metadata: { url: string; preview: string; title: string } }
+export type RichPayload = { type: 'sticker'; metadata: { id: string } } | { type: 'sticker'; metadata: { sticker_uuid: string } } | { type: 'gif'; metadata: { url: string; preview: string; title: string } }
 
 function useGifs(q: string, enabled: boolean) {
   const [debounced, setDebounced] = useState(q)
@@ -18,6 +23,45 @@ function useGifs(q: string, enabled: boolean) {
     staleTime: 10 * 60_000,
     queryFn: async () => (await api.get<ApiResponse<{ enabled: boolean; items: GifItem[] }>>('/chat/gifs', { params: { q: debounced || undefined } })).data.data,
   })
+}
+
+/** Minhas figurinhas: as que eu criei e as que salvei de outras pessoas; "+" adiciona uma imagem nova. */
+function MyStickers({ onPick }: { onPick: (p: RichPayload) => void }) {
+  const qc = useQueryClient()
+  const { data } = useMyStickersList()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [error, setError] = useState('')
+  const refresh = () => qc.invalidateQueries({ queryKey: stickerKeys.mine })
+  const add = useMutation({ mutationFn: (f: File) => chatService.addSticker(f), onSuccess: () => { setError(''); refresh() }, onError: (e) => setError(extractApiError(e)) })
+  const remove = useMutation({ mutationFn: (uuid: string) => chatService.removeSticker(uuid), onSuccess: refresh })
+  const items = data?.items ?? []
+
+  const choose = (f?: File) => {
+    if (!f) return
+    if (!/^image\/(png|webp|gif|jpeg)$/.test(f.type)) return setError('Use uma imagem PNG, WebP, GIF ou JPG.')
+    if (f.size > 1024 * 1024) return setError('A figurinha pode ter até 1 MB.')
+    add.mutate(f)
+  }
+
+  return (
+    <section aria-label="Minhas figurinhas" className="mb-3">
+      <h3 className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-gray-500">Minhas figurinhas <span className="font-normal normal-case text-gray-400">{items.length}/{data?.max ?? 100}</span></h3>
+      <div className="grid grid-cols-4 gap-2">
+        <button type="button" onClick={() => fileRef.current?.click()} disabled={add.isPending} className="flex aspect-square flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-dashed border-gray-300 text-[10px] text-gray-500 hover:border-brand-400 hover:text-brand-600 disabled:opacity-50" aria-label="Adicionar figurinha">
+          <ImagePlus className="h-5 w-5" /> {add.isPending ? 'Enviando…' : 'Nova'}
+        </button>
+        <input ref={fileRef} type="file" accept="image/png,image/webp,image/gif,image/jpeg" className="hidden" onChange={(e) => { choose(e.target.files?.[0]); e.target.value = '' }} />
+        {items.map((st) => (
+          <div key={st.uuid} className="group relative aspect-square">
+            <button type="button" onClick={() => onPick({ type: 'sticker', metadata: { sticker_uuid: st.uuid } })} className="h-full w-full rounded-xl bg-gray-50 p-1 transition hover:scale-105" aria-label="Enviar figurinha"><StickerImage uuid={st.uuid} className="h-full w-full" /></button>
+            <button type="button" onClick={() => { if (confirm('Remover esta figurinha da sua coleção?')) remove.mutate(st.uuid) }} className="absolute -right-1 -top-1 hidden rounded-full bg-white p-1 text-gray-500 shadow ring-1 ring-gray-200 hover:text-red-500 group-hover:block group-focus-within:block" aria-label="Remover da minha coleção"><Trash2 className="h-3 w-3" /></button>
+          </div>
+        ))}
+      </div>
+      {error && <p className="mt-1 text-xs text-red-600" role="alert">{error}</p>}
+      {!items.length && !error && <p className="mt-1 text-[11px] text-gray-400">Adicione imagens como figurinha. Quem receber pode salvar na própria coleção.</p>}
+    </section>
+  )
 }
 
 /** Figurinhas prontas e busca de GIFs (os GIFs só aparecem se o servidor tiver a chave da Giphy). */
@@ -36,7 +80,10 @@ export default function StickerGifPanel({ onPick, onClose }: { onPick: (p: RichP
       </div>
 
       {tab === 'stickers' ? (
-        <div className="grid max-h-56 grid-cols-3 gap-2 overflow-y-auto">
+        <div className="max-h-64 overflow-y-auto">
+        <MyStickers onPick={onPick} />
+        <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Figurinhas prontas</h3>
+        <div className="grid grid-cols-3 gap-2">
           {STICKERS.map((s) => (
             <button key={s.id} type="button" onClick={() => onPick({ type: 'sticker', metadata: { id: s.id } })}
               className={cn('flex aspect-square flex-col items-center justify-center rounded-2xl bg-gradient-to-br p-1 transition hover:scale-105', s.bg)} aria-label={s.label}>
@@ -44,6 +91,7 @@ export default function StickerGifPanel({ onPick, onClose }: { onPick: (p: RichP
               <span className="mt-1 text-[10px] font-semibold text-gray-700">{s.label}</span>
             </button>
           ))}
+        </div>
         </div>
       ) : gifs.data && !gifs.data.enabled ? (
         <p className="px-2 py-6 text-center text-sm text-gray-500">Os GIFs ainda não estão ativados nesta empresa. O responsável pelo sistema precisa informar a chave da Giphy.</p>

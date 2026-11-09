@@ -42,6 +42,35 @@ const chatService = {
     return res.data.data
   },
 
+  /** POST /chat/messages/:uuid/react — reage (ou remove a reação, com null) a uma mensagem */
+  async react(messageUuid: string, emoji: string | null): Promise<void> {
+    await api.post(`/chat/messages/${messageUuid}/react`, { emoji })
+  },
+
+  /** GET/PUT /me/chat-settings — confirmação de leitura (visualizado) */
+  async getSettings(): Promise<{ read_receipts: boolean }> {
+    return (await api.get<ApiResponse<{ read_receipts: boolean }>>('/me/chat-settings')).data.data
+  },
+  async setReadReceipts(on: boolean): Promise<{ read_receipts: boolean }> {
+    return (await api.put<ApiResponse<{ read_receipts: boolean }>>('/me/chat-settings', { read_receipts: on })).data.data
+  },
+
+  /** Figurinhas próprias */
+  async myStickers(): Promise<{ items: { uuid: string }[]; max: number }> {
+    return (await api.get<ApiResponse<{ items: { uuid: string }[]; max: number }>>('/stickers')).data.data
+  },
+  async addSticker(file: File): Promise<{ uuid: string }> {
+    const fd = new FormData()
+    fd.append('image', file)
+    return (await api.post<ApiResponse<{ uuid: string }>>('/stickers', fd, { headers: { 'Content-Type': 'multipart/form-data' } })).data.data
+  },
+  async saveSticker(uuid: string): Promise<void> {
+    await api.post(`/stickers/${uuid}/save`)
+  },
+  async removeSticker(uuid: string): Promise<void> {
+    await api.delete(`/stickers/${uuid}`)
+  },
+
   /** PATCH /chat/:uuid/read — mark messages from a user as read */
   async markRead(userUuid: string): Promise<void> {
     await api.patch(`/chat/${userUuid}/read`)

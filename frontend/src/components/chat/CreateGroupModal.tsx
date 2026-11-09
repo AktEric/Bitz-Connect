@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { Camera } from 'lucide-react'
+import chatGroupService from '@/services/chatGroup.service'
 import { X, Megaphone, Users, Search } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useMyHotels } from '@/hooks/useHotel'
@@ -32,6 +34,9 @@ export default function CreateGroupModal({ onClose, onCreated }: Props) {
   const [deptIds, setDeptIds] = useState<string[]>([])
   const [memberIds, setMemberIds] = useState<string[]>([])
   const [search, setSearch] = useState('')
+  const photoRef = useRef<HTMLInputElement>(null)
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
 
   const { data: departments = [] } = useDepartments(effectiveSlug || null)
   const { data: members = [] } = useCompanyMembers(effectiveSlug || null)
@@ -61,6 +66,9 @@ export default function CreateGroupModal({ onClose, onCreated }: Props) {
         department_uuids: allEmployees ? [] : deptIds,
         member_uuids: allEmployees ? [] : memberIds,
       })
+      if (photo) {
+        try { const r = await chatGroupService.setAvatar(group.uuid, photo); group.avatar_url = r.avatar_url } catch { toast('Grupo criado, mas não foi possível enviar a foto.', 'error') }
+      }
       toast('Grupo criado com sucesso.', 'success')
       onCreated(group)
     } catch (err) {
@@ -103,6 +111,20 @@ export default function CreateGroupModal({ onClose, onCreated }: Props) {
                   </select>
                 </label>
               )}
+
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => photoRef.current?.click()} className="relative flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-gray-300 bg-gray-50 text-gray-400 hover:border-brand-400 hover:text-brand-600" aria-label="Escolher foto do grupo">
+                  {photoUrl ? <img src={photoUrl} alt="" className="h-full w-full object-cover" /> : <Camera className="h-6 w-6" />}
+                </button>
+                <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => {
+                  const f = e.target.files?.[0]; e.target.value = ''
+                  if (!f) return
+                  if (!/^image\/(jpeg|png|webp)$/.test(f.type) || f.size > 5 * 1024 * 1024) return toast('Use uma foto JPG, PNG ou WebP de até 5 MB.', 'error')
+                  if (photoUrl) URL.revokeObjectURL(photoUrl)
+                  setPhoto(f); setPhotoUrl(URL.createObjectURL(f))
+                }} />
+                <div className="text-xs text-gray-500"><p className="font-medium text-gray-700">Foto do grupo (opcional)</p>{photo ? <button type="button" className="text-gray-400 hover:text-red-500" onClick={() => { if (photoUrl) URL.revokeObjectURL(photoUrl); setPhoto(null); setPhotoUrl(null) }}>Remover foto</button> : 'JPG, PNG ou WebP, até 5 MB.'}</div>
+              </div>
 
               <label className="block text-sm">
                 <span className="mb-1 block font-medium text-gray-700">Nome do grupo</span>

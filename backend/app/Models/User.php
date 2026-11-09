@@ -57,6 +57,7 @@ class User extends Authenticatable implements Subscribable
     protected function casts(): array
     {
         return [
+            'chat_read_receipts' => 'boolean',
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
             'social_links'      => 'array',

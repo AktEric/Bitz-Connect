@@ -22,6 +22,7 @@ class Message extends Model
         'receiver_hotel_id',
         'content',
         'read_at',
+        'delivered_at',
         'type',
         'metadata',
     ];
@@ -30,6 +31,7 @@ class Message extends Model
     {
         return [
             'read_at'  => 'datetime',
+            'delivered_at' => 'datetime',
             'type'     => MessageType::class,
             'metadata' => 'array',
         ];

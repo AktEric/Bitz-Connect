@@ -9,9 +9,15 @@ export interface ChatGroupHotel {
   avatar_url: string | null
 }
 
+/** Enviada, entregue ou visualizada (só nas minhas mensagens). */
+export type DeliveryStatus = 'sent' | 'delivered' | 'read'
+export interface ChatReaction { emoji: string; count: number; mine: boolean; people: string[] }
+
 export interface ChatGroup {
   uuid: string
   name: string
+  /** Foto própria do grupo (se não houver, usa a logo da empresa). */
+  avatar_url?: string | null
   description: string | null
   /** "Modo aviso": só administradores enviam mensagens. */
   only_admins_can_post: boolean
@@ -49,6 +55,8 @@ export interface ChatGroupMessage {
   content: string
   type: string
   metadata?: Record<string, unknown> | null
+  status?: DeliveryStatus | null
+  reactions?: ChatReaction[]
   is_announcement: boolean
   is_mine: boolean
   created_at: string

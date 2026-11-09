@@ -95,6 +95,8 @@ export interface Message {
   sender: ChatParty
   type: MessageType
   metadata: JobMetadata | Record<string, unknown> | null
+  status?: 'sent' | 'delivered' | 'read' | null
+  reactions?: { emoji: string; count: number; mine: boolean; people: string[] }[]
 }
 
 export interface Conversation {

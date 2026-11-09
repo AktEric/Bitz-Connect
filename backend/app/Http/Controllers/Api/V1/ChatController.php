@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Chat\Services\ChatAttachments;
+use App\Domain\Chat\Services\ChatReactions;
 use App\Events\Chat\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\ApiResponseTrait;
@@ -24,6 +25,9 @@ class ChatController extends Controller
 {
     use ApiResponseTrait;
 
+    /** @var array<int, array> reações por mensagem, preenchido antes de formatar uma página */
+    private array $reactionMap = [];
+
     // ──────────────────────────────────────────────────────────
     // Personal inbox (pessoa)
     // ──────────────────────────────────────────────────────────
@@ -33,6 +37,7 @@ class ChatController extends Controller
      */
     public function unreadCount(Request $request): JsonResponse
     {
+        $this->touchDelivered($request->user()->id);
         $count = Message::where('receiver_id', $request->user()->id)
             ->whereNull('read_at')
             ->count();
@@ -48,6 +53,7 @@ class ChatController extends Controller
     public function conversations(Request $request): JsonResponse
     {
         $authId = $request->user()->id;
+        $this->touchDelivered($authId);
 
         $messages = Message::with(['sender', 'receiver', 'senderHotel', 'receiverHotel'])
             ->where(function ($q) use ($authId) {
@@ -112,6 +118,7 @@ class ChatController extends Controller
     public function messages(Request $request, User $user): JsonResponse
     {
         $authId = $request->user()->id;
+        $this->touchDelivered($authId);
 
         $paginator = Message::with(['sender', 'receiver', 'senderHotel', 'receiverHotel'])
             ->where(function ($q) use ($authId, $user) {
@@ -148,7 +155,7 @@ class ChatController extends Controller
                 return $this->error($stored, ['file' => [$stored]], 422);
             }
             [$type, $content, $metadata] = $stored;
-        } elseif (($rich = $attachments->rich($request->input('type'), $request->input('metadata'))) !== null) {
+        } elseif (($rich = $attachments->rich($request->input('type'), $request->input('metadata'), $request->user())) !== null) {
             if (is_string($rich)) {
                 return $this->error($rich, [], 422);
             }
@@ -489,6 +496,7 @@ class ChatController extends Controller
 
     private function paginatedMessages($paginator, ?int $authId, ?int $viewpointHotelId = null): JsonResponse
     {
+        $this->reactionMap = $authId ? app(ChatReactions::class)->summaries('direct', $paginator->getCollection()->pluck('id')->all(), $authId) : [];
         $data = $paginator->getCollection()->map(fn (Message $msg) => $this->formatMessage($msg, $authId, $viewpointHotelId));
 
         return response()->json([
@@ -530,6 +538,29 @@ class ChatController extends Controller
      * @param  int|null  $viewpointHotelId  Id do hotel cujo painel está vendo a conversa —
      *                            "is_mine" passa a ser relativo ao hotel, não a um admin.
      */
+    /** O app da pessoa buscou suas mensagens: elas passam de "enviada" para "entregue". */
+    private function touchDelivered(int $userId): void
+    {
+        Message::where('receiver_id', $userId)->whereNull('delivered_at')->update(['delivered_at' => now()]);
+    }
+
+    /**
+     * Estado da MINHA mensagem: enviada, entregue ou visualizada. "Visualizada" só aparece quando os dois lados mantêm
+     * a confirmação de leitura ligada (como no WhatsApp); com ela desligada, a leitura segue valendo só para os contadores.
+     */
+    private function deliveryStatus(Message $message, bool $isMine, ?int $viewpointHotelId): ?string
+    {
+        if (! $isMine || $viewpointHotelId !== null || ! $message->receiver_id) {
+            return null;
+        }
+        $viewerReceipts = (bool) (request()->user()?->chat_read_receipts ?? true);
+        if ($message->read_at && $viewerReceipts && ($message->receiver?->chat_read_receipts ?? true)) {
+            return 'read';
+        }
+
+        return $message->delivered_at || $message->read_at ? 'delivered' : 'sent';
+    }
+
     private function formatMessage(Message $message, ?int $authId, ?int $viewpointHotelId = null): array
     {
         $isMine = $viewpointHotelId !== null
@@ -544,7 +575,9 @@ class ChatController extends Controller
             'uuid'       => $message->uuid,
             'content'    => $message->content,
             'is_mine'    => $isMine,
-            'read_at'    => $message->read_at?->toISOString(),
+            'read_at'    => $isMine ? null : $message->read_at?->toISOString(),
+            'status'     => $this->deliveryStatus($message, $isMine, $viewpointHotelId),
+            'reactions'  => $this->reactionMap[$message->id] ?? [],
             'created_at' => $message->created_at->toISOString(),
             'type'       => $message->type?->value ?? 'text',
             'metadata'   => ChatAttachments::publicMetadata($message->metadata),
@@ -568,5 +601,18 @@ class ChatController extends Controller
             'Cache-Control'          => 'private, max-age=3600',
             'Content-Security-Policy' => "default-src 'none'; sandbox",
         ], $inline ? 'inline' : 'attachment');
+    }
+
+    /** POST /chat/messages/{uuid}/react { emoji | null } — reage (ou tira a reação) a uma mensagem. */
+    public function react(Request $request, string $uuid, ChatReactions $reactions): JsonResponse
+    {
+        $data = $request->validate(['emoji' => ['present', 'nullable', 'string', \Illuminate\Validation\Rule::in(ChatReactions::EMOJIS)]]);
+        $found = $reactions->find($request->user(), $uuid);
+        if (! $found) {
+            return $this->notFound('Mensagem não encontrada.');
+        }
+        [$kind, $message] = $found;
+
+        return $this->success('Reação atualizada.', ['reactions' => $reactions->set($request->user(), $kind, $message->id, $data['emoji'])]);
     }
 }

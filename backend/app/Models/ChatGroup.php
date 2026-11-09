@@ -21,6 +21,7 @@ class ChatGroup extends Model
         'name',
         'description',
         'only_admins_can_post',
+        'avatar_path',
     ];
 
     protected function casts(): array

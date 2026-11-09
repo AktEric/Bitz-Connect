@@ -14,7 +14,9 @@ use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Support\ImageSanitizer;
 
 /**
  * Grupos de chat corporativo (barra lateral de chat da empresa).
@@ -25,6 +27,9 @@ use Illuminate\Support\Str;
 class ChatGroupController extends Controller
 {
     use ApiResponseTrait;
+
+    /** @var array<int, array> reações por mensagem, preenchido antes de formatar uma página */
+    private array $reactionMap = [];
 
     public function __construct(
         private readonly ChatGroupService $service,
@@ -129,6 +134,7 @@ class ChatGroupController extends Controller
             'department_uuids'     => ['sometimes', 'array'],
             'department_uuids.*'   => ['string'],
             'all_employees'        => ['sometimes', 'boolean'],
+            'photo'                => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
         $memberIds = $this->service->resolveCompanyUserIds(
@@ -139,6 +145,9 @@ class ChatGroupController extends Controller
         );
 
         $group = $this->service->createGroup($hotel, $user, $data, $memberIds)->load('hotel');
+        if ($request->hasFile('photo')) {
+            $group->update(['avatar_path' => ImageSanitizer::store($request->file('photo'), 'chat-groups', 'public')]);
+        }
 
         return $this->created('Grupo criado com sucesso.', $this->formatGroup(
             $group,
@@ -172,6 +181,38 @@ class ChatGroupController extends Controller
             $user,
             $this->service->adminHotelIds($user),
         ));
+    }
+
+    /** POST /chat-groups/{group}/avatar (multipart: photo) — troca a foto do grupo. */
+    public function setAvatar(Request $request, ChatGroup $group): JsonResponse
+    {
+        $user = $request->user();
+        if (! $this->service->canManage($user, $group, $group->membershipOf($user))) {
+            return $this->forbidden('Você não pode gerenciar este grupo.');
+        }
+        $request->validate(['photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120']]);
+        $old = $group->avatar_path;
+        $group->update(['avatar_path' => ImageSanitizer::store($request->file('photo'), 'chat-groups', 'public')]);
+        if ($old) {
+            Storage::disk('public')->delete($old);
+        }
+
+        return $this->success('Foto do grupo atualizada.', ['avatar_url' => asset('storage/' . $group->avatar_path)]);
+    }
+
+    /** DELETE /chat-groups/{group}/avatar — volta para a foto padrão. */
+    public function removeAvatar(Request $request, ChatGroup $group): JsonResponse
+    {
+        $user = $request->user();
+        if (! $this->service->canManage($user, $group, $group->membershipOf($user))) {
+            return $this->forbidden('Você não pode gerenciar este grupo.');
+        }
+        if ($group->avatar_path) {
+            Storage::disk('public')->delete($group->avatar_path);
+            $group->update(['avatar_path' => null]);
+        }
+
+        return $this->success('Foto do grupo removida.', ['avatar_url' => null]);
     }
 
     /** DELETE /chat-groups/{group} — apenas administradores da empresa. */
@@ -310,8 +351,13 @@ class ChatGroupController extends Controller
 
         $paginator = $group->messages()->with('sender')->orderByDesc('id')->paginate(30);
 
+        // quem pode ter lido: os outros membros com a confirmação de leitura ligada (e só se eu também a mantenho ligada)
+        $readers = ($user->chat_read_receipts ?? true)
+            ? $group->members()->with('user')->where('user_id', '!=', $user->id)->get()->filter(fn ($m) => $m->user && ($m->user->chat_read_receipts ?? true))->values()
+            : collect();
+        $this->reactionMap = app(\App\Domain\Chat\Services\ChatReactions::class)->summaries('group', $paginator->getCollection()->pluck('id')->all(), $user->id);
         $data = $paginator->getCollection()
-            ->map(fn (ChatGroupMessage $msg) => $this->formatMessage($msg, $user))
+            ->map(fn (ChatGroupMessage $msg) => $this->formatMessage($msg, $user, $readers))
             ->values();
 
         return response()->json([
@@ -355,7 +401,7 @@ class ChatGroupController extends Controller
                 return $this->error($stored, ['file' => [$stored]], 422);
             }
             [$type, $data['content'], $metadata] = $stored;
-        } elseif (($rich = $attachments->rich($request->input('type'), $request->input('metadata'))) !== null) {
+        } elseif (($rich = $attachments->rich($request->input('type'), $request->input('metadata'), $request->user())) !== null) {
             if (is_string($rich)) {
                 return $this->error($rich, [], 422);
             }
@@ -437,6 +483,7 @@ class ChatGroupController extends Controller
         return [
             'uuid'                 => $group->uuid,
             'name'                 => $group->name,
+            'avatar_url'           => $group->avatar_path ? asset('storage/' . $group->avatar_path) : null,
             'description'          => $group->description,
             'only_admins_can_post' => $group->only_admins_can_post,
             'members_count'        => $group->members()->count(),
@@ -461,9 +508,15 @@ class ChatGroupController extends Controller
         ];
     }
 
-    private function formatMessage(ChatGroupMessage $message, User $viewer): array
+    private function formatMessage(ChatGroupMessage $message, User $viewer, ?\Illuminate\Support\Collection $readers = null): array
     {
+        $mine = $message->sender_id === $viewer->id;
+        // enviada, ou "lida por todos" (todos os outros membros que mantêm a confirmação já abriram o grupo depois dela)
+        $status = ! $mine ? null : ($readers && $readers->isNotEmpty() && $readers->every(fn ($m) => $m->last_read_at && $m->last_read_at >= $message->created_at) ? 'read' : 'sent');
+
         return [
+            'status'          => $status,
+            'reactions'       => $this->reactionMap[$message->id] ?? [],
             'uuid'            => $message->uuid,
             'content'         => $message->content,
             'type'            => $message->type,
