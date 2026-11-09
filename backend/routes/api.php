@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ChatGroupController;
 use App\Http\Controllers\Api\V1\CompanyDirectoryController;
 use App\Http\Controllers\Api\V1\CompanyInviteController;
 use App\Http\Controllers\Api\V1\CareerController;
+use App\Http\Controllers\Api\V1\SalaryController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\Api\V1\WorkspaceSearchController;
 use App\Http\Controllers\Api\V1\AccountSecurityController;
@@ -228,7 +229,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/{user}/read',          [ChatController::class, 'markRead']);
     });
 
-    // Central de ajuda (Vitória)
+    // Central de ajuda (Bianca)
     Route::post('/help/chat', [\App\Http\Controllers\Api\V1\HelpChatController::class, 'chat'])->middleware('throttle:20,1');
 
     // ── Workspace (intranet da empresa) ───────────────────────
@@ -258,6 +259,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me/profile',                [PersonController::class, 'mine']);
         Route::put('/me/profile',                [PersonController::class, 'updateMine']);
         Route::get('/people/{uuid}/profile',     [PersonController::class, 'show']);
+        Route::get('/me/salary',                 [SalaryController::class, 'status']);
+        Route::post('/me/salary/reveal',         [SalaryController::class, 'reveal']);
+        Route::put('/people/{uuid}/salary',      [SalaryController::class, 'set']);
         Route::get('/people/{uuid}/org',         [PersonController::class, 'org']);
         Route::get('/people/{uuid}/career',                [CareerController::class, 'index']);
         Route::post('/people/{uuid}/career',               [CareerController::class, 'store']);

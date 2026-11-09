@@ -8,7 +8,7 @@ import {
 import { useState, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
-import VitoriaChat from '@/components/help/VitoriaChat'
+import BiancaChat from '@/components/help/BiancaChat'
 import { useUnreadCount } from '@/hooks/useNotifications'
 import { useUnreadMessages, chatKeys } from '@/hooks/useChat'
 import { useChatGroupsUnread } from '@/hooks/useChatGroups'
@@ -689,7 +689,7 @@ export default function AppLayout() {
         </main>
       </div>
 
-      <VitoriaChat />
+      <BiancaChat />
     </div>
   )
 }

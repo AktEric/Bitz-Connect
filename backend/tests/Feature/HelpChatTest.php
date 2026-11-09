@@ -1,6 +1,6 @@
 <?php
 
-use App\Domain\Help\Services\VitoriaLocal;
+use App\Domain\Help\Services\BiancaLocal;
 use App\Models\Hotel;
 use App\Models\HotelUser;
 use App\Models\User;
@@ -13,13 +13,13 @@ uses(RefreshDatabase::class);
 
 function ask(string $text, ?string $role = null): string
 {
-    return (new VitoriaLocal())->reply($text, $role);
+    return (new BiancaLocal())->reply($text, $role);
 }
 
 // ── Motor local (gratuito, sem IA externa) ─────────────────────────
 
 it('conversa normalmente: oi, tudo bem, obrigado, tchau', function () {
-    expect(ask('oi'))->toMatch('/ajudar|Vitória/u');
+    expect(ask('oi'))->toMatch('/ajudar|Bianca/u');
     expect(ask('Oi, tudo bem?'))->toMatch('/tudo|bem/i');
     expect(ask('bom dia!'))->toContain('ajudar');
     expect(ask('obrigada'))->toMatch('/nada|imagina|ajudar/i');
@@ -76,7 +76,7 @@ it('reexplica passo a passo quando a pessoa diz que não entendeu (conversa do p
         ['role' => 'assistant', 'content' => '**Montar o organograma** ...'],
     ];
 
-    $r = (new VitoriaLocal())->reply('mas eu n entendi bem', null, $history);
+    $r = (new BiancaLocal())->reply('mas eu n entendi bem', null, $history);
 
     expect($r)->toContain('passo a passo')->toContain('1. O organograma')->toContain('Empresa → Organograma')
         ->toContain('Gestor direto')->not->toContain('1. :')->not->toContain('não encontrei');
@@ -90,13 +90,13 @@ it('resume curto quando pede de novo e já foi explicado passo a passo', functio
         ['role' => 'assistant', 'content' => 'Sem problema! Vou explicar de outro jeito, passo a passo: ...'],
     ];
 
-    $r = (new VitoriaLocal())->reply('ainda não entendi, explica melhor', null, $history);
+    $r = (new BiancaLocal())->reply('ainda não entendi, explica melhor', null, $history);
 
     expect($r)->toContain('resumir')->toContain('travou');
 });
 
 it('pergunta o assunto quando não há nada para reexplicar', function () {
-    expect((new VitoriaLocal())->reply('não entendi', null, []))->toContain('Sobre qual assunto');
+    expect((new BiancaLocal())->reply('não entendi', null, []))->toContain('Sobre qual assunto');
 });
 
 it('entende pergunta curta de continuação usando o assunto anterior', function () {
@@ -105,7 +105,7 @@ it('entende pergunta curta de continuação usando o assunto anterior', function
         ['role' => 'assistant', 'content' => 'Editar meu perfil: ...'],
     ];
 
-    expect((new VitoriaLocal())->reply('e a foto?', null, $history))->toMatch('/foto/i');
+    expect((new BiancaLocal())->reply('e a foto?', null, $history))->toMatch('/foto/i');
 });
 
 it('responde perguntas genéricas sobre o sistema com a visão geral', function (string $q) {
@@ -201,7 +201,7 @@ it('avisa quando o Claude está ligado mas sem chave', function () {
         ->assertStatus(503);
 });
 
-// Bateria de perguntas do dia a dia (escritas de jeitos diferentes) que a Vitória deve entender.
+// Bateria de perguntas do dia a dia (escritas de jeitos diferentes) que a Bianca deve entender.
 it('entende perguntas do dia a dia sobre o sistema', function (string $pergunta, string $esperado) {
     expect(mb_stripos(ask($pergunta), $esperado))->not->toBeFalse("Pergunta sem a resposta esperada ({$esperado}): {$pergunta}");
 })->with([
@@ -266,7 +266,7 @@ it('entende perguntas do dia a dia sobre o sistema', function (string $pergunta,
 ]);
 
 it('sugere assuntos parecidos quando não tem certeza', function () {
-    $v = new VitoriaLocal();
+    $v = new BiancaLocal();
     $r = $v->reply('como funciona o fechamento de caixa do restaurante e do ponto de venda');
 
     expect($v->answered)->toBeFalse();
@@ -274,7 +274,7 @@ it('sugere assuntos parecidos quando não tem certeza', function () {
 });
 
 it('marca quando respondeu e quando não', function () {
-    $v = new VitoriaLocal();
+    $v = new BiancaLocal();
     $v->reply('como monto o organograma?');
     expect($v->answered)->toBeTrue();
 
@@ -288,5 +288,5 @@ it('registra no log as perguntas sem resposta', function () {
 
     $this->postJson('/api/v1/help/chat', ['messages' => [['role' => 'user', 'content' => 'qual a previsão do tempo amanhã em Marte']]])->assertOk();
 
-    \Illuminate\Support\Facades\Log::shouldHaveReceived('info')->withArgs(fn ($m, $ctx = []) => $m === 'vitoria.sem_resposta' && str_contains($ctx['pergunta'], 'Marte'))->once();
+    \Illuminate\Support\Facades\Log::shouldHaveReceived('info')->withArgs(fn ($m, $ctx = []) => $m === 'bianca.sem_resposta' && str_contains($ctx['pergunta'], 'Marte'))->once();
 });

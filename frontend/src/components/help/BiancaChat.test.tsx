@@ -2,21 +2,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import VitoriaChat from './VitoriaChat'
+import BiancaChat from './BiancaChat'
 
 // Implementação trocável por teste (função simples: evita o vi.fn registrar a rejeição como "não tratada").
 let impl: (...args: unknown[]) => Promise<string> = async () => ''
 const calls: unknown[][] = []
 vi.mock('@/services/help.service', () => ({
-  askVitoria: (...a: unknown[]) => { calls.push(a); return impl(...a) },
+  askBianca: (...a: unknown[]) => { calls.push(a); return impl(...a) },
 }))
 
 function setup() {
   window.HTMLElement.prototype.scrollIntoView = vi.fn()
-  return render(<MemoryRouter initialEntries={['/w/inovacao/mural']}><VitoriaChat workspace="inovacao" /></MemoryRouter>)
+  return render(<MemoryRouter initialEntries={['/w/inovacao/mural']}><BiancaChat workspace="inovacao" /></MemoryRouter>)
 }
 
-describe('VitoriaChat', () => {
+describe('BiancaChat', () => {
   beforeEach(() => { calls.length = 0 })
   afterEach(() => cleanup())
 
@@ -25,9 +25,9 @@ describe('VitoriaChat', () => {
     setup()
 
     fireEvent.click(screen.getByLabelText(/abrir a central de ajuda/i))
-    expect(screen.getByText(/Eu sou a Vitória/i)).toBeTruthy()
+    expect(screen.getByText(/Eu sou a Bianca/i)).toBeTruthy()
 
-    fireEvent.change(screen.getByLabelText(/mensagem para a vitória/i), { target: { value: 'oi, tudo bem?' } })
+    fireEvent.change(screen.getByLabelText(/mensagem para a bianca/i), { target: { value: 'oi, tudo bem?' } })
     fireEvent.click(screen.getByLabelText('Enviar'))
 
     await waitFor(() => expect(screen.getByText('Oi! Tudo bem sim, e você?')).toBeTruthy())
@@ -47,11 +47,11 @@ describe('VitoriaChat', () => {
 
   it('mostra erro amigável quando a resposta falha', async () => {
     impl = () => new Promise<string>((_, reject) => {
-      setTimeout(() => reject({ response: { data: { message: 'A Vitória está indisponível agora.' } } }), 0)
+      setTimeout(() => reject({ response: { data: { message: 'A Bianca está indisponível agora.' } } }), 0)
     })
     setup()
     fireEvent.click(screen.getByLabelText(/abrir a central de ajuda/i))
-    fireEvent.change(screen.getByLabelText(/mensagem para a vitória/i), { target: { value: 'oi' } })
+    fireEvent.change(screen.getByLabelText(/mensagem para a bianca/i), { target: { value: 'oi' } })
     fireEvent.click(screen.getByLabelText('Enviar'))
     await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('indisponível'))
   })

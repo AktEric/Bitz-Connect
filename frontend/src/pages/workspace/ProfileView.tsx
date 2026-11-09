@@ -11,6 +11,7 @@ import type { PersonProfileFields } from '@/types/workspace.types'
 import { ProfileFacts, RecordSection } from './PersonCardModal'
 import ProfileCareer from './ProfileCareer'
 import ProfileOrg from './ProfileOrg'
+import ProfileSalary, { SalaryAdminField } from './ProfileSalary'
 import { useCan } from './permissions'
 import { Empty, Panel, Spinner, btnPrimary, errMsg, fmtDate, inputCls, labelCls, timeAgo, useWs } from './ui'
 
@@ -25,7 +26,7 @@ const FIELDS: { key: keyof PersonProfileFields; label: string; placeholder: stri
 ]
 const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 
-type Tab = 'social' | 'career' | 'record' | 'notices' | 'team'
+type Tab = 'social' | 'career' | 'salary' | 'record' | 'notices' | 'team'
 
 function SocialEditor({ slug }: { slug: string }) {
   const qc = useQueryClient()
@@ -111,6 +112,7 @@ export default function ProfileView({ uuid, self }: { uuid: string; self: boolea
   if (isLoading || !card) return <Spinner />
 
   const tabs: { key: Tab; label: string }[] = [{ key: 'social', label: 'Perfil social' }, { key: 'career', label: 'Carreira' }]
+  if (self) tabs.push({ key: 'salary', label: 'Salário' })
   if (self || canManagePeople) tabs.push({ key: 'record', label: 'Dados cadastrais' })
   if (self) tabs.push({ key: 'notices', label: 'Avisos' })
   tabs.push({ key: 'team', label: 'Equipe e liderança' })
@@ -151,7 +153,8 @@ export default function ProfileView({ uuid, self }: { uuid: string; self: boolea
 
       <div role="tabpanel">
         {tab === 'social' && (self ? <SocialEditor slug={slug} /> : <Panel><ProfileFacts profile={card.profile as unknown as Record<string, string | null>} /></Panel>)}
-        {tab === 'record' && <Panel><RecordSection slug={slug} uuid={uuid} /></Panel>}
+        {tab === 'salary' && self && <ProfileSalary slug={slug} />}
+        {tab === 'record' && <Panel><RecordSection slug={slug} uuid={uuid} />{canManagePeople && <div className="mt-5 border-t border-gray-100 pt-4"><SalaryAdminField slug={slug} uuid={uuid} /></div>}</Panel>}
         {tab === 'notices' && <Notices />}
         {tab === 'career' && <ProfileCareer slug={slug} uuid={uuid} />}
         {tab === 'team' && <ProfileOrg slug={slug} uuid={uuid} />}

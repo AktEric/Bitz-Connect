@@ -27,6 +27,9 @@ class HotelUser extends Model
         'birthday_visible',
     ];
 
+    /** Nunca serializar o salário por acidente (respostas JSON, logs). */
+    protected $hidden = ['salary', 'private_data'];
+
     protected function casts(): array
     {
         return [
@@ -35,6 +38,7 @@ class HotelUser extends Model
             'hired_at' => 'date',
             'punch_consent_at' => 'datetime',
             'private_data' => 'encrypted:array',
+            'salary' => 'encrypted',
             'profile' => 'array',
             'birth_date' => 'date',
             'birthday_visible' => 'boolean',

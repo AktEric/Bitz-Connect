@@ -6,16 +6,16 @@ use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 /**
- * Vitória: assistente da central de ajuda. Conversa normalmente e responde sobre o sistema
- * usando a base de conhecimento em resources/help/vitoria.md (lida a cada conversa).
+ * Bianca: assistente da central de ajuda. Conversa normalmente e responde sobre o sistema
+ * usando a base de conhecimento em resources/help/bianca.md (lida a cada conversa).
  */
-class VitoriaAssistant
+class BiancaAssistant
 {
     public const NOT_CONFIGURED = 'not_configured';
     public const UNAVAILABLE    = 'unavailable';
 
     private const PERSONA = <<<'TXT'
-Você é a Vitória, a assistente virtual da central de ajuda deste sistema (Workspace da empresa e rede profissional de hotelaria).
+Você é a Bianca, a assistente virtual da central de ajuda deste sistema (Workspace da empresa e rede profissional de hotelaria).
 Personalidade: simpática, acolhedora e objetiva. Você conversa normalmente: se a pessoa disser "oi" ou "tudo bem?", responda de forma natural, como em um chat. Pode bater papo leve, mas sempre volte a ajudar.
 Quando perguntarem sobre o sistema, responda usando SOMENTE a base de conhecimento abaixo e o contexto da pessoa. Seja prática: diga o caminho no menu e, se for um "como fazer", dê passos numerados e curtos.
 Respeite as permissões: se a pessoa não tem o papel necessário, diga isso com gentileza e indique quem resolve (ex.: o RH).
@@ -56,7 +56,7 @@ TXT;
             ]);
 
         if (! $res->successful()) {
-            report(new RuntimeException('Vitória: falha na API (' . $res->status() . ') ' . mb_substr($res->body(), 0, 300)));
+            report(new RuntimeException('Bianca: falha na API (' . $res->status() . ') ' . mb_substr($res->body(), 0, 300)));
             throw new RuntimeException(self::UNAVAILABLE);
         }
 
@@ -75,7 +75,7 @@ TXT;
 
     private function knowledge(): string
     {
-        $path = resource_path('help/vitoria.md');
+        $path = resource_path('help/bianca.md');
 
         return is_file($path) ? (string) file_get_contents($path) : '';
     }

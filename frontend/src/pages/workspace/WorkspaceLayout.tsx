@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Avatar } from '@/components/ui/Avatar'
 import NotificationBell from '@/components/common/NotificationBell'
 import ChatSidebar from '@/components/chat/ChatSidebar'
-import VitoriaChat from '@/components/help/VitoriaChat'
+import BiancaChat from '@/components/help/BiancaChat'
 import { cn } from '@/utils/cn'
 import { getTheme, setTheme, type Theme } from '@/utils/theme'
 import CommandPalette from './CommandPalette'
@@ -235,7 +235,7 @@ export default function WorkspaceLayout() {
 
       <ChatSidebar open={chatOpen} onClose={() => setChatOpen(false)} requestedDirect={direct} />
 
-      <VitoriaChat workspace={slug} className="xl:right-[4.5rem]" />
+      <BiancaChat workspace={slug} className="xl:right-[4.5rem]" />
     </div>
   )
 }
