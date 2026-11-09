@@ -158,3 +158,9 @@
 .dark .bg-white\/70 { background-color: rgb(255 255 255 / 0.05); }
 .dark .border-pink-100 { border-color: rgb(236 72 153 / 0.3); }
 .dark .text-amber-700 { color: #fcd34d; }
+
+/* Barras de ícones do Workspace (menu à esquerda, pessoas à direita) */
+.ws-rail-scroll { scrollbar-width: none; }
+.ws-rail-scroll::-webkit-scrollbar { display: none; }
+.dark .ws-rail { background-color: #181b24; border-right: 1px solid #232734; }
+.dark .ws-rail .bg-white { background-color: rgb(124 58 237 / 0.35); }

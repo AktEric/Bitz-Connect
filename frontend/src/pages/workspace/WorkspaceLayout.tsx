@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Maximize2, Minimize2, PanelRightClose, PanelRightOpen, Moon, Sun, Globe, CheckCircle2, type LucideIcon,
+  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Moon, Sun, Globe, CheckCircle2, ChevronDown,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import { useAuth } from '@/hooks/useAuth'
@@ -14,11 +14,14 @@ import { cn } from '@/utils/cn'
 import { getTheme, setTheme, type Theme } from '@/utils/theme'
 import CommandPalette from './CommandPalette'
 import { Spinner } from './ui'
+import WorkspaceRail, { NavGroups, type NavGroup, type NavItem } from './WorkspaceRail'
+import ShortcutsBar from './ShortcutsBar'
+import PresenceRail, { type ChatPerson } from './PresenceRail'
 
-interface NavItem { to: string; label: string; Icon: LucideIcon; end?: boolean; badge?: number }
-interface NavGroup { title: string; items: NavItem[] }
-
-/** Casca do Workspace: barra superior, menu por área (desktop), navegação inferior e gaveta (mobile). */
+/**
+ * Casca do Workspace. Desktop: barra de ícones à esquerda, topo com busca central, barra de atalhos
+ * e fileira de pessoas (chat) à direita. Celular: navegação inferior e gaveta.
+ */
 export default function WorkspaceLayout() {
   const { slug = '' } = useParams()
   const { data: info, isLoading, isError } = useWorkspaceInfo(slug)
@@ -28,8 +31,8 @@ export default function WorkspaceLayout() {
   const [chatOpen, setChatOpen] = useState(false)
   const [drawer, setDrawer] = useState(false)
   const [menu, setMenu] = useState(false)
-  const [dock, setDock] = useState<'min' | 'open' | 'wide'>(() => { try { const v = localStorage.getItem('chatDock'); return v === 'open' || v === 'wide' ? v : 'min' } catch { return 'min' } })
-  const changeDock = (d: 'min' | 'open' | 'wide') => { setDock(d); try { localStorage.setItem('chatDock', d) } catch { /* ignora */ } }
+  const [expanded, setExpanded] = useState(false)
+  const [direct, setDirect] = useState<ChatPerson | null>(null)
   const [themeNow, setThemeNow] = useState<Theme>(getTheme)
   const [searchOpen, setSearchOpen] = useState(false)
 
@@ -42,7 +45,7 @@ export default function WorkspaceLayout() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  useEffect(() => { setDrawer(false); setMenu(false) }, [location.pathname])
+  useEffect(() => { setDrawer(false); setMenu(false); setExpanded(false) }, [location.pathname])
 
   if (isLoading) return <div className="min-h-screen bg-slate-50"><Spinner /></div>
   if (isError || !info) {
@@ -107,102 +110,83 @@ export default function WorkspaceLayout() {
 
   const roleLabel = info.me.job_title ?? (info.me.is_admin ? 'RH / Gestão' : 'Colaborador')
 
-  const renderGroups = (onNavigate?: () => void) => (
-    <nav className="space-y-5" aria-label="Menu do Workspace">
-      {groups.map((g) => (
-        <div key={g.title}>
-          <p className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">{g.title}</p>
-          <ul className="space-y-0.5">
-            {g.items.map(({ to, label, Icon, end, badge }) => (
-              <li key={to + label}>
-                <NavLink
-                  to={to}
-                  end={end}
-                  onClick={onNavigate}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-                      isActive && !to.includes('?') ? 'bg-violet-50 text-violet-700' : 'text-gray-600 hover:bg-gray-100',
-                    )
-                  }
-                >
-                  <Icon className="h-[18px] w-[18px]" />
-                  <span className="flex-1 truncate">{label}</span>
-                  {!!badge && badge > 0 && (
-                    <span className="rounded-full bg-violet-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">{badge}</span>
-                  )}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </nav>
-  )
+  const firstName = user?.name?.split(' ')[0] ?? ''
+  const openChat = () => { setDirect(null); setChatOpen(true) }
 
   return (
     <div className="min-h-screen bg-slate-50">
       <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
-      <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-gray-200 bg-white/90 px-3 backdrop-blur sm:px-5">
-        <button type="button" className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden" onClick={() => setDrawer(true)} aria-label="Abrir menu">
-          <Menu className="h-5 w-5" />
-        </button>
-        <Link to={`/w/${slug}`} className="flex min-w-0 items-center gap-2.5">
-          <Avatar src={info.hotel.avatar_url} name={info.hotel.name} size="sm" />
-          <span className="truncate text-sm font-semibold text-gray-900">{info.hotel.name}</span>
-        </Link>
-        <div className="ml-auto flex items-center gap-1">
+      <WorkspaceRail groups={groups} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
+
+      <div className="lg:pl-[68px] xl:pr-16">
+        <header className="sticky top-0 z-40 grid h-14 grid-cols-[1fr_auto] items-center gap-3 border-b border-gray-200 bg-white/90 px-3 backdrop-blur sm:px-5 md:grid-cols-[1fr_minmax(0,28rem)_1fr] 2xl:px-8">
+          <div className="flex min-w-0 items-center gap-2">
+            <button type="button" className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden" onClick={() => setDrawer(true)} aria-label="Abrir menu">
+              <Menu className="h-5 w-5" />
+            </button>
+            <Link to={`/w/${slug}`} className="flex min-w-0 items-center gap-2.5">
+              <Avatar src={info.hotel.avatar_url} name={info.hotel.name} size="sm" />
+              <span className="truncate text-sm font-semibold text-gray-900">{info.hotel.name}</span>
+            </Link>
+          </div>
+
           <button
             type="button" onClick={() => setSearchOpen(true)} aria-label="Buscar (Ctrl+K)"
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+            className="hidden w-full items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-400 transition hover:border-violet-300 hover:bg-white md:flex"
           >
-            <Search className="h-[18px] w-[18px]" /> <span className="hidden sm:inline">Buscar</span>
+            <span className="flex-1 truncate text-left">Buscar pessoas, páginas…</span>
             <kbd className="hidden rounded border border-gray-200 px-1.5 py-0.5 text-[10px] font-normal text-gray-400 lg:block">Ctrl K</kbd>
+            <Search className="h-4 w-4 text-gray-500" />
           </button>
-          <button
-            type="button"
-            onClick={() => setChatOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 xl:hidden"
-            aria-label="Abrir mensagens"
-          >
-            <MessageSquare className="h-[18px] w-[18px]" /> <span className="hidden sm:inline">Mensagens</span>
-          </button>
-          <NotificationBell />
-          <div className="relative">
-            <button type="button" onClick={() => setMenu((v) => !v)} className="ml-1 flex items-center rounded-full ring-offset-2 hover:ring-2 hover:ring-violet-200" aria-label="Minha conta">
-              <Avatar src={user?.avatar_url} name={user?.name ?? 'U'} size="sm" />
-            </button>
-            {menu && (
-              <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl">
-                <div className="px-3 py-2">
-                  <p className="truncate text-sm font-semibold text-gray-900">{user?.name}</p>
-                  <p className="truncate text-xs text-gray-400">{roleLabel}</p>
-                </div>
-                <Link to={`/w/${slug}/perfil`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Users className="h-4 w-4" /> Meu perfil</Link>
-                <Link to={`/w/${slug}/seguranca`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ShieldCheck className="h-4 w-4" /> Segurança</Link>
-                <Link to="/w" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ArrowLeftRight className="h-4 w-4" /> Trocar de empresa</Link>
-                <Link to="/feed" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Globe className="h-4 w-4" /> Rede profissional</Link>
-                <button type="button" onClick={() => { const n = getTheme() === "dark" ? "light" : "dark"; setTheme(n); setThemeNow(n) }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                  {themeNow === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />} {themeNow === "dark" ? "Tema claro" : "Tema escuro"}
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => { await logout(); navigate('/entrar', { replace: true }) }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                >
-                  <LogOut className="h-4 w-4" /> Sair
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
 
-      <div className="flex w-full gap-6 px-3 pb-24 pt-4 sm:px-5 2xl:px-8 lg:pb-8 lg:pt-6">
-        <aside className="hidden w-60 flex-shrink-0 lg:block">
-          <div className="sticky top-20">{renderGroups()}</div>
-        </aside>
-        <main id="conteudo" tabIndex={-1} className="min-w-0 flex-1 outline-none">
+          <div className="flex items-center justify-end gap-1">
+            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Buscar" className="rounded-xl p-2 text-gray-600 hover:bg-gray-100 md:hidden">
+              <Search className="h-[18px] w-[18px]" />
+            </button>
+            <button
+              type="button"
+              onClick={openChat}
+              className="inline-flex items-center gap-2 rounded-xl p-2 text-sm font-medium text-gray-600 hover:bg-gray-100 xl:hidden"
+              aria-label="Abrir mensagens"
+            >
+              <MessageSquare className="h-[18px] w-[18px]" />
+            </button>
+            <NotificationBell />
+            <div className="relative">
+              <button type="button" onClick={() => setMenu((v) => !v)} className="ml-1 flex items-center gap-2 rounded-full py-1 pl-1 pr-2 hover:bg-gray-100" aria-label="Minha conta" aria-expanded={menu}>
+                <Avatar src={user?.avatar_url} name={user?.name ?? 'U'} size="sm" />
+                <span className="hidden max-w-[10rem] truncate text-sm font-semibold text-gray-800 sm:block">{firstName}</span>
+                <ChevronDown className="hidden h-4 w-4 text-gray-400 sm:block" />
+              </button>
+              {menu && (
+                <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl">
+                  <div className="px-3 py-2">
+                    <p className="truncate text-sm font-semibold text-gray-900">{user?.name}</p>
+                    <p className="truncate text-xs text-gray-400">{roleLabel}</p>
+                  </div>
+                  <Link to={`/w/${slug}/perfil`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Users className="h-4 w-4" /> Meu perfil</Link>
+                  <Link to={`/w/${slug}/seguranca`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ShieldCheck className="h-4 w-4" /> Segurança</Link>
+                  <Link to="/w" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ArrowLeftRight className="h-4 w-4" /> Trocar de empresa</Link>
+                  <Link to="/feed" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Globe className="h-4 w-4" /> Rede profissional</Link>
+                  <button type="button" onClick={() => { const n = getTheme() === "dark" ? "light" : "dark"; setTheme(n); setThemeNow(n) }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                    {themeNow === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />} {themeNow === "dark" ? "Tema claro" : "Tema escuro"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => { await logout(); navigate('/entrar', { replace: true }) }}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut className="h-4 w-4" /> Sair
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <ShortcutsBar slug={slug} items={groups.flatMap((g) => g.items)} />
+
+        <main id="conteudo" tabIndex={-1} className="min-w-0 px-3 pb-24 pt-4 outline-none sm:px-5 lg:px-6 lg:pb-8 lg:pt-6 2xl:px-8">
           {info.me.needs_two_factor && (
             <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
               <ShieldCheck className="h-5 w-5 flex-shrink-0" />
@@ -212,27 +196,9 @@ export default function WorkspaceLayout() {
           )}
           {info.me.needs_two_factor && !location.pathname.endsWith('/seguranca') ? null : <Outlet context={{ slug, info }} />}
         </main>
-        <aside className={cn('hidden flex-shrink-0 transition-[width] duration-200 xl:block', dock === 'min' ? 'w-12' : dock === 'wide' ? 'w-[460px]' : 'w-[340px]')} aria-label="Chat">
-          <div className="sticky top-20 h-[calc(100vh-6.5rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            {dock === 'min' ? (
-              <button type="button" onClick={() => changeDock('open')} aria-label="Abrir o chat" title="Abrir o chat"
-                className="flex h-full w-full flex-col items-center gap-3 pt-3 text-gray-500 hover:bg-gray-50">
-                <MessageSquare className="h-5 w-5" />
-                <span className="text-xs font-medium [writing-mode:vertical-rl]">Mensagens</span>
-                <PanelRightOpen className="mt-auto mb-3 h-4 w-4" />
-              </button>
-            ) : (
-              <div className="flex h-full flex-col">
-                <div className="flex flex-shrink-0 justify-end gap-1 border-b border-gray-100 px-2 py-1">
-                  <button type="button" onClick={() => changeDock(dock === 'wide' ? 'open' : 'wide')} aria-label={dock === 'wide' ? 'Reduzir o chat' : 'Ampliar o chat'} title={dock === 'wide' ? 'Reduzir' : 'Ampliar'} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">{dock === 'wide' ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}</button>
-                  <button type="button" onClick={() => changeDock('min')} aria-label="Minimizar o chat" title="Minimizar" className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"><PanelRightClose className="h-4 w-4" /></button>
-                </div>
-                <div className="min-h-0 flex-1"><ChatSidebar docked /></div>
-              </div>
-            )}
-          </div>
-        </aside>
       </div>
+
+      <PresenceRail slug={slug} onOpenChat={openChat} onOpenPerson={(p) => { setDirect({ ...p }); setChatOpen(true) }} />
 
       {/* Navegação inferior (mobile) */}
       <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden" aria-label="Atalhos">
@@ -246,7 +212,7 @@ export default function WorkspaceLayout() {
             <Icon className="h-5 w-5" /> {label}
           </NavLink>
         ))}
-        <button type="button" onClick={() => setChatOpen(true)} className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium text-gray-500">
+        <button type="button" onClick={openChat} className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium text-gray-500">
           <MessageSquare className="h-5 w-5" /> Chat
         </button>
         <button type="button" onClick={() => setDrawer(true)} className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium text-gray-500">
@@ -265,14 +231,14 @@ export default function WorkspaceLayout() {
               </div>
               <button type="button" onClick={() => setDrawer(false)} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label="Fechar menu"><X className="h-5 w-5" /></button>
             </div>
-            {renderGroups(() => setDrawer(false))}
+            <NavGroups groups={groups} onNavigate={() => setDrawer(false)} />
           </div>
         </div>
       )}
 
       {searchOpen && <CommandPalette slug={slug} pages={groups.flatMap((g) => g.items.map((i) => ({ to: i.to, label: i.label })))} onClose={() => setSearchOpen(false)} />}
 
-      <ChatSidebar open={chatOpen} onClose={() => setChatOpen(false)} />
+      <ChatSidebar open={chatOpen} onClose={() => setChatOpen(false)} requestedDirect={direct} />
 
       <VitoriaChat workspace={slug} className="xl:right-[4.5rem]" />
     </div>

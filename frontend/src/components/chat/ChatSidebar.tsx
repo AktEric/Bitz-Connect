@@ -25,6 +25,8 @@ interface Props {
   docked?: boolean
   /** Grupo a abrir ao exibir o painel (ex.: vindo de uma notificação). */
   requestedGroup?: string | null
+  /** Pessoa com quem abrir a conversa direta ao exibir o painel (ex.: clique na fileira de presença). */
+  requestedDirect?: { uuid: string; name: string; avatar_url: string | null } | null
 }
 
 type View = 'list' | 'thread' | 'info' | 'direct'
@@ -42,7 +44,7 @@ function formatTime(iso: string): string {
  * Barra lateral de chat (painel deslizante, disponível em qualquer tela):
  * grupos da empresa e acesso às conversas diretas.
  */
-export default function ChatSidebar({ open = false, onClose = () => {}, docked = false, requestedGroup }: Props) {
+export default function ChatSidebar({ open = false, onClose = () => {}, docked = false, requestedGroup, requestedDirect }: Props) {
   const navigate = useNavigate()
   const [tab, setTab] = useState<'groups' | 'direct'>('groups')
   const [view, setView] = useState<View>('list')
@@ -62,6 +64,14 @@ export default function ChatSidebar({ open = false, onClose = () => {}, docked =
       setTab('groups')
     }
   }, [requestedGroup])
+
+  useEffect(() => {
+    if (requestedDirect) {
+      setActiveDirect(requestedDirect)
+      setView('direct')
+      setTab('direct')
+    }
+  }, [requestedDirect])
 
   function openGroup(uuid: string) {
     setActiveGroup(uuid)

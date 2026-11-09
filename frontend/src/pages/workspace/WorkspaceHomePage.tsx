@@ -59,7 +59,7 @@ export default function WorkspaceHomePage() {
         </nav>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <div className="space-y-5 xl:col-span-2">
           <FeedStream compact />
         </div>
