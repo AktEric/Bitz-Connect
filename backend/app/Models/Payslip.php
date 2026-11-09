@@ -8,14 +8,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Payslip extends Model
 {
-    protected $fillable = ['uuid','hotel_id','user_id','uploaded_by','kind','title','reference_month','amount_cents','file_path','original_name','mime','size','first_viewed_at'];
+    protected $fillable = ['uuid','hotel_id','user_id','uploaded_by','kind','title','reference_month','amount_cents','file_path','original_name','mime','size','first_viewed_at','signed_at','signature_kind','signature_name','signature_path','signature_hash','signed_ip'];
 
     protected $table = 'payslips';
-    protected $hidden = ['file_path'];
+    protected $hidden = ['file_path', 'signature_path', 'signed_ip'];
 
     protected function casts(): array
     {
-        return ['reference_month' => 'date', 'first_viewed_at' => 'datetime', 'amount_cents' => 'integer', 'size' => 'integer'];
+        return ['reference_month' => 'date', 'first_viewed_at' => 'datetime', 'signed_at' => 'datetime', 'amount_cents' => 'integer', 'size' => 'integer'];
     }
 
     public function owner(): BelongsTo

@@ -61,6 +61,7 @@ const WorkspaceRequestsPage = lazy(() => import('@/pages/workspace/WorkspaceRequ
 const WorkspacePayslipsPage = lazy(() => import('@/pages/workspace/WorkspacePayslipsPage'))
 const WorkspaceGoalsPage = lazy(() => import('@/pages/workspace/WorkspaceGoalsPage'))
 const WorkspaceDevelopmentPage = lazy(() => import('@/pages/workspace/WorkspaceDevelopmentPage'))
+const WorkspaceMarketplacePage = lazy(() => import('@/pages/workspace/WorkspaceMarketplacePage'))
 const WorkspaceAdminPage = lazy(() => import('@/pages/workspace/WorkspaceAdminPage'))
 const WorkspaceCalendarPage = lazy(() => import('@/pages/workspace/WorkspaceCalendarPage'))
 const WorkspaceSecurityPage = lazy(() => import('@/pages/workspace/WorkspaceSecurityPage'))
@@ -125,6 +126,7 @@ export default function AppRoutes() {
             <Route path="pesquisas" element={<WorkspaceClimatePage />} />
             <Route path="organograma" element={<WorkspaceOrgChartPage />} />
             <Route path="vagas" element={<WorkspaceJobsPage />} />
+            <Route path="marketplace" element={<RequireCan cap="marketplace.view"><WorkspaceMarketplacePage /></RequireCan>} />
             <Route path="perfil" element={<WorkspaceProfilePage />} />
             <Route path="pessoas/:uuid" element={<WorkspaceProfilePage />} />
             <Route path="relatorios" element={<RequireCan cap="reports.view"><WorkspaceReportsPage /></RequireCan>} />

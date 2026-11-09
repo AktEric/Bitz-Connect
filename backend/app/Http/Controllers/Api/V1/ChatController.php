@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Chat\Services\ChatAttachments;
 use App\Events\Chat\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\ApiResponseTrait;
@@ -130,9 +131,9 @@ class ChatController extends Controller
     /**
      * POST /chat/{userUuid}/messages
      */
-    public function send(Request $request, User $user): JsonResponse
+    public function send(Request $request, User $user, ChatAttachments $attachments): JsonResponse
     {
-        $request->validate(['content' => ['required', 'string', 'max:5000']]);
+        $request->validate(['content' => ['required_without_all:file,metadata', 'nullable', 'string', 'max:5000']] + ChatAttachments::rules());
 
         $authUser = $request->user();
 
@@ -140,16 +141,33 @@ class ChatController extends Controller
             return $this->error('Você não pode enviar mensagem para si mesmo.', [], 422);
         }
 
-        [$type, $metadata, $error] = $this->resolveTypeAndMetadata($request);
-        if ($error) {
-            return $error;
+        $content = (string) $request->input('content', '');
+        if ($request->hasFile('file')) {
+            $stored = $attachments->store($request->file('file'), $request->boolean('voice'), $request->integer('duration') ?: null, $content, 'direct');
+            if (is_string($stored)) {
+                return $this->error($stored, ['file' => [$stored]], 422);
+            }
+            [$type, $content, $metadata] = $stored;
+        } elseif (($rich = $attachments->rich($request->input('type'), $request->input('metadata'))) !== null) {
+            if (is_string($rich)) {
+                return $this->error($rich, [], 422);
+            }
+            [$type, $content, $metadata] = $rich;
+        } else {
+            [$type, $metadata, $error] = $this->resolveTypeAndMetadata($request, $authUser, $user);
+            if ($error) {
+                return $error;
+            }
+            if ($content === '' && $type === 'listing') {
+                $content = '🛍️ Anúncio do marketplace';
+            }
         }
 
         $message = Message::create([
             'uuid'        => (string) Str::uuid(),
             'sender_id'   => $authUser->id,
             'receiver_id' => $user->id,
-            'content'     => $request->input('content'),
+            'content'     => $content,
             'type'        => $type,
             'metadata'    => $metadata,
         ]);
@@ -424,9 +442,23 @@ class ChatController extends Controller
      * Resolve o `type`/`metadata` do payload (suporta compartilhamento de vaga).
      * Retorna [type, metadata, ?JsonResponse de erro].
      */
-    private function resolveTypeAndMetadata(Request $request): array
+    private function resolveTypeAndMetadata(Request $request, ?User $sender = null, ?User $receiver = null): array
     {
         $type = $request->input('type', 'text');
+
+        if ($type === 'listing') {
+            $request->validate(['metadata.listing_uuid' => 'required|string']);
+            $listing = \App\Models\MarketplaceListing::with('hotel')->where('uuid', $request->input('metadata.listing_uuid'))->first();
+            $member = fn (?User $u) => $u && $listing && \App\Models\HotelUser::where('hotel_id', $listing->hotel_id)->where('user_id', $u->id)->where('status', 'approved')->exists();
+            if (! $listing || $listing->status === 'hidden' || ! $member($sender) || ! $member($receiver)) {
+                return [$type, null, $this->error('Anúncio não encontrado.', [], 422)];
+            }
+
+            return [$type, [
+                'listing_uuid' => $listing->uuid, 'title' => $listing->title, 'price_cents' => $listing->price_cents,
+                'hotel_slug' => $listing->hotel->slug, 'status' => $listing->status,
+            ], null];
+        }
 
         if ($type !== 'job') {
             return [$type, null, null];
@@ -515,8 +547,26 @@ class ChatController extends Controller
             'read_at'    => $message->read_at?->toISOString(),
             'created_at' => $message->created_at->toISOString(),
             'type'       => $message->type?->value ?? 'text',
-            'metadata'   => $message->metadata,
+            'metadata'   => ChatAttachments::publicMetadata($message->metadata),
             'sender'     => $senderParty,
         ];
+    }
+
+    /** GET /chat/attachments/{uuid} — entrega o anexo só a quem participa da conversa. */
+    public function attachment(Request $request, string $uuid, ChatAttachments $attachments): \Symfony\Component\HttpFoundation\StreamedResponse|JsonResponse
+    {
+        $file = $attachments->findFor($request->user(), $uuid);
+        if (! $file) {
+            return $this->notFound('Anexo não encontrado.');
+        }
+        // imagens e áudios abrem na tela; o resto baixa. Nunca deixa o navegador "adivinhar" o tipo.
+        $inline = in_array($file['kind'], ['image', 'audio'], true);
+
+        return \Illuminate\Support\Facades\Storage::disk('local')->response($file['path'], $file['name'], [
+            'Content-Type'           => $file['mime'],
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control'          => 'private, max-age=3600',
+            'Content-Security-Policy' => "default-src 'none'; sandbox",
+        ], $inline ? 'inline' : 'attachment');
     }
 }

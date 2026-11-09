@@ -7,6 +7,9 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
     ],
 
+    // GIFs no chat (Giphy). Crie uma chave em developers.giphy.com e informe em GIPHY_API_KEY. Sem ela o botão de GIF fica oculto.
+    'giphy' => ['key' => env('GIPHY_API_KEY')],
+
     // Bianca (central de ajuda): 'local' = motor gratuito, sem IA externa (padrão); 'claude' = usa a Claude API (gasta tokens).
     'help' => ['driver' => env('HELP_DRIVER', 'local')],
 

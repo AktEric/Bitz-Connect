@@ -48,6 +48,7 @@ export interface ChatGroupMessage {
   uuid: string
   content: string
   type: string
+  metadata?: Record<string, unknown> | null
   is_announcement: boolean
   is_mine: boolean
   created_at: string

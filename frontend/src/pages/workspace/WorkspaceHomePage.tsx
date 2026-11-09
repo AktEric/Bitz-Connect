@@ -69,7 +69,7 @@ export default function WorkspaceHomePage() {
         <aside className="space-y-5 xl:order-1" aria-label="Meu espaço">
           <Panel className="!p-4">
             <div className="flex items-center gap-3">
-              <PersonAvatarLink person={{ uuid: user?.uuid ?? '', name: user?.name ?? '', avatar_url: user?.avatar_url }} size="xl" className="ring-2 ring-brand-100" />
+              <PersonAvatarLink person={{ uuid: user?.uuid ?? '', name: user?.name ?? '', avatar_url: user?.avatar_url }} size="xl" />
               <div className="min-w-0">
                 <p className="text-xs text-gray-400">{greeting()},</p>
                 <PersonLink person={user?.uuid ? { uuid: user.uuid, name: user.name } : null} className="block truncate text-base font-semibold text-gray-900">

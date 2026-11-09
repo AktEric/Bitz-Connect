@@ -4,7 +4,8 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { BadgeCheck, Cake, ImagePlus, MessageCircle, Pin, Trash2, Video, X } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import type { FeedComment, FeedPost } from '@/types/workspace.types'
-import { Empty, Modal, PageHeader, Panel, Pill, Spinner, btnGhost, btnPrimary, errMsg, fmtDate, timeAgo, useWs } from './ui'
+import { Empty, Modal, PageHeader, Panel, Pill, Spinner, btnGhost, btnPrimary, errMsg, fmtDate, fmtMoney, timeAgo, useWs } from './ui'
+import { Link, useParams } from 'react-router-dom'
 import { MentionField, MentionText, applyMentions, type Mention } from './MentionField'
 import PhotoGrid from './PhotoGrid'
 import KudosModal, { BADGES } from './KudosModal'
@@ -14,6 +15,37 @@ import PersonLink, { PersonAvatarLink } from './PersonLink'
 import { resizeImage } from './imageUtils'
 
 const MAX_PHOTOS = 6
+
+/** Anúncio do marketplace repostado no mural. */
+function ListingEmbed({ listing }: { listing: NonNullable<FeedPost['listing']> }) {
+  const { slug } = useParams()
+  return (
+    <Link to={`/w/${slug}/marketplace?anuncio=${listing.uuid}`} className="mt-3 flex overflow-hidden rounded-2xl border border-gray-100 bg-white hover:shadow-md">
+      <div className="h-28 w-28 flex-shrink-0 bg-gray-100">{listing.cover_url && <img src={listing.cover_url} alt="" loading="lazy" className="h-full w-full object-cover" />}</div>
+      <div className="min-w-0 flex-1 p-3">
+        <p className="text-lg font-bold text-gray-900">{listing.price_cents == null ? 'A combinar' : listing.price_cents === 0 ? 'Grátis' : fmtMoney(listing.price_cents)}{listing.status === 'sold' && <span className="ml-2 text-xs font-semibold text-gray-500">Vendido</span>}</p>
+        <p className="truncate text-sm text-gray-800">{listing.title}</p>
+        <p className="mt-1 truncate text-xs text-gray-400">Marketplace · {listing.seller?.name}</p>
+      </div>
+    </Link>
+  )
+}
+
+/** Cartão com a foto da pessoa homenageada (aniversário) ou recém-chegada (boas-vindas); a foto é sempre a atual do perfil. */
+function SubjectCard({ post }: { post: FeedPost }) {
+  if ((post.kind !== 'birthday' && post.kind !== 'welcome') || !post.subject) return null
+  const birthday = post.kind === 'birthday'
+  const first = post.subject.name?.split(' ')[0]
+
+  return (
+    <div className="mt-3 flex flex-col items-center gap-2 rounded-2xl bg-white/80 py-5 text-center shadow-sm ring-1 ring-black/5">
+      {birthday ? <Cake className="h-5 w-5 text-pink-500" /> : <span className="text-xl" aria-hidden>👋</span>}
+      <PersonAvatarLink person={post.subject} size="2xl" />
+      <PersonLink person={post.subject} className="text-lg font-semibold text-gray-900">{birthday ? `Feliz aniversário, ${first}!` : `Boas-vindas, ${first}!`}</PersonLink>
+      <p className="text-xs text-gray-500">{[post.subject.job_title, birthday ? null : post.department].filter(Boolean).join(' · ')}</p>
+    </div>
+  )
+}
 
 function Comments({ slug, post, expanded, onExpand }: { slug: string; post: FeedPost; expanded: boolean; onExpand: () => void }) {
   const qc = useQueryClient()
@@ -96,7 +128,7 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
   const del = useMutation({ mutationFn: () => workspaceService.deletePost(slug, post.uuid), onSuccess: refresh })
 
   return (
-    <Panel className={post.kind === 'birthday' ? 'border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50' : post.kind === 'kudos' ? 'border-amber-100 bg-gradient-to-br from-amber-50 via-white to-brand-50' : undefined}>
+    <Panel className={post.kind === 'birthday' ? 'border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50' : post.kind === 'welcome' ? 'border-brand-100 bg-gradient-to-br from-brand-50 via-white to-emerald-50' : post.kind === 'kudos' ? 'border-amber-100 bg-gradient-to-br from-amber-50 via-white to-brand-50' : undefined}>
       {post.kind === 'kudos' && post.subject && (
         <div className="mb-3 flex items-center gap-3 rounded-2xl bg-white/70 p-3">
           <span className="text-3xl" aria-hidden>{BADGES[post.badge ?? '']?.emoji ?? '⭐'}</span>
@@ -107,25 +139,20 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
           <PersonAvatarLink person={post.subject} size="lg" className="ml-auto" />
         </div>
       )}
-      {post.kind === 'birthday' && post.subject && (
-        <div className="mb-3 flex flex-col items-center gap-2 rounded-2xl bg-white/70 py-5 text-center">
-          <Cake className="h-5 w-5 text-pink-500" />
-          <PersonAvatarLink person={post.subject} size="xl" />
-          <PersonLink person={post.subject} className="text-lg font-semibold text-gray-900">Feliz aniversário, {post.subject.name?.split(' ')[0]}!</PersonLink>
-          <p className="text-xs text-gray-500">{[post.subject.job_title, post.department].filter(Boolean).join(' · ')}</p>
-        </div>
-      )}
       <div className="flex items-start gap-3">
-        {post.kind !== 'birthday' && post.kind !== 'kudos' && <PersonAvatarLink person={post.author} size="md" />}
+        {post.kind !== 'kudos' && <PersonAvatarLink person={post.author} size="md" />}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2">
             <PersonLink person={post.author} className="font-semibold text-gray-900" />
-            {post.author?.job_title && <span className="text-xs text-gray-400">{post.author.job_title}</span>}
+            {post.author?.is_company && <Pill tone="brand">Perfil oficial</Pill>}
+            {post.author?.job_title && !post.author.is_company && <span className="text-xs text-gray-400">{post.author.job_title}</span>}
             <span className="text-xs text-gray-400">· {timeAgo(post.created_at)}</span>
             {post.pinned && <Pill tone="amber">Fixado</Pill>}
             {post.department && <Pill tone="blue">{post.department}</Pill>}
           </div>
           {post.body && <MentionText text={post.body} names={post.mentions} className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-700" />}
+          <SubjectCard post={post} />
+          {post.listing && <ListingEmbed listing={post.listing} />}
           <PollBlock slug={slug} post={post} />
           <PhotoGrid media={(post.media ?? []).filter((m) => m.kind !== 'video')} />
           {(post.media ?? []).filter((m) => m.kind === 'video').map((m) => (
@@ -170,7 +197,7 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
 type Draft = { id: number; blob: Blob; preview: string }
 
 export function FeedStream({ compact = false }: { compact?: boolean }) {
-  const { slug } = useWs()
+  const { slug, info } = useWs()
   const canPost = useCan('feed.post')
   const canModerate = useCan('feed.moderate')
   const qc = useQueryClient()
@@ -179,6 +206,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
   const [dept, setDept] = useState('')
   const [group, setGroup] = useState('')   // '' = tudo · 'company' = só empresa toda · uuid = grupo do setor
   const [pinned, setPinned] = useState(false)
+  const [asCompany, setAsCompany] = useState(false)
   const [requiresAck, setRequiresAck] = useState(false)
   const [photos, setPhotos] = useState<Draft[]>([])
   const [video, setVideo] = useState<File | null>(null)
@@ -207,12 +235,12 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
 
   const reset = () => {
     photos.forEach((p) => URL.revokeObjectURL(p.preview))
-    setBody(''); setMentions([]); setPinned(false); setRequiresAck(false); setDept(''); setPhotos([]); setVideo(null); setError('')
+    setBody(''); setMentions([]); setPinned(false); setAsCompany(false); setRequiresAck(false); setDept(''); setPhotos([]); setVideo(null); setError('')
   }
 
   const publish = useMutation({
     mutationFn: () => workspaceService.createPost(slug, {
-      body: applyMentions(body.trim(), mentions), pinned, requires_ack: requiresAck, department_uuid: dept || null, photos: photos.map((p) => p.blob), video,
+      body: applyMentions(body.trim(), mentions), pinned, as_company: asCompany, requires_ack: requiresAck, department_uuid: dept || null, photos: photos.map((p) => p.blob), video,
     }),
     onSuccess: () => { reset(); qc.invalidateQueries({ queryKey: ['ws', slug, 'feed'] }) },
     onError: (e) => setError(errMsg(e)),
@@ -316,6 +344,9 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
                 <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={requiresAck} onChange={(e) => setRequiresAck(e.target.checked)} /> Exigir confirmação de leitura</label>
                 {canModerate && (
                   <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} /> Fixar no topo</label>
+                )}
+                {canModerate && (
+                  <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={asCompany} onChange={(e) => setAsCompany(e.target.checked)} /> Publicar como {info.hotel.name}</label>
                 )}
               </div>
             </details>

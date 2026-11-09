@@ -5,6 +5,8 @@ export interface WorkspacePerson {
   name: string
   avatar_url: string | null
   job_title: string | null
+  /** Perfil oficial da empresa (assina parabéns e boas-vindas): não tem página de perfil. */
+  is_company?: boolean
 }
 
 export interface WorkspaceSummary {
@@ -16,7 +18,7 @@ export interface WorkspaceSummary {
 
 export type Capability =
   | 'feed.view' | 'feed.post' | 'feed.moderate'
-  | 'jobs.apply' | 'jobs.manage'
+  | 'jobs.apply' | 'jobs.manage' | 'marketplace.view' | 'marketplace.sell' | 'marketplace.moderate'
   | 'people.view' | 'people.manage' | 'career.manage' | 'areas.manage' | 'invites.manage' | 'onboarding.view'
   | 'roles.view' | 'roles.manage' | 'security.view' | 'security.manage' | 'audit.view'
   | 'calendar.manage' | 'calendar.holiday' | 'climate.manage' | 'climate.results'
@@ -126,7 +128,8 @@ export interface FeedMedia {
 
 export interface FeedPost {
   uuid: string
-  kind: 'post' | 'birthday' | 'kudos' | 'poll'
+  kind: 'post' | 'birthday' | 'welcome' | 'kudos' | 'poll' | 'listing'
+  listing?: import('./marketplace.types').Listing | null
   poll?: { options: { uuid: string; label: string; votes: number }[]; total: number; my_vote: string | null; closes_on: string | null; closed: boolean } | null
   badge?: string | null
   subject: WorkspacePerson | null
@@ -197,9 +200,22 @@ export interface Payslip {
   size: number
   viewed: boolean
   first_viewed_at: string | null
+  signed_at: string | null
+  signature_kind: 'drawn' | 'typed' | null
   owner: WorkspacePerson | null
   created_at: string
 }
+
+export interface PayslipSignatureProof {
+  title: string
+  kind: 'drawn' | 'typed'
+  name: string
+  /** PNG em data URL (só assinatura desenhada). */
+  image: string | null
+  signed_at: string
+  hash: string
+}
+export type SignPayslipInput = { kind: 'typed'; name: string } | { kind: 'drawn'; image: string }
 
 export type GoalStatus = 'active' | 'achieved' | 'missed' | 'cancelled'
 

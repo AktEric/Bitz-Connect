@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Chat\Services\ChatAttachments;
 use App\Domain\Chat\Services\ChatGroupService;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\ApiResponseTrait;
@@ -327,7 +328,7 @@ class ChatGroupController extends Controller
     }
 
     /** POST /chat-groups/{group}/messages */
-    public function send(Request $request, ChatGroup $group): JsonResponse
+    public function send(Request $request, ChatGroup $group, ChatAttachments $attachments): JsonResponse
     {
         $user       = $request->user();
         $membership = $group->membershipOf($user);
@@ -341,9 +342,25 @@ class ChatGroupController extends Controller
         }
 
         $data = $request->validate([
-            'content'         => ['required', 'string', 'max:5000'],
+            'content'         => ['required_without_all:file,metadata', 'nullable', 'string', 'max:5000'],
             'is_announcement' => ['sometimes', 'boolean'],
-        ]);
+        ] + ChatAttachments::rules());
+
+        $type = 'text';
+        $metadata = null;
+        $data['content'] = (string) ($data['content'] ?? '');
+        if ($request->hasFile('file')) {
+            $stored = $attachments->store($request->file('file'), $request->boolean('voice'), $request->integer('duration') ?: null, $data['content'], 'group');
+            if (is_string($stored)) {
+                return $this->error($stored, ['file' => [$stored]], 422);
+            }
+            [$type, $data['content'], $metadata] = $stored;
+        } elseif (($rich = $attachments->rich($request->input('type'), $request->input('metadata'))) !== null) {
+            if (is_string($rich)) {
+                return $this->error($rich, [], 422);
+            }
+            [$type, $data['content'], $metadata] = $rich;
+        }
 
         // Apenas administradores podem marcar uma mensagem como aviso.
         $announcement = (bool) ($data['is_announcement'] ?? false)
@@ -353,7 +370,8 @@ class ChatGroupController extends Controller
             'uuid'            => (string) Str::uuid(),
             'sender_id'       => $user->id,
             'content'         => $data['content'],
-            'type'            => 'text',
+            'type'            => $type,
+            'metadata'        => $metadata,
             'is_announcement' => $announcement,
         ]);
 
@@ -449,6 +467,7 @@ class ChatGroupController extends Controller
             'uuid'            => $message->uuid,
             'content'         => $message->content,
             'type'            => $message->type,
+            'metadata'        => ChatAttachments::publicMetadata($message->metadata),
             'is_announcement' => $message->is_announcement,
             'is_mine'         => $message->sender_id === $viewer->id,
             'created_at'      => $message->created_at->toISOString(),

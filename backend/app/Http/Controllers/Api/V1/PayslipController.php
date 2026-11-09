@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\AuditLog;
 use App\Models\Hotel;
 use App\Models\Payslip;
+use App\Models\User;
+use App\Support\ImageSanitizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -27,6 +29,8 @@ class PayslipController extends WorkspaceBaseController
             'mime'            => $p->mime,
             'size'            => $p->size,
             'viewed'          => $p->first_viewed_at !== null,
+            'signed_at'       => $p->signed_at?->toISOString(),
+            'signature_kind'  => $p->signature_kind,
             'first_viewed_at' => $forAdmin ? $p->first_viewed_at?->toISOString() : null,
             'owner'           => $this->access->person($p->owner),
             'created_at'      => $p->created_at?->toISOString(),
@@ -146,6 +150,102 @@ class PayslipController extends WorkspaceBaseController
         ]);
     }
 
+    private function normalizeName(string $name): string
+    {
+        return trim((string) preg_replace('/\s+/', ' ', mb_strtolower(Str::ascii($name))));
+    }
+
+    /** PNG vindo do canvas ("data:image/png;base64,..."): valida formato, tamanho e dimensões. */
+    private function decodeSignatureImage(?string $dataUrl): ?string
+    {
+        if (! $dataUrl || ! preg_match('#^data:image/png;base64,([A-Za-z0-9+/=]+)$#', $dataUrl, $m)) {
+            return null;
+        }
+        $bytes = base64_decode($m[1], true);
+        if ($bytes === false || strlen($bytes) > 300_000 || ! str_starts_with($bytes, "\x89PNG\r\n\x1a\n")) {
+            return null;
+        }
+        $info = @getimagesizefromstring($bytes);
+
+        return $info && $info[2] === IMAGETYPE_PNG && $info[0] >= 40 && $info[0] <= 1600 && $info[1] >= 20 && $info[1] <= 900
+            ? ImageSanitizer::clean($bytes) : null;
+    }
+
+    /** POST /payslips/{uuid}/sign  { kind: drawn|typed, name?, image?, accept } — só o dono do documento, uma vez. */
+    public function sign(Request $request, Hotel $hotel, string $uuid): JsonResponse
+    {
+        $p = $this->findAllowed($request, $hotel, $uuid);
+        if (! $p || $p->user_id !== $request->user()->id || ! Storage::disk('local')->exists($p->file_path)) {
+            return $this->notFound('Documento não encontrado.');
+        }
+        if ($p->signed_at) {
+            return $this->error('Este documento já foi assinado.', [], 409);
+        }
+        $data = $request->validate([
+            'kind'   => ['required', Rule::in(['drawn', 'typed'])],
+            'name'   => ['required_if:kind,typed', 'nullable', 'string', 'max:160'],
+            'image'  => ['required_if:kind,drawn', 'nullable', 'string', 'max:450000'],
+            'accept' => ['accepted'],
+        ], ['accept.accepted' => 'Confirme que recebeu o documento para assinar.']);
+
+        $user = $request->user();
+        $imageBytes = null;
+        if ($data['kind'] === 'typed') {
+            if ($this->normalizeName($data['name']) !== $this->normalizeName($user->name)) {
+                return $this->error('Digite seu nome completo, como está cadastrado.', ['name' => ['O nome não confere com o seu cadastro.']], 422);
+            }
+            $signer = $user->name;
+        } else {
+            $imageBytes = $this->decodeSignatureImage($data['image'] ?? null);
+            if (! $imageBytes) {
+                return $this->error('Assinatura inválida. Desenhe novamente.', ['image' => ['Imagem de assinatura inválida.']], 422);
+            }
+            $signer = $user->name;
+        }
+
+        $at = now();
+        $path = null;
+        if ($imageBytes !== null) {
+            $path = "payslips/{$hotel->id}/signatures/{$p->uuid}.png";
+            Storage::disk('local')->put($path, $imageBytes);
+        }
+        $hash = hash('sha256', implode('|', [
+            $p->uuid, hash('sha256', (string) Storage::disk('local')->get($p->file_path)), $user->id, $at->toIso8601String(),
+            $data['kind'], $signer, $imageBytes !== null ? hash('sha256', $imageBytes) : '',
+        ]));
+
+        $p->forceFill([
+            'signed_at' => $at, 'signature_kind' => $data['kind'], 'signature_name' => $signer, 'signature_path' => $path,
+            'signature_hash' => $hash, 'signed_ip' => $request->ip(),
+        ])->save();
+        AuditLog::record($request, $hotel, 'payslip.signed', $p->owner, ['title' => $p->title, 'kind' => $data['kind']]);
+
+        if ($p->uploaded_by && ($uploader = User::find($p->uploaded_by))) {
+            $this->notifications->workspaceNotice($uploader, $user, 'workspace_payslip', "{$user->name} assinou um documento", $p->title, $this->link($hotel, 'recebimentos'));
+        }
+
+        return $this->success('Documento assinado com sucesso.', $this->format($p->refresh()->load('owner'), false));
+    }
+
+    /** GET /payslips/{uuid}/signature — comprovante da assinatura (dono do documento ou RH/financeiro). */
+    public function signature(Request $request, Hotel $hotel, string $uuid): JsonResponse
+    {
+        $p = $this->findAllowed($request, $hotel, $uuid);
+        if (! $p || ! $p->signed_at) {
+            return $this->notFound('Este documento ainda não foi assinado.');
+        }
+        if ($p->user_id !== $request->user()->id) {
+            AuditLog::record($request, $hotel, 'payslip.signature_viewed', $p->owner, ['title' => $p->title]);
+        }
+        $image = $p->signature_path && Storage::disk('local')->exists($p->signature_path)
+            ? 'data:image/png;base64,' . base64_encode((string) Storage::disk('local')->get($p->signature_path)) : null;
+
+        return $this->success('Assinatura carregada.', [
+            'title' => $p->title, 'kind' => $p->signature_kind, 'name' => $p->signature_name, 'image' => $image,
+            'signed_at' => $p->signed_at->toISOString(), 'hash' => $p->signature_hash,
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
     public function destroy(Request $request, Hotel $hotel, string $uuid): JsonResponse
     {
         $m = $this->membership($request, $hotel);
@@ -155,7 +255,7 @@ class PayslipController extends WorkspaceBaseController
         }
 
         AuditLog::record($request, $hotel, 'payslip.deleted', $p->owner, ['title' => $p->title]);
-        Storage::disk('local')->delete($p->file_path);
+        Storage::disk('local')->delete(array_filter([$p->file_path, $p->signature_path]));
         $p->delete();
 
         return $this->success('Documento removido com sucesso.');

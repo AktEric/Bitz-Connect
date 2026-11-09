@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Info, Lock, Megaphone, MessageSquare, Plus, Send, Users, X } from 'lucide-react'
 import { useConversations, useMarkRead, useMessages, useSendMessage } from '@/hooks/useChat'
 import {
@@ -16,6 +16,7 @@ import { cn } from '@/utils/cn'
 import { extractApiError } from '@/utils/api-error'
 import CreateGroupModal from './CreateGroupModal'
 import GroupInfoPanel from './GroupInfoPanel'
+import type { DockTarget } from './ChatDock'
 import type { ChatGroup } from '@/types/chatGroup.types'
 
 interface Props {
@@ -27,6 +28,8 @@ interface Props {
   requestedGroup?: string | null
   /** Pessoa com quem abrir a conversa direta ao exibir o painel (ex.: clique na fileira de presença). */
   requestedDirect?: { uuid: string; name: string; avatar_url: string | null } | null
+  /** Quando informado, grupos e conversas abrem como janela flutuante em vez de ocupar o painel. */
+  onOpenWindow?: (target: DockTarget) => void
 }
 
 type View = 'list' | 'thread' | 'info' | 'direct'
@@ -44,7 +47,7 @@ function formatTime(iso: string): string {
  * Barra lateral de chat (painel deslizante, disponível em qualquer tela):
  * grupos da empresa e acesso às conversas diretas.
  */
-export default function ChatSidebar({ open = false, onClose = () => {}, docked = false, requestedGroup, requestedDirect }: Props) {
+export default function ChatSidebar({ open = false, onClose = () => {}, docked = false, requestedGroup, requestedDirect, onOpenWindow }: Props) {
   const navigate = useNavigate()
   const [tab, setTab] = useState<'groups' | 'direct'>('groups')
   const [view, setView] = useState<View>('list')
@@ -74,6 +77,8 @@ export default function ChatSidebar({ open = false, onClose = () => {}, docked =
   }, [requestedDirect])
 
   function openGroup(uuid: string) {
+    const g = groups.find((x) => x.uuid === uuid)
+    if (onOpenWindow && g) return onOpenWindow({ kind: 'group', uuid, name: g.name, avatar_url: g.hotel?.avatar_url ?? null })
     setActiveGroup(uuid)
     setView('thread')
   }
@@ -141,7 +146,9 @@ export default function ChatSidebar({ open = false, onClose = () => {}, docked =
                     <li key={`${c.party.type}:${c.party.uuid}`}>
                       <button
                         onClick={() => {
-                          if (c.party.type === 'user') {
+                          if (c.party.type === 'user' && onOpenWindow) {
+                            onOpenWindow({ kind: 'direct', uuid: c.party.uuid, name: c.party.name, avatar_url: c.party.avatar_url ?? null })
+                          } else if (c.party.type === 'user') {
                             setActiveDirect({ uuid: c.party.uuid, name: c.party.name, avatar_url: c.party.avatar_url ?? null })
                             setView('direct')
                           } else {
@@ -468,7 +475,7 @@ function DirectThread({
           <ArrowLeft className="h-5 w-5" />
         </button>
         <Avatar src={person.avatar_url} name={person.name} size="sm" />
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">{person.name}</span>
+        <Link to={`/users/${person.uuid}`} className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900 hover:underline" title="Ver perfil">{person.name}</Link>
         {onClose && (
           <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100" aria-label="Fechar chat">
             <X className="h-5 w-5" />

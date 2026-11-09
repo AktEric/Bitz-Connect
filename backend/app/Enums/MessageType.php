@@ -11,4 +11,10 @@ enum MessageType: string
     case Hotel    = 'hotel';
     case ImgStub  = 'img-stub';
     case FileStub = 'file-stub';
+    case Image    = 'image';
+    case Audio    = 'audio';
+    case File     = 'file';
+    case Gif      = 'gif';
+    case Sticker  = 'sticker';
+    case Listing  = 'listing';
 }

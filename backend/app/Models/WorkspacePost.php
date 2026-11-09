@@ -11,12 +11,12 @@ class WorkspacePost extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['uuid','hotel_id','author_id','department_id','body','pinned','requires_ack','kind','subject_id','subject_date','badge','poll_closes_on'];
+    protected $fillable = ['uuid','hotel_id','author_id','department_id','body','pinned','requires_ack','kind','subject_id','subject_date','badge','poll_closes_on','as_company','listing_id'];
 
     protected $table = 'workspace_posts';
     protected function casts(): array
     {
-        return ['pinned' => 'boolean', 'requires_ack' => 'boolean', 'poll_closes_on' => 'date'];
+        return ['pinned' => 'boolean', 'requires_ack' => 'boolean', 'as_company' => 'boolean', 'poll_closes_on' => 'date'];
     }
 
     public function author(): BelongsTo
@@ -32,6 +32,11 @@ class WorkspacePost extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function listing(): BelongsTo
+    {
+        return $this->belongsTo(MarketplaceListing::class, 'listing_id');
     }
 
     public function comments(): HasMany

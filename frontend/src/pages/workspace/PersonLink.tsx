@@ -4,7 +4,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import type { WorkspacePerson } from '@/types/workspace.types'
 import { cn } from '@/utils/cn'
 
-type PersonRef = Pick<WorkspacePerson, 'uuid' | 'name'> & Partial<Pick<WorkspacePerson, 'avatar_url' | 'job_title'>>
+type PersonRef = Pick<WorkspacePerson, 'uuid' | 'name'> & Partial<Pick<WorkspacePerson, 'avatar_url' | 'job_title' | 'is_company'>>
 
 /** Caminho do perfil de uma pessoa no Workspace. */
 export const personPath = (slug: string, uuid: string) => `/w/${slug}/pessoas/${uuid}`
@@ -16,6 +16,8 @@ export const personPath = (slug: string, uuid: string) => `/w/${slug}/pessoas/${
 export default function PersonLink({ person, className, children }: { person: PersonRef | null | undefined; className?: string; children?: ReactNode }) {
   const { slug = '' } = useParams()
   if (!person) return <span className={className}>{children ?? 'Ex-colaborador'}</span>
+  // o perfil da empresa não tem página de pessoa
+  if (person.is_company) return <span className={className}>{children ?? person.name}</span>
 
   return (
     <Link to={personPath(slug, person.uuid)} className={cn('rounded hover:text-brand-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500', className)}>
@@ -27,7 +29,7 @@ export default function PersonLink({ person, className, children }: { person: Pe
 /** Foto da pessoa levando ao perfil. */
 export function PersonAvatarLink({ person, size = 'sm', className }: { person: PersonRef | null | undefined; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'; className?: string }) {
   return (
-    <PersonLink person={person} className={cn('flex-shrink-0', className)}>
+    <PersonLink person={person} className={cn('flex-shrink-0 rounded-full hover:no-underline', className)}>
       <Avatar src={person?.avatar_url} name={person?.name ?? '?'} size={size} />
     </PersonLink>
   )

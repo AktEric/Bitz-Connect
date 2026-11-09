@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useLocation } from 'react-router-dom'
-import { MessageCircleQuestion, Send, X, RotateCcw } from 'lucide-react'
+import { Send, X, RotateCcw } from 'lucide-react'
 import { askBianca, type HelpMessage } from '@/services/help.service'
 import { cn } from '@/utils/cn'
 
@@ -108,7 +108,7 @@ export default function BiancaChat({ workspace, className }: Props) {
             className,
           )}
         >
-          <MessageCircleQuestion className="h-5 w-5" /> <span className="hidden sm:inline">Ajuda</span>
+          <BiancaAvatar className="-ml-2 h-9 w-9 ring-2 ring-white/60" /> <span className="hidden sm:inline">Fale com a Bianca</span>
         </button>
       )}
 
@@ -119,7 +119,7 @@ export default function BiancaChat({ workspace, className }: Props) {
           className="fixed inset-x-3 bottom-20 z-50 flex h-[min(34rem,calc(100vh-7rem))] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl sm:inset-x-auto sm:right-4 sm:w-[24rem] lg:bottom-5"
         >
           <header className="flex items-center gap-3 bg-brand-600 px-4 py-3 text-white">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-base font-semibold" aria-hidden>V</span>
+            <BiancaAvatar className="h-10 w-10" />
             <div className="min-w-0 flex-1">
               <p className="font-semibold leading-tight">Bianca</p>
               <p className="text-xs text-brand-100">Central de ajuda</p>
@@ -187,10 +187,21 @@ export default function BiancaChat({ workspace, className }: Props) {
   )
 }
 
+/** Foto da Bianca (recorte da cintura para cima); se o arquivo faltar, cai na letra B. */
+function BiancaAvatar({ className }: { className?: string }) {
+  const [failed, setFailed] = useState(false)
+  return (
+    <span className={cn('flex flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/90 text-base font-semibold text-brand-700', className)} aria-hidden>
+      {failed ? 'B' : <img src="/bianca.png" alt="" onError={() => setFailed(true)} className="h-full w-full object-cover object-top" />}
+    </span>
+  )
+}
+
 function Bubble({ role, text }: { role: HelpMessage['role']; text: string }) {
   const mine = role === 'user'
   return (
-    <div className={cn('flex', mine ? 'justify-end' : 'justify-start')}>
+    <div className={cn('flex items-end gap-2', mine ? 'justify-end' : 'justify-start')}>
+      {!mine && <BiancaAvatar className="h-7 w-7 bg-brand-50 ring-1 ring-gray-200" />}
       <div
         className={cn(
           'max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed',

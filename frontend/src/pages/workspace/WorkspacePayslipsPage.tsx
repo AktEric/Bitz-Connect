@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react'
 import { useCan } from './permissions'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, FileText, Trash2, Upload } from 'lucide-react'
+import { CheckCircle2, Download, FileText, PenLine, Trash2, Upload } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { SignModal, SignatureProofModal } from './PayslipSignature'
 import workspaceService from '@/services/workspace.service'
 import type { Payslip } from '@/types/workspace.types'
 import { Empty, Modal, PageHeader, Panel, Pill, Spinner, Tabs, btnGhost, btnPrimary, errMsg, fmtMoney, fmtMonth, inputCls, labelCls, useWs } from './ui'
@@ -77,6 +79,9 @@ export default function WorkspacePayslipsPage() {
   const [scope, setScope] = useState<'mine' | 'all'>('mine')
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const { user } = useAuth()
+  const [signing, setSigning] = useState<Payslip | null>(null)
+  const [proof, setProof] = useState<Payslip | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['ws', slug, 'payslips', scope],
@@ -121,6 +126,13 @@ export default function WorkspacePayslipsPage() {
               </div>
               {!p.viewed && scope === 'mine' && <Pill tone="brand">Novo</Pill>}
               {scope === 'all' && <Pill tone={p.viewed ? 'green' : 'gray'}>{p.viewed ? 'Visto' : 'Não visto'}</Pill>}
+              {p.signed_at ? (
+                <button type="button" className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100" onClick={() => setProof(p)}>
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Assinado
+                </button>
+              ) : scope === 'mine' ? (
+                <button type="button" className={btnPrimary} onClick={() => setSigning(p)}><PenLine className="h-4 w-4" /> Assinar</button>
+              ) : <Pill tone="amber">Sem assinatura</Pill>}
               <button className={btnGhost} onClick={() => download(p)}><Download className="h-4 w-4" /> Baixar</button>
               {isAdmin && (
                 <button className="text-gray-400 hover:text-red-500" aria-label="Remover" onClick={() => { if (confirm('Remover este documento definitivamente?')) remove.mutate(p.uuid) }}><Trash2 className="h-4 w-4" /></button>
@@ -130,6 +142,8 @@ export default function WorkspacePayslipsPage() {
         </div>
       )}
 
+      {signing && <SignModal slug={slug} payslip={signing} userName={user?.name ?? ''} onClose={() => setSigning(null)} />}
+      {proof && <SignatureProofModal slug={slug} payslip={proof} onClose={() => setProof(null)} />}
       {uploading && <UploadModal slug={slug} onClose={() => setUploading(false)} />}
     </div>
   )

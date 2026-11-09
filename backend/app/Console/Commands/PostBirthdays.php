@@ -33,12 +33,14 @@ class PostBirthdays extends Command
             if ($exists) {
                 continue;
             }
-            $first = Str::before($m->user->name, ' ');
+            $hotel = Hotel::find($m->hotel_id);
+            $m->loadMissing('department');
+            $role  = trim(($m->job_title ? ", {$m->job_title}" : '') . ($m->department ? " do setor {$m->department->name}" : ''));
             WorkspacePost::create([
                 'uuid' => (string) Str::uuid(), 'hotel_id' => $m->hotel_id,
                 'author_id' => $m->user_id, 'subject_id' => $m->user_id, 'subject_date' => $today->toDateString(),
-                'kind' => 'birthday', 'pinned' => false,
-                'body' => "Hoje é aniversário de {$first}! 🎂 Deixe sua mensagem de parabéns.",
+                'kind' => 'birthday', 'pinned' => false, 'as_company' => true,
+                'body' => "Hoje é dia de festa! 🎂 A {$hotel->name} deseja um feliz aniversário a @[{$m->user->name}]({$m->user->uuid}){$role}. Muita saúde, alegria e conquistas! Deixe sua mensagem de parabéns nos comentários. 🎉",
             ]);
             $count++;
         }

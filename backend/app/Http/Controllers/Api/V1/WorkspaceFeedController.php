@@ -111,6 +111,18 @@ class WorkspaceFeedController extends WorkspaceBaseController
         ];
     }
 
+    /** Perfil oficial da empresa, que assina parabéns, boas-vindas e avisos de administradores. */
+    private function companyPerson(int $hotelId): array
+    {
+        static $cache = [];
+        $h = $cache[$hotelId] ??= Hotel::find($hotelId);
+
+        return [
+            'uuid' => $h?->uuid ?? '', 'name' => $h?->name ?? 'Empresa', 'job_title' => 'Perfil oficial',
+            'avatar_url' => $h?->logo_path ? asset('storage/' . $h->logo_path) : null, 'is_company' => true,
+        ];
+    }
+
     private function format(WorkspacePost $p, int $meId, bool $isAdmin, array $reactions = [], ?string $mine = null, array $names = []): array
     {
         $counts = array_fill_keys(self::REACTIONS, 0);
@@ -129,9 +141,10 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'badge'          => $p->badge,
             'poll'           => ($p->kind ?? 'post') === 'poll' ? $this->pollPayload($p) : null,
             'subject'        => $p->subject_id ? $this->access->person($p->subject) : null,
+            'listing'        => $p->listing && $p->listing->status !== 'hidden' ? app(\App\Domain\Marketplace\Services\ListingPresenter::class)->summary($p->listing, $meId) : null,
             'comments_preview' => $p->getAttribute('preview') ?? [],
             'created_at'     => $p->created_at?->toISOString(),
-            'author'         => $this->access->person($p->author),
+            'author'         => $p->as_company ? $this->companyPerson($p->hotel_id) : $this->access->person($p->author),
             'department'     => $p->department?->name,
             'media'          => $p->media->map(fn ($m) => $this->mediaPayload($m))->values(),
             'mentions'       => $mentioned,
@@ -140,7 +153,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'likes_count'    => array_sum($counts),
             'comments_count' => (int) ($p->comments_count ?? 0),
             'liked_by_me'    => $mine !== null,
-            'can_delete'     => $isAdmin || ($p->author_id === $meId && ($p->kind ?? 'post') === 'post'),
+            'can_delete'     => $isAdmin || ($p->author_id === $meId && in_array($p->kind ?? 'post', ['post', 'listing'], true)),
             'requires_ack'   => (bool) $p->requires_ack,
             'acked_at'       => $p->getAttribute('ack_mine_at'),
             'ack_count'      => $p->requires_ack && ($isAdmin || $p->author_id === $meId) ? (int) $p->getAttribute('ack_count') : null,
@@ -212,7 +225,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
 
         $meId = $request->user()->id;
         $q = $this->visible(WorkspacePost::query(), $hotel, $m)
-            ->with(['author', 'department', 'media', 'subject'])
+            ->with(['author', 'department', 'media', 'subject', 'listing.images', 'listing.seller'])
             ->withCount(['comments'])
             ->orderByDesc('pinned')->orderByDesc('created_at')->orderByDesc('id');
 
@@ -363,6 +376,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
             'pinned'          => ['sometimes', 'boolean'],
             'department_uuid' => ['nullable', 'uuid'],
             'requires_ack'    => ['sometimes', 'boolean'],
+            'as_company'      => ['sometimes', 'boolean'],
             'photos'          => ['nullable', 'array', 'max:' . self::MAX_PHOTOS],
             'photos.*'        => ['file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'video'           => ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/quicktime', 'max:204800'],
@@ -390,6 +404,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
                 'body'          => $body,
                 'pinned'        => $this->access->isAdmin($m) && ($data['pinned'] ?? false),
                 'requires_ack'  => (bool) ($data['requires_ack'] ?? false),
+                'as_company'    => $this->access->isAdmin($m) && ($data['as_company'] ?? false),
             ]);
             foreach (array_values($request->file('photos', [])) as $i => $file) {
                 WorkspacePostMedia::create([

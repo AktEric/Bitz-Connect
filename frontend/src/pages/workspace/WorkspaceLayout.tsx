@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Moon, Sun, Globe, CheckCircle2, ChevronDown,
+  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Moon, Sun, Globe, CheckCircle2, ChevronDown, Store,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import type { Capability } from '@/types/workspace.types'
@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Avatar } from '@/components/ui/Avatar'
 import NotificationBell from '@/components/common/NotificationBell'
 import ChatSidebar from '@/components/chat/ChatSidebar'
+import { ChatDockProvider, useChatDock } from '@/components/chat/ChatDock'
 import BiancaChat from '@/components/help/BiancaChat'
 import { cn } from '@/utils/cn'
 import { getTheme, setTheme, type Theme } from '@/utils/theme'
@@ -24,6 +25,10 @@ import PresenceRail, { type ChatPerson } from './PresenceRail'
  * e fileira de pessoas (chat) à direita. Celular: navegação inferior e gaveta.
  */
 export default function WorkspaceLayout() {
+  return <ChatDockProvider><WorkspaceShell /></ChatDockProvider>
+}
+
+function WorkspaceShell() {
   const { slug = '' } = useParams()
   const { data: info, isLoading, isError } = useWorkspaceInfo(slug)
   const { user, logout } = useAuth()
@@ -33,7 +38,7 @@ export default function WorkspaceLayout() {
   const [drawer, setDrawer] = useState(false)
   const [menu, setMenu] = useState(false)
   const [expanded, setExpanded] = useState(false)
-  const [direct, setDirect] = useState<ChatPerson | null>(null)
+  const dock = useChatDock()
   const [themeNow, setThemeNow] = useState<Theme>(getTheme)
   const [searchOpen, setSearchOpen] = useState(false)
 
@@ -82,7 +87,7 @@ export default function WorkspaceLayout() {
         { to: 'pesquisas', label: 'Pesquisa de clima', Icon: HeartPulse },
       ],
     },
-    { title: 'Empresa', items: [{ to: 'equipe', label: 'Pessoas', Icon: Users }, { to: 'organograma', label: 'Organograma', Icon: Network }, { to: 'vagas', label: 'Vagas', Icon: Briefcase }] },
+    { title: 'Empresa', items: [{ to: 'equipe', label: 'Pessoas', Icon: Users }, { to: 'organograma', label: 'Organograma', Icon: Network }, { to: 'vagas', label: 'Vagas', Icon: Briefcase }, ...(can('marketplace.view') ? [{ to: 'marketplace', label: 'Marketplace', Icon: Store }] : [])] },
   ]
   const company = groups[groups.length - 1].items
   if (can('dashboard.view')) {
@@ -105,8 +110,8 @@ export default function WorkspaceLayout() {
   const roleLabel = info.me.job_title ?? (info.me.is_admin ? 'RH / Gestão' : 'Colaborador')
 
   const firstName = user?.name?.split(' ')[0] ?? ''
-  const openChat = () => { setDirect(null); setChatOpen(true) }
-  const openPerson = (p: ChatPerson) => { setDirect({ ...p }); setChatOpen(true) }
+  const openChat = () => setChatOpen(true)
+  const openPerson = (p: ChatPerson) => { setChatOpen(false); dock.open({ kind: 'direct', uuid: p.uuid, name: p.name, avatar_url: p.avatar_url }) }
 
   return (
     <div className="ws-bg min-h-screen">
@@ -233,7 +238,7 @@ export default function WorkspaceLayout() {
 
       {searchOpen && <CommandPalette slug={slug} pages={groups.flatMap((g) => g.items.map((i) => ({ to: i.to, label: i.label })))} onClose={() => setSearchOpen(false)} />}
 
-      <ChatSidebar open={chatOpen} onClose={() => setChatOpen(false)} requestedDirect={direct} />
+      <ChatSidebar open={chatOpen} onClose={() => setChatOpen(false)} onOpenWindow={(t) => { setChatOpen(false); dock.open(t) }} />
 
       <BiancaChat workspace={slug} className="xl:right-[4.5rem]" />
     </div>
