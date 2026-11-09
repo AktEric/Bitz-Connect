@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\V1\TimeSettingsController;
 use App\Http\Controllers\Api\V1\TimeClockController;
 use App\Http\Controllers\Api\V1\WorkScheduleController;
 use App\Http\Controllers\Api\V1\WorkspaceFeedController;
+use App\Http\Controllers\Api\V1\WorkspaceHomeController;
 use App\Http\Controllers\Api\V1\WorkspaceRequestController;
 use App\Http\Controllers\Api\V1\PayslipController;
 use App\Http\Controllers\Api\V1\GoalController;
@@ -295,6 +296,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/invites',                 [CompanyInviteController::class, 'store']);
         Route::delete('/invites/{invite}',      [CompanyInviteController::class, 'destroy']);
         Route::get('/search',                            [WorkspaceSearchController::class, 'index'])->middleware('throttle:60,1');
+        // Início: destaques da coluna direita
+        Route::get('/home/highlights',                   [WorkspaceHomeController::class, 'highlights']);
+
         Route::get('/calendar',                          [CalendarController::class, 'index']);
         Route::post('/calendar/events',                  [CalendarController::class, 'storeEvent']);
         Route::patch('/calendar/events/{uuid}',          [CalendarController::class, 'updateEvent']);

@@ -112,6 +112,7 @@ export default function WorkspaceLayout() {
 
   const firstName = user?.name?.split(' ')[0] ?? ''
   const openChat = () => { setDirect(null); setChatOpen(true) }
+  const openPerson = (p: ChatPerson) => { setDirect({ ...p }); setChatOpen(true) }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -194,11 +195,11 @@ export default function WorkspaceLayout() {
               {!location.pathname.endsWith('/seguranca') && <Link to={`/w/${slug}/seguranca`} className="rounded-xl bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-700">Ativar agora</Link>}
             </div>
           )}
-          {info.me.needs_two_factor && !location.pathname.endsWith('/seguranca') ? null : <Outlet context={{ slug, info }} />}
+          {info.me.needs_two_factor && !location.pathname.endsWith('/seguranca') ? null : <Outlet context={{ slug, info, openChat: openPerson }} />}
         </main>
       </div>
 
-      <PresenceRail slug={slug} onOpenChat={openChat} onOpenPerson={(p) => { setDirect({ ...p }); setChatOpen(true) }} />
+      <PresenceRail slug={slug} onOpenChat={openChat} onOpenPerson={openPerson} />
 
       {/* Navegação inferior (mobile) */}
       <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden" aria-label="Atalhos">

@@ -6,6 +6,8 @@ import type { WorkspaceInfo } from '@/types/workspace.types'
 export interface WorkspaceContext {
   slug: string
   info: WorkspaceInfo
+  /** Abre o chat direto com a pessoa (painel lateral). */
+  openChat: (person: { uuid: string; name: string; avatar_url: string | null }) => void
 }
 
 export function useWs() {

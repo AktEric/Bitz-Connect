@@ -8,6 +8,7 @@ import OnboardingCard from './OnboardingCard'
 import { useTimeBank, useTimeTeam, useTimesheet } from '@/hooks/useWorkspace'
 import { Avatar } from '@/components/ui/Avatar'
 import ClockCard from './ClockCard'
+import { AbsencesCard, BirthdaysCard, JobsCard, NewHiresCard } from './HomeHighlights'
 import { FeedStream } from './WorkspaceFeedPage'
 import { fmtMinutes } from './timeUtils'
 import { Panel, fmtDate, useWs } from './ui'
@@ -17,7 +18,10 @@ function greeting() {
   return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'
 }
 
-/** Início do colaborador: ponto em destaque, o que fazer agora, mural e metas. Gestão aparece só para quem gere. */
+/**
+ * Início do colaborador: mural no centro (com os aniversariantes do dia) e, ao lado, ponto, destaques da empresa
+ * (ausências, novos colaboradores, vagas) e o que é pessoal. Gestão aparece só para quem gere.
+ */
 export default function WorkspaceHomePage() {
   const { slug, info } = useWs()
   const { user } = useAuth()
@@ -49,7 +53,7 @@ export default function WorkspaceHomePage() {
             {[info.me.job_title, info.me.department, info.hotel.name].filter(Boolean).join(' · ')}
           </p>
         </div>
-        <nav className="flex flex-wrap gap-2" aria-label="Atalhos">
+        <nav className="flex flex-wrap gap-2 lg:hidden" aria-label="Atalhos">
           {actions.map(({ to, label, Icon, badge }) => (
             <Link key={to + label} to={to} className="relative inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:border-violet-300 hover:text-violet-700">
               <Icon className="h-4 w-4" /> {label}
@@ -59,8 +63,9 @@ export default function WorkspaceHomePage() {
         </nav>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        <div className="space-y-5 xl:col-span-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="space-y-5">
+          <BirthdaysCard slug={slug} />
           <FeedStream compact />
         </div>
 
@@ -81,6 +86,10 @@ export default function WorkspaceHomePage() {
               </Link>
             </Panel>
           )}
+
+          <AbsencesCard slug={slug} />
+          <NewHiresCard slug={slug} />
+          <JobsCard slug={slug} />
 
           <Panel>
             <h2 className="mb-3 font-semibold text-gray-900">Meu mês</h2>

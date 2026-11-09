@@ -6,7 +6,7 @@ import type {
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult, PersonCard, PersonProfileFields, MyProfile, PersonRecord, JobItem, JobApplicationItem, PublicJob,
+  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult, PersonCard, PersonProfileFields, MyProfile, PersonRecord, JobItem, JobApplicationItem, PublicJob, HomeHighlights,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -28,6 +28,7 @@ async function del(url: string): Promise<void> {
 const workspaceService = {
   mine: () => get<WorkspaceSummary[]>('/me/workspaces'),
   info: (slug: string) => get<WorkspaceInfo>(w(slug)),
+  homeHighlights: (slug: string) => get<HomeHighlights>(`${w(slug)}/home/highlights`),
 
   // Ponto
   timeToday: (slug: string) => get<TimeToday>(`${w(slug)}/time/today`),

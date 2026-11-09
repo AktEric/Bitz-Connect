@@ -164,3 +164,5 @@
 .ws-rail-scroll::-webkit-scrollbar { display: none; }
 .dark .ws-rail { background-color: #181b24; border-right: 1px solid #232734; }
 .dark .ws-rail .bg-white { background-color: rgb(124 58 237 / 0.35); }
+.dark .bg-amber-100 { background-color: rgb(245 158 11 / 0.16); }
+.dark .text-fuchsia-50 { color: #181326; }

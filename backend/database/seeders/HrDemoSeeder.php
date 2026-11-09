@@ -181,6 +181,14 @@ class HrDemoSeeder extends Seeder
             'leticia'   => ['Letícia Prado',        'Estagiária de Marketing',          'Comercial & Eventos', 'daniela',   '2025-08-04', '2004-01-09', 'half',   1400, null],
         ];
 
+        // Datas relativas a hoje, para a Início sempre ter aniversariantes do dia e admissões recentes
+        $today = CarbonImmutable::now(TimeClock::TZ);
+        $this->spec['camila'][5] = '2000-' . $today->format('m-d');
+        $this->spec['felipe'][5] = '1996-' . $today->format('m-d');
+        foreach (['leticia' => 6, 'bruna' => 19, 'vanessa' => 38] as $k => $days) {
+            $this->spec[$k][4] = $today->subDays($days)->toDateString();
+        }
+
         $cities = [['Gramado', '95670-000'], ['Canela', '95680-000'], ['Gramado', '95670-000'], ['Nova Petrópolis', '95150-000']];
         $streets = ['Rua Garibaldi', 'Av. Borges de Medeiros', 'Rua São Pedro', 'Rua Madre Verônica', 'Av. das Hortênsias', 'Rua Emílio Sörensen', 'Rua Pedro Benetti', 'Rua Leopoldo Rosenfeldt'];
         $districts = ['Centro', 'Planalto', 'Floresta', 'Carniel', 'Piratini', 'Avenida Central'];
@@ -262,6 +270,12 @@ class HrDemoSeeder extends Seeder
             'decision_note' => 'Aprovado com a Rosângela; escala ajustada.', 'assigned_to' => $hr->id, 'created_at' => $at('2026-08-01 08:02')]);
         $req('carlos', ['type' => 'vacation', 'title' => 'Férias — outubro', 'starts_on' => '2026-10-19', 'ends_on' => '2026-10-28', 'status' => 'approved',
             'decided_by' => $this->u['helena']->id, 'decided_at' => $at('2026-09-10 11:00'), 'created_at' => $at('2026-09-08 17:45')]);
+        // Férias em andamento e próximas, relativas a hoje (aparecem em "Ausências" na Início)
+        $now = CarbonImmutable::now(TimeClock::TZ)->startOfDay();
+        $req('edson', ['type' => 'vacation', 'title' => 'Férias', 'starts_on' => $now->subDays(5)->toDateString(), 'ends_on' => $now->addDays(9)->toDateString(),
+            'status' => 'approved', 'decided_by' => $hr->id, 'decided_at' => $now->subDays(40)->utc(), 'created_at' => $now->subDays(45)->utc()]);
+        $req('sergio', ['type' => 'vacation', 'title' => 'Férias', 'starts_on' => $now->addDays(3)->toDateString(), 'ends_on' => $now->addDays(12)->toDateString(),
+            'status' => 'approved', 'decided_by' => $hr->id, 'decided_at' => $now->subDays(20)->utc(), 'created_at' => $now->subDays(22)->utc()]);
         // Férias futuras
         $req('helena', ['type' => 'vacation', 'title' => 'Férias de novembro', 'description' => 'Rafael fica como substituto no período.',
             'starts_on' => '2026-11-16', 'ends_on' => '2026-11-30', 'status' => 'approved', 'decided_by' => $this->u['owner']->id, 'decided_at' => $at('2026-10-01 09:00'),
@@ -668,7 +682,7 @@ class HrDemoSeeder extends Seeder
             ['marina', false, 'Pesquisa de clima de novembro no ar! São 4 perguntas, 100% anônimas. Prazo: 20/11.', '2026-11-06 08:30'],
             ['rafael', false, 'Parabéns ao time da recepção pela nota 9,1 no Booking em outubro — melhor resultado do ano! 👏', '2026-11-03 18:20'],
             ['ana', false, 'Lembrete: pedidos de férias para janeiro e fevereiro até 15/11, por causa da alta temporada.', '2026-10-28 14:00'],
-            ['marina', false, 'Damos as boas-vindas à Letícia Prado, nossa nova estagiária de Marketing no Comercial & Eventos!', '2026-08-04 11:15'],
+            ['marina', false, 'Damos as boas-vindas à Letícia Prado, nossa nova estagiária de Marketing no Comercial & Eventos!', $this->spec['leticia'][4] . ' 11:15'],
         ];
         foreach ($posts as [$k, $pinned, $body, $when]) {
             $at = CarbonImmutable::parse($when, TimeClock::TZ)->utc();
