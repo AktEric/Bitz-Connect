@@ -8,6 +8,7 @@ import OnboardingCard from './OnboardingCard'
 import { useTimeBank, useTimeTeam, useTimesheet } from '@/hooks/useWorkspace'
 import { Avatar } from '@/components/ui/Avatar'
 import ClockCard from './ClockCard'
+import { AbsencesCard, BirthdaysCard, JobsCard, NewHiresCard } from './HomeHighlights'
 import { FeedStream } from './WorkspaceFeedPage'
 import { fmtMinutes } from './timeUtils'
 import { Panel, fmtDate, useWs } from './ui'
@@ -17,7 +18,10 @@ function greeting() {
   return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'
 }
 
-/** Início do colaborador: ponto em destaque, o que fazer agora, mural e metas. Gestão aparece só para quem gere. */
+/**
+ * Início do colaborador: mural no centro (com os aniversariantes do dia) e, ao lado, ponto, destaques da empresa
+ * (ausências, novos colaboradores, vagas) e o que é pessoal. Gestão aparece só para quem gere.
+ */
 export default function WorkspaceHomePage() {
   const { slug, info } = useWs()
   const { user } = useAuth()
@@ -49,7 +53,7 @@ export default function WorkspaceHomePage() {
             {[info.me.job_title, info.me.department, info.hotel.name].filter(Boolean).join(' · ')}
           </p>
         </div>
-        <nav className="flex flex-wrap gap-2" aria-label="Atalhos">
+        <nav className="flex flex-wrap gap-2 lg:hidden" aria-label="Atalhos">
           {actions.map(({ to, label, Icon, badge }) => (
             <Link key={to + label} to={to} className="relative inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:border-violet-300 hover:text-violet-700">
               <Icon className="h-4 w-4" /> {label}
@@ -59,13 +63,15 @@ export default function WorkspaceHomePage() {
         </nav>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-3">
-        <div className="space-y-5 xl:col-span-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="space-y-5">
+          <BirthdaysCard slug={slug} />
           <FeedStream compact />
         </div>
 
         <div className="space-y-5">
           <ClockCard slug={slug} compact />
+          <OnboardingCard slug={slug} enabled={info.me.is_admin} />
           {lead && (
             <Panel className="border-violet-100 bg-violet-50/40">
               <h2 className="mb-3 font-semibold text-gray-900">Para você, gestor</h2>
@@ -82,32 +88,35 @@ export default function WorkspaceHomePage() {
             </Panel>
           )}
 
-          <Panel>
-            <h2 className="mb-3 font-semibold text-gray-900">Meu mês</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-gray-50 p-3">
-                <p className="text-xl font-bold text-gray-900">{sheet ? fmtMinutes(sheet.worked_minutes) : '—'}</p>
-                <p className="text-xs text-gray-500">horas trabalhadas</p>
-              </div>
-              <div className="rounded-xl bg-gray-50 p-3">
-                <p className={`text-xl font-bold ${bank && bank.balance_minutes < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{bank ? fmtMinutes(bank.balance_minutes) : '—'}</p>
-                <p className="text-xs text-gray-500">saldo do banco de horas</p>
-              </div>
-            </div>
-          </Panel>
+          <AbsencesCard slug={slug} />
+          <NewHiresCard slug={slug} />
+          <JobsCard slug={slug} />
 
           <HomeCalendarCard slug={slug} />
 
+          {/* o que é só da pessoa: mês, metas e gestor num cartão só */}
           <Panel>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-semibold text-gray-900"><Target className="h-4 w-4 text-violet-500" /> Minhas metas</h2>
-              <Link to="metas" className="text-sm font-medium text-violet-600">Ver</Link>
+            <h2 className="mb-3 font-semibold text-gray-900">Meu resumo</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <Link to="ponto" className="rounded-xl bg-gray-50 p-3 hover:bg-gray-100">
+                <p className="text-xl font-bold text-gray-900">{sheet ? fmtMinutes(sheet.worked_minutes) : '—'}</p>
+                <p className="text-xs text-gray-500">horas no mês</p>
+              </Link>
+              <Link to="ponto" className="rounded-xl bg-gray-50 p-3 hover:bg-gray-100">
+                <p className={`text-xl font-bold ${bank && bank.balance_minutes < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{bank ? fmtMinutes(bank.balance_minutes) : '—'}</p>
+                <p className="text-xs text-gray-500">banco de horas</p>
+              </Link>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between">
+              <h3 className="flex items-center gap-1.5 text-sm font-medium text-gray-700"><Target className="h-4 w-4 text-violet-500" /> Minhas metas</h3>
+              <Link to="metas" className="text-xs font-medium text-violet-600">Ver todas</Link>
             </div>
             {!goals?.length ? (
-              <p className="text-sm text-gray-400">Sem metas no momento.</p>
+              <p className="mt-1 text-sm text-gray-400">Sem metas no momento.</p>
             ) : (
-              <ul className="space-y-3">
-                {goals.slice(0, 3).map((g) => (
+              <ul className="mt-2 space-y-2.5">
+                {goals.slice(0, 2).map((g) => (
                   <li key={g.uuid}>
                     <div className="flex justify-between text-sm"><span className="truncate text-gray-700">{g.title}</span><span className="text-gray-500">{Math.round(g.progress)}%</span></div>
                     <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
@@ -118,19 +127,17 @@ export default function WorkspaceHomePage() {
                 ))}
               </ul>
             )}
-          </Panel>
 
-          <OnboardingCard slug={slug} enabled={info.me.is_admin} />
-
-          {info.me.manager && (
-            <Panel>
-              <h2 className="mb-2 font-semibold text-gray-900">Meu gestor</h2>
-              <div className="flex items-center gap-3">
-                <Avatar src={info.me.manager.avatar_url} name={info.me.manager.name} size="md" />
-                <div><p className="text-sm font-medium text-gray-900">{info.me.manager.name}</p><p className="text-xs text-gray-400">{info.me.manager.job_title ?? 'Gestor direto'}</p></div>
+            {info.me.manager && (
+              <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-3">
+                <Avatar src={info.me.manager.avatar_url} name={info.me.manager.name} size="sm" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-gray-900">{info.me.manager.name}</p>
+                  <p className="text-xs text-gray-400">Meu gestor{info.me.manager.job_title ? ` · ${info.me.manager.job_title}` : ''}</p>
+                </div>
               </div>
-            </Panel>
-          )}
+            )}
+          </Panel>
         </div>
       </div>
     </div>

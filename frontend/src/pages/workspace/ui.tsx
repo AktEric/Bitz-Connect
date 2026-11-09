@@ -6,6 +6,8 @@ import type { WorkspaceInfo } from '@/types/workspace.types'
 export interface WorkspaceContext {
   slug: string
   info: WorkspaceInfo
+  /** Abre o chat direto com a pessoa (painel lateral). */
+  openChat: (person: { uuid: string; name: string; avatar_url: string | null }) => void
 }
 
 export function useWs() {
@@ -33,7 +35,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 }
 
 export function Panel({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('rounded-2xl border border-gray-100 bg-white p-4 shadow-sm', className)}>{children}</div>
+  return <div className={cn('ws-card rounded-2xl border border-transparent bg-white p-5', className)}>{children}</div>
 }
 
 export function Empty({ text }: { text: string }) {

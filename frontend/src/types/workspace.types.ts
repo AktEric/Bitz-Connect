@@ -578,3 +578,13 @@ export interface JobItem {
 }
 export interface JobApplicationItem { uuid: string; status: 'new' | 'reviewing' | 'rejected' | 'hired'; message: string | null; created_at: string; person: WorkspacePerson | null; department: string | null }
 export interface PublicJob { title: string; description: string; requirements: string | null; location: string | null; contract_type: string | null; contact: string | null; department: string | null; company: string | null; closes_on: string | null }
+
+// ── Início: destaques da coluna direita ─────────────────────────
+export interface HighlightPerson { uuid: string; name: string; avatar_url: string | null; job_title?: string | null }
+export interface HomeHighlights {
+  birthdays_today: HighlightPerson[]
+  absences: { person: HighlightPerson; kind: 'vacation'; label: string; starts_on: string; ends_on: string; ongoing: boolean }[]
+  new_hires: { person: HighlightPerson; department: string | null; hired_at: string }[]
+  jobs: { uuid: string; title: string; department: string | null; contract_type: string | null; closes_on: string | null }[]
+  events: { type: 'event' | 'holiday'; title: string; date: string; time: string | null; subtitle: string | null }[]
+}
