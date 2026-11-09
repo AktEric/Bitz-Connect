@@ -119,19 +119,17 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
 
   return (
     <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-ink-900 via-brand-800 to-brand-600 p-5 text-white shadow-lg sm:p-6">
-      <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
-          <span className={cn('h-2 w-2 rounded-full', ui.dot)} /> {ui.label}
-        </span>
-        <span className="text-xs capitalize text-brand-100">{date}</span>
-      </div>
+      <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
+        <span className={cn('h-2 w-2 rounded-full', ui.dot)} /> {ui.label}
+      </span>
 
-      <p className={cn('mt-4 font-semibold tabular-nums tracking-tight', compact ? 'text-4xl' : 'text-5xl sm:text-6xl')}>{time}</p>
+      <p className={cn('mt-3 font-semibold tabular-nums tracking-tight', compact ? 'text-4xl' : 'text-5xl sm:text-6xl')}>{time}</p>
+      <p className="mt-0.5 text-sm text-white/80">{date.charAt(0).toUpperCase() + date.slice(1)}</p>
 
       <div className="mt-4">
-        <div className="mb-1 flex justify-between text-xs text-brand-100">
-          <span>Hoje: {data ? fmtMinutes(live) : '—'}</span>
-          <span>{dayOff ? 'Hoje é folga na sua escala' : `Jornada: ${data ? fmtMinutes(data.daily_minutes) : '8h00'}`}</span>
+        <div className="mb-1.5 grid grid-cols-2 gap-3">
+          <div><p className="text-[11px] uppercase tracking-wide text-white/70">Hoje</p><p className="text-sm font-semibold tabular-nums">{data ? fmtMinutes(live) : '—'}</p></div>
+          <div className="text-right"><p className="text-[11px] uppercase tracking-wide text-white/70">Jornada</p><p className="text-sm font-semibold tabular-nums">{dayOff ? 'Folga hoje' : data ? fmtMinutes(data.daily_minutes) : '8h00'}</p></div>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-white/20">
           <div className="h-full rounded-full bg-white transition-all" style={{ width: `${pct}%` }} />

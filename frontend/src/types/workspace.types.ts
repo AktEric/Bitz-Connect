@@ -18,7 +18,7 @@ export interface WorkspaceSummary {
 
 export type Capability =
   | 'feed.view' | 'feed.post' | 'feed.moderate'
-  | 'jobs.apply' | 'jobs.manage' | 'marketplace.view' | 'marketplace.sell' | 'marketplace.moderate'
+  | 'benefits.view' | 'benefits.manage' | 'jobs.apply' | 'jobs.manage' | 'marketplace.view' | 'marketplace.sell' | 'marketplace.moderate'
   | 'people.view' | 'people.manage' | 'career.manage' | 'areas.manage' | 'invites.manage' | 'onboarding.view'
   | 'roles.view' | 'roles.manage' | 'security.view' | 'security.manage' | 'audit.view'
   | 'calendar.manage' | 'calendar.holiday' | 'climate.manage' | 'climate.results'
@@ -72,6 +72,7 @@ export interface WorkspaceInvite {
   email: string | null
   department: string | null
   job_title: string | null
+  benefit_package?: string | null
   max_uses: number
   uses: number | null
   expires_at: string | null

@@ -33,6 +33,8 @@ class WorkspacePermissions
         $caps = [
             'feed.view'  => true,
             'jobs.apply' => true,
+            'benefits.view'    => true,
+            'benefits.manage'  => $admin,
             'marketplace.view' => true,
             'marketplace.sell' => true,
             'marketplace.moderate' => $admin,

@@ -53,7 +53,12 @@ class CompanyInviteController extends Controller
             'job_title'       => ['nullable', 'string', 'max:120'],
             'max_uses'        => ['nullable', 'integer', 'min:1', 'max:1000'],
             'expires_in_days' => ['nullable', 'integer', 'min:1', 'max:90'],
+            'benefit_package_uuid' => ['nullable', 'uuid'],
         ]);
+        $package = ! empty($data['benefit_package_uuid']) ? \App\Models\BenefitPackage::where('hotel_id', $hotel->id)->where('uuid', $data['benefit_package_uuid'])->first() : null;
+        if (! empty($data['benefit_package_uuid']) && ! $package) {
+            return $this->notFound('Pacote de benefícios não encontrado.');
+        }
 
         $departmentId = null;
         if (! empty($data['department_uuid'])) {
@@ -72,6 +77,7 @@ class CompanyInviteController extends Controller
             'email'         => isset($data['email']) ? Str::lower($data['email']) : null,
             'department_id' => $departmentId,
             'job_title'     => $data['job_title'] ?? null,
+            'benefit_package_id' => $package?->id,
             'max_uses'      => $data['max_uses'] ?? (isset($data['email']) ? 1 : 50),
             'expires_at'    => now()->addDays($data['expires_in_days'] ?? 14),
         ]);
@@ -148,6 +154,11 @@ class CompanyInviteController extends Controller
                 ? $existing->update($attributes)
                 : HotelUser::create($attributes + ['hotel_id' => $invite->hotel_id, 'user_id' => $user->id]);
 
+            // pacote de benefícios escolhido no convite
+            if ($invite->benefit_package_id && ($pkg = \App\Models\BenefitPackage::find($invite->benefit_package_id))) {
+                app(\App\Domain\Workspace\Services\Benefits::class)->applyPackage($pkg, $invite->hotel, $user->id, $invite->created_by);
+            }
+
             $invite->increment('uses');
 
             return ['hotel' => $invite->hotel, 'already' => false];
@@ -179,6 +190,7 @@ class CompanyInviteController extends Controller
             'email'      => $invite->email,
             'department' => $invite->department?->name,
             'job_title'  => $invite->job_title,
+            'benefit_package' => $invite->benefit_package_id ? \App\Models\BenefitPackage::where('id', $invite->benefit_package_id)->value('name') : null,
             'max_uses'   => $invite->max_uses,
             'uses'       => $invite->uses,
             'expires_at' => $invite->expires_at?->toISOString(),

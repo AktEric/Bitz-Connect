@@ -104,11 +104,11 @@ export default function BiancaChat({ workspace, className }: Props) {
           aria-label="Abrir a central de ajuda (Bianca)"
           title="Precisa de ajuda? Fale com a Bianca"
           className={cn(
-            'fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-brand-600 px-4 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 lg:bottom-5 lg:right-5',
+            'group fixed bottom-20 right-4 z-40 flex items-center rounded-full bg-brand-600 p-1 text-sm font-medium text-white shadow-lg transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 lg:bottom-4 lg:right-4',
             className,
           )}
         >
-          <BiancaAvatar className="-ml-2 h-9 w-9 ring-2 ring-white/60" /> <span className="hidden sm:inline">Fale com a Bianca</span>
+          <BiancaAvatar className="h-11 w-11 ring-2 ring-white/60" /><span className="hidden max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 group-hover:ml-2 group-hover:mr-3 group-hover:max-w-[12rem] group-hover:opacity-100 group-focus-visible:ml-2 group-focus-visible:mr-3 group-focus-visible:max-w-[12rem] group-focus-visible:opacity-100 sm:inline">Fale com a Bianca</span>
         </button>
       )}
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Moon, Sun, Globe, CheckCircle2, ChevronDown, Store, UserCog,
+  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Moon, Sun, Globe, CheckCircle2, ChevronDown, Gift, Store, UserCog,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import type { Capability } from '@/types/workspace.types'
@@ -82,6 +82,7 @@ function WorkspaceShell() {
       items: [
         { to: 'solicitacoes', label: 'Férias e solicitações', Icon: ClipboardList, badge: can('requests.review') ? 0 : c.my_open_requests },
         { to: 'recebimentos', label: 'Holerites e recebimentos', Icon: Wallet, badge: c.new_payslips },
+        { to: 'beneficios', label: 'Meus benefícios', Icon: Gift },
         { to: 'metas', label: 'Metas', Icon: Target },
         { to: 'desenvolvimento', label: 'Desenvolvimento', Icon: GraduationCap },
         { to: 'pesquisas', label: 'Pesquisa de clima', Icon: HeartPulse },
@@ -164,6 +165,7 @@ function WorkspaceShell() {
                   <div className="px-3 py-2">
                     <p className="truncate text-sm font-semibold text-gray-900">{user?.name}</p>
                     <p className="truncate text-xs text-gray-400">{roleLabel}</p>
+                    <p className="mt-0.5 text-[10px] text-gray-300" title="Data e hora em que esta versão do sistema foi gerada">Versão de {new Date(__BUILD_TIME__).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                   <Link to={`/w/${slug}/perfil`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><Users className="h-4 w-4" /> Meu perfil</Link>
                   <Link to={`/w/${slug}/seguranca`} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"><ShieldCheck className="h-4 w-4" /> Segurança</Link>
@@ -187,7 +189,7 @@ function WorkspaceShell() {
 
         <ShortcutsBar slug={slug} items={groups.flatMap((g) => g.items)} />
 
-        <main id="conteudo" tabIndex={-1} className="min-w-0 px-3 pb-24 pt-4 outline-none sm:px-5 lg:px-6 lg:pb-8 lg:pt-6 2xl:px-8">
+        <main id="conteudo" tabIndex={-1} className="min-w-0 px-3 pb-24 pt-4 outline-none sm:px-5 lg:px-6 lg:pb-24 lg:pt-6 2xl:px-8">
           {info.me.needs_two_factor && (
             <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
               <ShieldCheck className="h-5 w-5 flex-shrink-0" />

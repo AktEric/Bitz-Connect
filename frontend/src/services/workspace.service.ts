@@ -1,5 +1,6 @@
 import api from './api'
 import { getDeviceKey } from '@/pages/workspace/deviceKey'
+import type { BenefitInput, BenefitList, BenefitPackage, BenefitTypes } from '@/types/benefits.types'
 import type { ApiResponse } from '@/types/api.types'
 import type {
   DevelopmentItem, DevelopmentPlan, FeedComment, FeedPost, Goal, GoalSummaryRow, InvitePreview,
@@ -61,6 +62,20 @@ const workspaceService = {
   myProfile: (slug: string) => get<MyProfile>(`${w(slug)}/me/profile`),
   saveMyProfile: (slug: string, body: Partial<PersonProfileFields> & { birthday_visible?: boolean }) => api.put<ApiResponse<MyProfile>>(`${w(slug)}/me/profile`, body).then((r) => r.data.data),
   personCard: (slug: string, uuid: string) => get<PersonCard>(`${w(slug)}/people/${uuid}/profile`),
+  // Benefícios
+  myBenefits: (slug: string) => get<BenefitList>(`${w(slug)}/me/benefits`),
+  personBenefits: (slug: string, uuid: string) => get<BenefitList>(`${w(slug)}/people/${uuid}/benefits`),
+  addBenefit: (slug: string, uuid: string, body: BenefitInput) => post<BenefitList>(`${w(slug)}/people/${uuid}/benefits`, body),
+  updateBenefit: (slug: string, uuid: string, id: string, body: BenefitInput) => api.put<ApiResponse<BenefitList>>(`${w(slug)}/people/${uuid}/benefits/${id}`, body).then((r) => r.data.data),
+  deleteBenefit: (slug: string, uuid: string, id: string) => api.delete<ApiResponse<BenefitList>>(`${w(slug)}/people/${uuid}/benefits/${id}`).then((r) => r.data.data),
+  applyBenefitPackage: (slug: string, uuid: string, packageUuid: string) => post<BenefitList>(`${w(slug)}/people/${uuid}/benefits/apply-package`, { package_uuid: packageUuid }),
+  benefitTypes: (slug: string) => get<BenefitTypes>(`${w(slug)}/benefit-types`),
+  createBenefitType: (slug: string, body: { name: string; color: string }) => post<BenefitTypes>(`${w(slug)}/benefit-types`, body),
+  updateBenefitType: (slug: string, uuid: string, body: { name?: string; color?: string; active?: boolean }) => patch<BenefitTypes>(`${w(slug)}/benefit-types/${uuid}`, body),
+  benefitPackages: (slug: string) => get<{ packages: BenefitPackage[] }>(`${w(slug)}/benefit-packages`),
+  createBenefitPackage: (slug: string, body: { name: string; items: { benefit_type_uuid: string; amount: number | null; deposit_day: number | null }[] }) => post<{ packages: BenefitPackage[] }>(`${w(slug)}/benefit-packages`, body),
+  updateBenefitPackage: (slug: string, uuid: string, body: { name: string; items: { benefit_type_uuid: string; amount: number | null; deposit_day: number | null }[] }) => api.put<ApiResponse<{ packages: BenefitPackage[] }>>(`${w(slug)}/benefit-packages/${uuid}`, body).then((r) => r.data.data),
+  deleteBenefitPackage: (slug: string, uuid: string) => api.delete<ApiResponse<{ packages: BenefitPackage[] }>>(`${w(slug)}/benefit-packages/${uuid}`).then((r) => r.data.data),
   salaryStatus: (slug: string) => get<{ configured: boolean }>(`${w(slug)}/me/salary`),
   revealSalary: (slug: string) => post<{ salary: number | null; currency: 'BRL' }>(`${w(slug)}/me/salary/reveal`, {}),
   setSalary: (slug: string, uuid: string, salary: number | null) => api.put<ApiResponse<{ configured: boolean }>>(`${w(slug)}/people/${uuid}/salary`, { salary }).then((r) => r.data.data),
@@ -123,7 +138,7 @@ const workspaceService = {
 
   // Convites
   invites: (slug: string) => get<WorkspaceInvite[]>(`${w(slug)}/invites`),
-  createInvite: (slug: string, body: { email?: string | null; department_uuid?: string | null; job_title?: string | null; max_uses?: number; expires_in_days?: number }) =>
+  createInvite: (slug: string, body: { email?: string | null; department_uuid?: string | null; job_title?: string | null; benefit_package_uuid?: string | null; max_uses?: number; expires_in_days?: number }) =>
     post<WorkspaceInvite>(`${w(slug)}/invites`, body),
   revokeInvite: (slug: string, uuid: string) => del(`${w(slug)}/invites/${uuid}`),
   invitePreview: (token: string) => get<InvitePreview>(`/invites/${token}`),
