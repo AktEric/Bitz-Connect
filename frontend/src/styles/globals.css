@@ -166,3 +166,9 @@
 .dark .ws-rail .bg-white { background-color: rgb(124 58 237 / 0.35); }
 .dark .bg-amber-100 { background-color: rgb(245 158 11 / 0.16); }
 .dark .text-fuchsia-50 { color: #181326; }
+
+/* Workspace: fundo cinza-azulado e cartões sem borda, com sombra suave (cartões "flutuam" sobre o fundo) */
+.ws-bg { background-color: #f1f3f8; }
+.dark .ws-bg { background-color: #0f1117; }
+.ws-card { box-shadow: 0 1px 2px rgb(16 24 40 / 0.04), 0 4px 12px -2px rgb(16 24 40 / 0.06); }
+.dark .ws-card { box-shadow: 0 0 0 1px #232734; }

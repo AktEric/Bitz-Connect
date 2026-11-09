@@ -21,7 +21,7 @@ function Carousel<T>({ title, items, render, footer }: { title: string; items: T
   const go = (d: number) => setI((at + d + n) % n)
 
   return (
-    <Panel className="p-5">
+    <Panel>
       <h2 className="mb-4 text-center font-semibold text-gray-900">{title}</h2>
       <div className="flex items-center gap-2" aria-roledescription="carrossel" aria-label={title}>
         {n > 1 && (
@@ -143,7 +143,7 @@ export function BirthdaysCard({ slug }: { slug: string }) {
   if (!people.length) return null
 
   return (
-    <Panel className="p-5">
+    <Panel>
       <h2 className="mb-4 flex items-center gap-2 font-semibold text-gray-900"><PartyPopper className="h-5 w-5 text-pink-500" /> Aniversariantes do dia</h2>
       <ul className="flex gap-4 overflow-x-auto pb-1">
         {people.map((p) => (

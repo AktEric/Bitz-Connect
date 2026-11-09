@@ -47,10 +47,10 @@ export default function WorkspaceLayout() {
 
   useEffect(() => { setDrawer(false); setMenu(false); setExpanded(false) }, [location.pathname])
 
-  if (isLoading) return <div className="min-h-screen bg-slate-50"><Spinner /></div>
+  if (isLoading) return <div className="ws-bg min-h-screen"><Spinner /></div>
   if (isError || !info) {
     return (
-      <div className="min-h-screen bg-slate-50 px-4 py-20 text-center">
+      <div className="ws-bg min-h-screen px-4 py-20 text-center">
         <p className="font-medium text-gray-700">Você não tem acesso a este Workspace.</p>
         <p className="mt-1 text-sm text-gray-400">O acesso é liberado após o vínculo com a empresa ser aprovado.</p>
         <Link to="/w" className="mt-4 inline-block text-sm font-medium text-violet-600">Ver minhas empresas</Link>
@@ -115,7 +115,7 @@ export default function WorkspaceLayout() {
   const openPerson = (p: ChatPerson) => { setDirect({ ...p }); setChatOpen(true) }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="ws-bg min-h-screen">
       <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
       <WorkspaceRail groups={groups} expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
 

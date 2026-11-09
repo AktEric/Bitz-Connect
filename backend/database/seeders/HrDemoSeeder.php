@@ -598,11 +598,9 @@ class HrDemoSeeder extends Seeder
 
     private function calendar(): void
     {
+        // feriados nacionais já vêm do CalendarService; aqui só o que é da empresa
         $events = [
-            ['Proclamação da República', 'holiday', '2026-11-15', null, null, null, null, null],
-            ['Dia da Consciência Negra', 'holiday', '2026-11-20', null, null, null, null, null],
-            ['Natal', 'holiday', '2026-12-25', null, null, null, null, null],
-            ['Confraternização Universal', 'holiday', '2027-01-01', null, null, null, null, null],
+            ['Aniversário de Gramado (feriado municipal)', 'holiday', '2026-12-15', null, null, null, null, null],
             ['Integração de novos colaboradores', 'event', '2026-11-12', '09:00', '12:00', 'Sala Araucária', null, 'Apresentação da empresa, políticas, segurança e tour pelo hotel.'],
             ['Treinamento NR-10 (reciclagem)', 'event', '2026-11-18', '08:00', '17:00', 'Centro de eventos', 'Manutenção', null],
             ['Treinamento de Boas Práticas na cozinha', 'event', '2026-11-24', '14:00', '16:00', 'Cozinha central', 'Alimentos & Bebidas', 'Obrigatório para toda a brigada.'],
