@@ -22,10 +22,10 @@ export function PollBlock({ slug, post }: { slug: string; post: FeedPost }) {
         const mine = poll.my_vote === o.uuid
         return (
           <button key={o.uuid} type="button" disabled={poll.closed || vote.isPending} onClick={() => vote.mutate(o.uuid)} aria-pressed={mine}
-            className={`relative block w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-sm ${mine ? 'border-violet-500' : 'border-gray-200'} ${poll.closed ? 'cursor-default' : 'hover:border-violet-300'}`}>
-            <span className="absolute inset-y-0 left-0 bg-violet-100/70" style={{ width: `${pct}%` }} aria-hidden />
+            className={`relative block w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-sm ${mine ? 'border-brand-500' : 'border-gray-200'} ${poll.closed ? 'cursor-default' : 'hover:border-brand-300'}`}>
+            <span className="absolute inset-y-0 left-0 bg-brand-100/70" style={{ width: `${pct}%` }} aria-hidden />
             <span className="relative flex items-center justify-between gap-3">
-              <span className={mine ? 'font-semibold text-violet-800' : 'text-gray-800'}>{mine ? '✓ ' : ''}{o.label}</span>
+              <span className={mine ? 'font-semibold text-brand-800' : 'text-gray-800'}>{mine ? '✓ ' : ''}{o.label}</span>
               <span className="flex-shrink-0 text-xs text-gray-500">{pct}% · {o.votes}</span>
             </span>
           </button>
@@ -69,7 +69,7 @@ export function PollModal({ slug, onClose, defaultDept = '' }: { slug: string; o
               </div>
             ))}
           </div>
-          {options.length < 6 && <button type="button" className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-violet-600" onClick={() => setOptions((a) => [...a, ''])}><Plus className="h-4 w-4" /> Adicionar opção</button>}
+          {options.length < 6 && <button type="button" className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand-600" onClick={() => setOptions((a) => [...a, ''])}><Plus className="h-4 w-4" /> Adicionar opção</button>}
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className={labelCls} htmlFor="p-c">Encerra em (opcional)</label><input id="p-c" type="date" className={inputCls} value={closes} onChange={(e) => setCloses(e.target.value)} /></div>

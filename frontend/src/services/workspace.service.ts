@@ -6,7 +6,7 @@ import type {
   Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult, PersonCard, PersonProfileFields, MyProfile, PersonRecord, JobItem, JobApplicationItem, PublicJob, HomeHighlights,
+  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult, PersonCard, PersonProfileFields, ReactionList, CareerPayload, CareerInput, PersonOrg, MyProfile, PersonRecord, JobItem, JobApplicationItem, PublicJob, HomeHighlights,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -61,6 +61,11 @@ const workspaceService = {
   myProfile: (slug: string) => get<MyProfile>(`${w(slug)}/me/profile`),
   saveMyProfile: (slug: string, body: Partial<PersonProfileFields> & { birthday_visible?: boolean }) => api.put<ApiResponse<MyProfile>>(`${w(slug)}/me/profile`, body).then((r) => r.data.data),
   personCard: (slug: string, uuid: string) => get<PersonCard>(`${w(slug)}/people/${uuid}/profile`),
+  personOrg: (slug: string, uuid: string) => get<PersonOrg>(`${w(slug)}/people/${uuid}/org`),
+  career: (slug: string, uuid: string) => get<CareerPayload>(`${w(slug)}/people/${uuid}/career`),
+  addCareer: (slug: string, uuid: string, body: CareerInput) => post<CareerPayload>(`${w(slug)}/people/${uuid}/career`, body),
+  updateCareer: (slug: string, uuid: string, entry: string, body: CareerInput) => api.put<ApiResponse<CareerPayload>>(`${w(slug)}/people/${uuid}/career/${entry}`, body).then((r) => r.data.data),
+  deleteCareer: (slug: string, uuid: string, entry: string) => api.delete<ApiResponse<CareerPayload>>(`${w(slug)}/people/${uuid}/career/${entry}`).then((r) => r.data.data),
   personRecord: (slug: string, uuid: string) => get<PersonRecord>(`${w(slug)}/people/${uuid}/record`),
   savePersonRecord: (slug: string, uuid: string, body: Partial<PersonRecord>) => api.put<ApiResponse<PersonRecord>>(`${w(slug)}/people/${uuid}/record`, body).then((r) => r.data.data),
   createPoll: (slug: string, body: { question: string; options: string[]; closes_on?: string | null; department_uuid?: string | null }) => post<FeedPost>(`${w(slug)}/polls`, body),
@@ -135,6 +140,7 @@ const workspaceService = {
   },
   ackPost: (slug: string, uuid: string) => post<{ acked_at: string }>(`${w(slug)}/feed/${uuid}/ack`),
   ackPanel: (slug: string, uuid: string) => get<AckPanel>(`${w(slug)}/feed/${uuid}/acks`),
+  postReactions: (slug: string, uuid: string) => get<ReactionList>(`${w(slug)}/feed/${uuid}/reactions`),
   reactPost: (slug: string, uuid: string, reaction: ReactionType | null) =>
     post<{ reactions: Record<ReactionType, number>; my_reaction: ReactionType | null; likes_count: number }>(`${w(slug)}/feed/${uuid}/react`, { reaction }),
   deletePost: (slug: string, uuid: string) => del(`${w(slug)}/feed/${uuid}`),

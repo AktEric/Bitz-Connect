@@ -15,7 +15,7 @@ const PADDING = 8
  * tendência de um indicador nos últimos 30 dias.
  * Sprint: monetization-hotelconnect-pro (Empresa PRO)
  */
-export function TrendChart({ title, data, color = '#7c3aed' }: TrendChartProps) {
+export function TrendChart({ title, data, color = '#0057d8' }: TrendChartProps) {
   const max = Math.max(1, ...data.map((d) => d.count))
   const total = data.reduce((sum, d) => sum + d.count, 0)
 

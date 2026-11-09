@@ -157,7 +157,7 @@ export default function JobDetailPage() {
           <div className="mt-3 flex justify-end">
             <button
               onClick={() => setShowShare(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 transition-all"
+              className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 transition-all"
             >
               <Share2 className="h-4 w-4" />
               Compartilhar vaga

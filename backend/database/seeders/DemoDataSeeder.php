@@ -41,7 +41,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * Cenário completo de demonstração do ConnectHotel: 12 hotéis, 30
+ * Cenário completo de demonstração do Bitz Connect: 12 hotéis, 30
  * profissionais (10 consultores PRO), vagas, candidaturas, feed, stories,
  * vídeos, cursos, mentorias, avaliações e conversas — tudo com conteúdo de
  * hotelaria escrito à mão e fotos/vídeos reais do tema.

@@ -127,7 +127,7 @@ export default function CreateGroupModal({ onClose, onCreated }: Props) {
               </label>
 
               <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-3 hover:bg-gray-50">
-                <input type="checkbox" checked={announceMode} onChange={(e) => setAnnounceMode(e.target.checked)} className="mt-0.5 rounded border-gray-300 text-violet-600" />
+                <input type="checkbox" checked={announceMode} onChange={(e) => setAnnounceMode(e.target.checked)} className="mt-0.5 rounded border-gray-300 text-brand-600" />
                 <span className="text-sm">
                   <span className="flex items-center gap-1.5 font-medium text-gray-800"><Megaphone className="h-4 w-4 text-amber-500" />Modo aviso</span>
                   <span className="text-gray-500">Somente administradores enviam mensagens; os demais apenas leem.</span>
@@ -138,7 +138,7 @@ export default function CreateGroupModal({ onClose, onCreated }: Props) {
                 <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-gray-700"><Users className="h-4 w-4" />Participantes</p>
 
                 <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-                  <input type="checkbox" checked={allEmployees} onChange={(e) => setAllEmployees(e.target.checked)} className="rounded border-gray-300 text-violet-600" />
+                  <input type="checkbox" checked={allEmployees} onChange={(e) => setAllEmployees(e.target.checked)} className="rounded border-gray-300 text-brand-600" />
                   Todos da empresa
                 </label>
 
@@ -155,7 +155,7 @@ export default function CreateGroupModal({ onClose, onCreated }: Props) {
                                 type="button"
                                 key={d.uuid}
                                 onClick={() => toggle(deptIds, setDeptIds, d.uuid)}
-                                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${on ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${on ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                               >
                                 {d.name} <span className="text-gray-400">({d.members_count})</span>
                               </button>
@@ -175,7 +175,7 @@ export default function CreateGroupModal({ onClose, onCreated }: Props) {
                       {people.map((m) => (
                         <li key={m.uuid}>
                           <label className="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-gray-50">
-                            <input type="checkbox" checked={memberIds.includes(m.uuid)} onChange={() => toggle(memberIds, setMemberIds, m.uuid)} className="rounded border-gray-300 text-violet-600" />
+                            <input type="checkbox" checked={memberIds.includes(m.uuid)} onChange={() => toggle(memberIds, setMemberIds, m.uuid)} className="rounded border-gray-300 text-brand-600" />
                             <Avatar src={m.avatar_url} name={m.name} size="xs" />
                             <span className="flex-1 truncate text-sm text-gray-800">{m.name}</span>
                             {m.department && <span className="text-xs text-gray-400">{m.department.name}</span>}

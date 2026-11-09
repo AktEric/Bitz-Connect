@@ -80,7 +80,7 @@ export default function MentorshipsPage() {
         open={upgradeOpen}
         onClose={() => setUpgradeOpen(false)}
         title="Ofereça mentorias"
-        description="A oferta de mentorias é exclusiva do ConnectHotel PRO - Consultor."
+        description="A oferta de mentorias é exclusiva do Bitz Connect PRO - Consultor."
       />
     </div>
   )

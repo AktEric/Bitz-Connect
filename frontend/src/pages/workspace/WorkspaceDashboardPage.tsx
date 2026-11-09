@@ -1,3 +1,4 @@
+import { useCan } from './permissions'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, BadgeCheck, CalendarDays, Clock, ClipboardList, Hourglass, Newspaper, ShieldCheck, Users } from 'lucide-react'
@@ -19,7 +20,7 @@ function Stat({ label, value, hint, tone = 'default' }: { label: string; value: 
 function Card({ title, Icon, children }: { title: string; Icon: typeof Users; children: ReactNode }) {
   return (
     <Panel>
-      <h2 className="mb-3 flex items-center gap-2 font-semibold text-gray-900"><Icon className="h-4 w-4 text-violet-500" /> {title}</h2>
+      <h2 className="mb-3 flex items-center gap-2 font-semibold text-gray-900"><Icon className="h-4 w-4 text-brand-500" /> {title}</h2>
       {children}
     </Panel>
   )
@@ -29,15 +30,16 @@ const TYPE_LABEL: Record<string, string> = { vacation: 'Férias', document: 'Doc
 
 /** Painel da diretoria: números agregados da empresa (nada aqui identifica o saldo ou a falta de uma pessoa). */
 export default function WorkspaceDashboardPage() {
-  const { slug, info } = useWs()
+  const { slug } = useWs()
+  const canView = useCan('dashboard.view')
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['ws', slug, 'dashboard'],
     queryFn: () => workspaceService.dashboard(slug),
-    enabled: !!info.me.can_see_dashboard,
+    enabled: canView,
     staleTime: 60_000,
   })
 
-  if (!info.me.can_see_dashboard) return <Empty text="O painel da diretoria é exclusivo do dono, do RH e da diretoria." />
+  if (!canView) return <Empty text="O painel da diretoria é exclusivo do dono, do RH e da diretoria." />
   if (isLoading) return <Spinner />
   if (isError || !data) return <Empty text={errMsg(error)} />
 
@@ -144,7 +146,7 @@ export default function WorkspaceDashboardPage() {
                     : <span className="text-gray-300"> · banco oculto (menos de {data.min_group} pessoas)</span>}
                 </span>
               </div>
-              <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-violet-500" style={{ width: `${Math.round((d.headcount / maxHead) * 100)}%` }} /></div>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-brand-500" style={{ width: `${Math.round((d.headcount / maxHead) * 100)}%` }} /></div>
             </li>
           ))}
         </ul>

@@ -14,7 +14,7 @@ interface StoryRingProps {
 export function StoryRing({ src, name, label, onClick }: StoryRingProps) {
   return (
     <button onClick={onClick} className="flex w-16 flex-shrink-0 flex-col items-center gap-1">
-      <div className="rounded-full bg-gradient-to-tr from-[#4D14D9] to-[#8E5BFF] p-[2px]">
+      <div className="rounded-full bg-gradient-to-tr from-[#0b0d12] to-[#4d8ff5] p-[2px]">
         <div className="rounded-full bg-white p-[2px]">
           <Avatar src={src} name={name} size="lg" />
         </div>

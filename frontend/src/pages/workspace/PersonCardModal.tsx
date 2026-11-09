@@ -25,7 +25,7 @@ export function ProfileFacts({ profile }: { profile: Record<string, string | nul
       <ul className="space-y-1.5">
         {rows.map(({ Icon, label, v }) => (
           <li key={label} className="flex items-start gap-2 text-sm">
-            <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-violet-500" />
+            <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-500" />
             <span><span className="text-gray-500">{label}: </span><span className="text-gray-900">{v}</span></span>
           </li>
         ))}

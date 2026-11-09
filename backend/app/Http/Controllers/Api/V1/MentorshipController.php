@@ -56,7 +56,7 @@ class MentorshipController extends Controller
     public function store(MentorshipRequest $request): JsonResponse
     {
         if ($request->user()->cannot('sell_mentorships')) {
-            return $this->forbidden('A oferta de mentorias é exclusiva do ConnectHotel PRO - Consultor.');
+            return $this->forbidden('A oferta de mentorias é exclusiva do Bitz Connect PRO - Consultor.');
         }
 
         $mentorship = $this->mentorships->create(CreateMentorshipDTO::fromArray($request->validated(), $request->user()->id));

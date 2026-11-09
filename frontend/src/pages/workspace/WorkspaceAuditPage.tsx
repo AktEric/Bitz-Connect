@@ -84,7 +84,7 @@ export default function WorkspaceAuditPage() {
         <Panel className="divide-y divide-gray-50 p-0">
           {items.map((l, i) => (
             <div key={`${l.created_at}-${i}`} className="flex flex-wrap items-start gap-3 px-4 py-3 text-sm">
-              <ScrollText className="mt-0.5 h-4 w-4 flex-shrink-0 text-violet-500" />
+              <ScrollText className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-500" />
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-gray-900">{label(l.action)}</p>
                 <p className="flex flex-wrap items-center gap-x-2 text-xs text-gray-500">

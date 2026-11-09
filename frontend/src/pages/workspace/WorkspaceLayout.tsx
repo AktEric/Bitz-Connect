@@ -5,6 +5,7 @@ import {
   Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Moon, Sun, Globe, CheckCircle2, ChevronDown,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
+import type { Capability } from '@/types/workspace.types'
 import { useAuth } from '@/hooks/useAuth'
 import { Avatar } from '@/components/ui/Avatar'
 import NotificationBell from '@/components/common/NotificationBell'
@@ -53,13 +54,14 @@ export default function WorkspaceLayout() {
       <div className="ws-bg min-h-screen px-4 py-20 text-center">
         <p className="font-medium text-gray-700">Você não tem acesso a este Workspace.</p>
         <p className="mt-1 text-sm text-gray-400">O acesso é liberado após o vínculo com a empresa ser aprovado.</p>
-        <Link to="/w" className="mt-4 inline-block text-sm font-medium text-violet-600">Ver minhas empresas</Link>
+        <Link to="/w" className="mt-4 inline-block text-sm font-medium text-brand-600">Ver minhas empresas</Link>
       </div>
     )
   }
 
   const c = info.counts
-  const lead = info.me.is_admin || info.me.is_manager
+  // O menu só mostra o que a pessoa pode usar: tudo vem de `info.me.permissions` (ver permissions.tsx).
+  const can = (cap: Capability) => info.me.permissions?.includes(cap) ?? false
   const groups: NavGroup[] = [
     {
       title: 'Meu dia',
@@ -73,7 +75,7 @@ export default function WorkspaceLayout() {
     {
       title: 'Meu RH',
       items: [
-        { to: 'solicitacoes', label: 'Férias e solicitações', Icon: ClipboardList, badge: lead ? 0 : c.my_open_requests },
+        { to: 'solicitacoes', label: 'Férias e solicitações', Icon: ClipboardList, badge: can('requests.review') ? 0 : c.my_open_requests },
         { to: 'recebimentos', label: 'Holerites e recebimentos', Icon: Wallet, badge: c.new_payslips },
         { to: 'metas', label: 'Metas', Icon: Target },
         { to: 'desenvolvimento', label: 'Desenvolvimento', Icon: GraduationCap },
@@ -82,26 +84,18 @@ export default function WorkspaceLayout() {
     },
     { title: 'Empresa', items: [{ to: 'equipe', label: 'Pessoas', Icon: Users }, { to: 'organograma', label: 'Organograma', Icon: Network }, { to: 'vagas', label: 'Vagas', Icon: Briefcase }] },
   ]
-  if (info.me.can_see_dashboard) {
+  const company = groups[groups.length - 1].items
+  if (can('dashboard.view')) {
     groups.splice(groups.length - 1, 0, { title: 'Diretoria', items: [{ to: 'painel', label: 'Painel da diretoria', Icon: LayoutDashboard }] })
   }
-  if (info.me.is_admin) {
-    groups[groups.length - 1].items.push({ to: 'comecar', label: 'Primeiros passos', Icon: Rocket })
-    groups[groups.length - 1].items.push({ to: 'configuracoes', label: 'Papéis e estrutura', Icon: Settings2 })
-    groups[groups.length - 1].items.push({ to: 'auditoria', label: 'Auditoria', Icon: ScrollText })
-  }
-  if (lead || info.me.can_see_dashboard) {
-    groups[groups.length - 1].items.push({ to: 'relatorios', label: 'Relatórios', Icon: FileBarChart })
-  }
-  if (lead) {
-    groups.splice(2, 0, {
-      title: 'Gestão',
-      items: [
-        { to: 'solicitacoes?aba=aprovar', label: 'Aprovações', Icon: CheckCircle2, badge: c.requests_to_review },
-        { to: 'ponto?aba=time', label: 'Ponto do time', Icon: Clock },
-      ],
-    })
-  }
+  if (can('onboarding.view')) company.push({ to: 'comecar', label: 'Primeiros passos', Icon: Rocket })
+  if (can('roles.view')) company.push({ to: 'configuracoes', label: 'Papéis e estrutura', Icon: Settings2 })
+  if (can('audit.view')) company.push({ to: 'auditoria', label: 'Auditoria', Icon: ScrollText })
+  if (can('reports.view')) company.push({ to: 'relatorios', label: 'Relatórios', Icon: FileBarChart })
+  const management: NavItem[] = []
+  if (can('requests.review')) management.push({ to: 'solicitacoes?aba=aprovar', label: 'Aprovações', Icon: CheckCircle2, badge: c.requests_to_review })
+  if (can('time.team')) management.push({ to: 'ponto?aba=time', label: 'Ponto do time', Icon: Clock })
+  if (management.length) groups.splice(2, 0, { title: 'Gestão', items: management })
   const mobileTabs: NavItem[] = [
     { to: '', label: 'Início', Icon: Home, end: true },
     { to: 'ponto', label: 'Ponto', Icon: Clock },
@@ -133,7 +127,7 @@ export default function WorkspaceLayout() {
 
           <button
             type="button" onClick={() => setSearchOpen(true)} aria-label="Buscar (Ctrl+K)"
-            className="hidden w-full items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-400 transition hover:border-violet-300 hover:bg-white md:flex"
+            className="hidden w-full items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-400 transition hover:border-brand-300 hover:bg-white md:flex"
           >
             <span className="flex-1 truncate text-left">Buscar pessoas, páginas…</span>
             <kbd className="hidden rounded border border-gray-200 px-1.5 py-0.5 text-[10px] font-normal text-gray-400 lg:block">Ctrl K</kbd>
@@ -208,7 +202,7 @@ export default function WorkspaceLayout() {
             key={label}
             to={to}
             end={end}
-            className={({ isActive }) => cn('flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium', isActive ? 'text-violet-700' : 'text-gray-500')}
+            className={({ isActive }) => cn('flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium', isActive ? 'text-brand-700' : 'text-gray-500')}
           >
             <Icon className="h-5 w-5" /> {label}
           </NavLink>

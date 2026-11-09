@@ -25,11 +25,11 @@ function NotificationIcon({ type }: { type: NotificationType }) {
     case 'connection_rejected':
     case 'connection_cancelled':      return <UserX         className={`${cls} text-gray-400`} />
     case 'new_message':
-    case 'unread_messages':           return <MessageCircle  className={`${cls} text-indigo-500`} />
+    case 'unread_messages':           return <MessageCircle  className={`${cls} text-brand-500`} />
     case 'post_liked':
     case 'comment_liked':             return <Heart          className={`${cls} text-red-500`} />
-    case 'post_commented':            return <MessageCircle  className={`${cls} text-purple-500`} />
-    case 'comment_replied':           return <Reply          className={`${cls} text-purple-400`} />
+    case 'post_commented':            return <MessageCircle  className={`${cls} text-brand-500`} />
+    case 'comment_replied':           return <Reply          className={`${cls} text-brand-400`} />
     case 'mention_in_post':
     case 'mention_in_comment':        return <AtSign         className={`${cls} text-pink-500`} />
     case 'job_application_received':  return <Briefcase      className={`${cls} text-amber-500`} />

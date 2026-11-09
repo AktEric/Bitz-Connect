@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\AuditLog;
+use App\Models\CareerEntry;
 use App\Models\Hotel;
 use App\Models\HotelUser;
 use App\Models\WorkspaceJob;
 use App\Models\WorkspaceJobApplication;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -205,9 +207,47 @@ class WorkspaceJobController extends WorkspaceBaseController
         if (! $a) {
             return $this->notFound('Candidatura não encontrada.');
         }
+        $becameHired = $data['status'] === 'hired' && $a->status !== 'hired';
         $a->update(['status' => $data['status']]);
+        if ($becameHired) {
+            $this->moveToNewRole($request, $hotel, $job, $a);
+        }
 
         return $this->success('Candidatura atualizada.', ['status' => $a->status]);
+    }
+
+    /** Contratação interna: encerra o cargo atual no histórico de carreira, abre o novo e atualiza cargo/setor da pessoa. */
+    private function moveToNewRole(Request $request, Hotel $hotel, WorkspaceJob $job, WorkspaceJobApplication $app): void
+    {
+        $member = HotelUser::with('department')->where('hotel_id', $hotel->id)->where('user_id', $app->user_id)->where('status', 'approved')->first();
+        if (! $member) {
+            return;
+        }
+        $today = now('America/Sao_Paulo')->toDateString();
+
+        DB::transaction(function () use ($hotel, $job, $member, $today) {
+            $open = CareerEntry::where('hotel_id', $hotel->id)->where('user_id', $member->user_id)->whereNull('ended_on')->get();
+            if ($open->isEmpty() && $member->job_title) {
+                // pessoa sem histórico: registra o cargo que ela ocupava até aqui
+                CareerEntry::create([
+                    'uuid' => (string) Str::uuid(), 'hotel_id' => $hotel->id, 'user_id' => $member->user_id, 'title' => $member->job_title,
+                    'department' => $member->department?->name, 'started_on' => $member->hired_at?->toDateString() ?? $today, 'ended_on' => $today, 'source' => 'manual',
+                ]);
+            }
+            $open->each(fn (CareerEntry $e) => $e->update(['ended_on' => $e->started_on->toDateString() > $today ? $e->started_on->toDateString() : $today]));
+
+            CareerEntry::create([
+                'uuid' => (string) Str::uuid(), 'hotel_id' => $hotel->id, 'user_id' => $member->user_id, 'title' => $job->title,
+                'department' => $job->department?->name ?? $member->department?->name, 'started_on' => $today, 'source' => 'job',
+                'note' => 'Contratação interna pela vaga publicada no Workspace.',
+            ]);
+            $member->forceFill(['job_title' => $job->title] + ($job->department_id ? ['department_id' => $job->department_id] : []))->save();
+        });
+
+        AuditLog::record($request, $hotel, 'career.promoted', $member->user, ['job' => $job->uuid]);
+        if ($member->user) {
+            $this->notifications->workspaceNotice($member->user, $request->user(), 'workspace_job_application', "Você foi selecionado(a): {$job->title}", 'Seu histórico de carreira foi atualizado.', $this->link($hotel, 'perfil'));
+        }
     }
 
     /** GET /public/jobs/{token} — página de divulgação (sem login), só de vagas marcadas como públicas e abertas. */

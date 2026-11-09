@@ -1,4 +1,7 @@
+import { cn } from '@/utils/cn'
+
 interface LogoProps {
+  /** Altura da marca (a largura acompanha a proporção). */
   iconClassName?: string
   textClassName?: string
   showText?: boolean
@@ -6,7 +9,8 @@ interface LogoProps {
 }
 
 /**
- * Marca oficial ConnectHotel (ícone + wordmark), conforme manual da marca.
+ * Marca Bitz Connect: logotipo "bitz" (preto e azul; branco e azul em fundo escuro) + "Connect".
+ * Sem texto, mostra só o ícone (o "b" da Bitz).
  */
 export default function Logo({
   iconClassName = 'h-8 w-8',
@@ -14,25 +18,20 @@ export default function Logo({
   showText = true,
   variant = 'default',
 }: LogoProps) {
-  const iconSrc = variant === 'white' ? '/logo-mark-white.svg' : '/logo-mark.svg'
+  if (!showText) {
+    return <img src="/logo-icon.png" alt="Bitz Connect" className={cn('rounded-lg', iconClassName)} />
+  }
 
   return (
     <>
-      <img src={iconSrc} alt="ConnectHotel" className={iconClassName} />
-      {showText && (
-        <span className={`font-bold tracking-tight ${textClassName}`}>
-          {variant === 'white' ? (
-            <span className="text-white">ConnectHotel</span>
-          ) : (
-            <>
-              <span className="bg-gradient-to-r from-[#5B21E0] to-[#4D14D9] bg-clip-text text-transparent">
-                Connect
-              </span>
-              <span className="text-[#0E1327]">Hotel</span>
-            </>
-          )}
-        </span>
-      )}
+      <img
+        src={variant === 'white' ? '/logo-bitz-word-white.png' : '/logo-bitz-word.png'}
+        alt="Bitz"
+        className={cn(iconClassName, 'w-auto')}
+      />
+      <span className={cn('font-semibold tracking-tight', textClassName, variant === 'white' ? 'text-white' : 'text-brand-600')}>
+        Connect
+      </span>
     </>
   )
 }

@@ -32,7 +32,7 @@ export default function CoursePage() {
     <div className="mx-auto max-w-3xl px-4 py-6">
       {/* Header */}
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
-        <div className="relative aspect-[3/1] w-full bg-gradient-to-br from-violet-500 to-indigo-600">
+        <div className="relative aspect-[3/1] w-full bg-gradient-to-br from-brand-500 to-ink-900">
           {course.thumbnail_url
             ? <img src={course.thumbnail_url} alt={course.title} className="h-full w-full object-cover" />
             : <div className="flex h-full w-full items-center justify-center"><GraduationCap className="h-12 w-12 text-white/70" /></div>}

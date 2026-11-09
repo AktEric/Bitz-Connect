@@ -42,7 +42,7 @@ function HotelResult({ hotel }: { hotel: Hotel }) {
       <CompanyAvatar slug={hotel.slug} name={hotel.name} logoUrl={hotel.logo_url} size="md" />
       <div className="min-w-0 flex-1">
         <span className="flex items-center gap-1 min-w-0">
-          <CompanyLink slug={hotel.slug} name={hotel.name} className="truncate font-semibold text-gray-900 hover:text-violet-600" />
+          <CompanyLink slug={hotel.slug} name={hotel.name} className="truncate font-semibold text-gray-900 hover:text-brand-600" />
           <PremiumBadge plan={hotel.plan} compact />
         </span>
         {hotel.description && (
@@ -95,7 +95,7 @@ function UserResult({ user }: { user: User }) {
       <ProfileAvatar uuid={user.uuid} name={user.name} src={user.avatar_url} size="sm" />
       <div className="min-w-0 flex-1">
         <span className="flex items-center gap-1 min-w-0">
-          <UserLink uuid={user.uuid} name={user.name} className="truncate font-semibold text-gray-900 hover:text-violet-600" />
+          <UserLink uuid={user.uuid} name={user.name} className="truncate font-semibold text-gray-900 hover:text-brand-600" />
           <PremiumBadge plan={user.plan} compact />
         </span>
         {(user.city || user.state) && (

@@ -53,10 +53,10 @@ export default function RegisterPessoaPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-indigo-50 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-brand-50 p-4">
       <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow">
-        <h1 className="mb-2 text-2xl font-bold text-indigo-900">Criar conta</h1>
-        <p className="mb-6 text-sm text-indigo-500">Cadastre-se como Pessoa</p>
+        <h1 className="mb-2 text-2xl font-bold text-brand-900">Criar conta</h1>
+        <p className="mb-6 text-sm text-brand-500">Cadastre-se como Pessoa</p>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
           {(
@@ -81,7 +81,7 @@ export default function RegisterPessoaPage() {
                 type={type}
                 autoComplete={autocomplete}
                 {...register(id)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
               {errors[id] && (
                 <p className="mt-1 text-xs text-red-600">{errors[id]?.message}</p>
@@ -96,7 +96,7 @@ export default function RegisterPessoaPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-lg bg-indigo-600 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-brand-600 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
           >
             {isSubmitting ? 'Criando conta…' : 'Criar conta'}
           </button>
@@ -104,7 +104,7 @@ export default function RegisterPessoaPage() {
 
         <p className="mt-4 text-center text-sm text-gray-600">
           Já tem conta?{' '}
-          <Link to="/login/pessoa" className="text-indigo-600 hover:underline">
+          <Link to="/login/pessoa" className="text-brand-600 hover:underline">
             Entrar
           </Link>
         </p>

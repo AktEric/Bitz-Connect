@@ -92,6 +92,52 @@ class PersonController extends WorkspaceBaseController
         return $this->success('Perfil carregado.', $this->publicCard($hotel, $target));
     }
 
+    /**
+     * GET /workspaces/{slug}/people/{uuid}/org — liderança acima, equipe direta e colegas de setor.
+     * Só nomes e cargos (o mesmo que o organograma mostra a todos).
+     */
+    public function org(Request $request, Hotel $hotel, string $uuid): JsonResponse
+    {
+        if (! $this->membership($request, $hotel)) {
+            return $this->forbidden('Você não faz parte desta empresa.');
+        }
+        $target = $this->access->memberByUuid($hotel, $uuid);
+        if (! $target) {
+            return $this->notFound('Pessoa não encontrada.');
+        }
+
+        $rows   = HotelUser::with(['user', 'department'])->where('hotel_id', $hotel->id)->where('status', 'approved')->get()->keyBy('user_id');
+        $person = fn (?HotelUser $h) => $h && $h->user ? $this->access->person($h->user, $h) : null;
+
+        // cadeia de líderes até o topo (com trava contra ciclos)
+        $leaders = [];
+        $seen    = [$target->user_id => true];
+        $cursor  = $rows->get($target->manager_id);
+        while ($cursor && ! isset($seen[$cursor->user_id]) && count($leaders) < 12) {
+            $seen[$cursor->user_id] = true;
+            $leaders[] = $person($cursor);
+            $cursor = $rows->get($cursor->manager_id);
+        }
+
+        $team = $rows->filter(fn ($h) => $h->manager_id === $target->user_id)->map($person)->filter()->values();
+        $dept = $target->department;
+        $peers = $dept
+            ? $rows->filter(fn ($h) => $h->department_id === $dept->id && $h->user_id !== $target->user_id)->map($person)->filter()->values()
+            : collect();
+
+        return $this->success('Organização carregada.', [
+            'manager' => $leaders[0] ?? null,
+            'leaders' => array_values(array_filter($leaders)),
+            'team'    => $team,
+            'department' => $dept ? [
+                'uuid' => $dept->uuid, 'name' => $dept->name,
+                'head' => $person($dept->head_id ? $rows->get($dept->head_id) : null),
+                'members_count' => $rows->where('department_id', $dept->id)->count(),
+            ] : null,
+            'peers' => $peers,
+        ]);
+    }
+
     private const RECORD_FIELDS = [
         'phone' => 30, 'zip' => 12, 'street' => 120, 'number' => 12, 'complement' => 60, 'district' => 60, 'city' => 60, 'state' => 2,
         'emergency_name' => 80, 'emergency_relation' => 40, 'emergency_phone' => 30,

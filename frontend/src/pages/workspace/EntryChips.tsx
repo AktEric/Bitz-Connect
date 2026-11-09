@@ -58,7 +58,7 @@ function DetailsModal({ slug, entry, onClose }: { slug: string; entry: TimeEntry
         <Row label="Rede">{entry.network_name ?? <span className="text-gray-400">{entry.outside_network ? 'Fora das redes autorizadas' : 'Sem rede cadastrada'}</span>}</Row>
         <Row label="Local">
           {entry.lat != null && entry.lng != null ? (
-            <a className="text-violet-700 underline" target="_blank" rel="noopener noreferrer" href={`https://www.openstreetmap.org/?mlat=${entry.lat}&mlon=${entry.lng}#map=18/${entry.lat}/${entry.lng}`}>
+            <a className="text-brand-700 underline" target="_blank" rel="noopener noreferrer" href={`https://www.openstreetmap.org/?mlat=${entry.lat}&mlon=${entry.lng}#map=18/${entry.lat}/${entry.lng}`}>
               Ver no mapa{entry.accuracy_m ? ` (±${entry.accuracy_m} m)` : ''}
             </a>
           ) : <span className="text-gray-400">Não informado</span>}
@@ -95,18 +95,18 @@ export default function EntryChips({ slug, entries }: { slug: string; entries: T
               <a
                 href={`https://www.openstreetmap.org/?mlat=${e.lat}&mlon=${e.lng}#map=18/${e.lat}/${e.lng}`}
                 target="_blank" rel="noopener noreferrer"
-                className="text-gray-400 hover:text-violet-600" title={`Ver local${e.accuracy_m ? ` (±${e.accuracy_m} m)` : ''}`} aria-label="Ver local da marcação no mapa"
+                className="text-gray-400 hover:text-brand-600" title={`Ver local${e.accuracy_m ? ` (±${e.accuracy_m} m)` : ''}`} aria-label="Ver local da marcação no mapa"
               >
                 <MapPin className="h-3.5 w-3.5" />
               </a>
             )}
             {e.has_photo && (
-              <button type="button" className="text-gray-400 hover:text-violet-600" title="Ver foto" aria-label="Ver foto da marcação" onClick={() => setPhoto(e.uuid)}>
+              <button type="button" className="text-gray-400 hover:text-brand-600" title="Ver foto" aria-label="Ver foto da marcação" onClick={() => setPhoto(e.uuid)}>
                 <Camera className="h-3.5 w-3.5" />
               </button>
             )}
             {(e.device_label || e.ip) && (
-              <button type="button" className="text-gray-400 hover:text-violet-600" title="Detalhes: aparelho, IP e rede" aria-label="Ver detalhes da marcação" onClick={() => setDetails(e)}>
+              <button type="button" className="text-gray-400 hover:text-brand-600" title="Detalhes: aparelho, IP e rede" aria-label="Ver detalhes da marcação" onClick={() => setDetails(e)}>
                 <Info className="h-3.5 w-3.5" />
               </button>
             )}

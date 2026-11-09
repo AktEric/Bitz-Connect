@@ -27,7 +27,7 @@ export function Avatar({ src, name, size = 'md', className, ring }: AvatarProps)
   return (
     <div
       className={cn(
-        'flex-shrink-0 overflow-hidden rounded-full bg-violet-100',
+        'flex-shrink-0 overflow-hidden rounded-full bg-brand-100',
         sizes[size],
         ring && 'ring-2 ring-white ring-offset-0',
         className,
@@ -36,7 +36,7 @@ export function Avatar({ src, name, size = 'md', className, ring }: AvatarProps)
       {src ? (
         <img src={src} alt={name} className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center font-semibold text-violet-600">
+        <div className="flex h-full w-full items-center justify-center font-semibold text-brand-600">
           {initials(name)}
         </div>
       )}

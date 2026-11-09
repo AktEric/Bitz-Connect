@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useCan } from './permissions'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import QRCode from 'qrcode'
@@ -128,7 +129,7 @@ function ConfirmModal({ title, action, onClose, onSuccess }: {
         <div>
           <label className={labelCls}>{recovery ? 'Código de recuperação' : 'Código do aplicativo'}</label>
           <input className={inputCls} inputMode={recovery ? 'text' : 'numeric'} autoComplete="one-time-code" maxLength={recovery ? 20 : 7} value={code} onChange={(e) => setCode(e.target.value)} placeholder={recovery ? 'xxxxx-xxxxx' : '000000'} />
-          <button type="button" className="mt-1 text-xs text-violet-700 hover:underline" onClick={() => { setRecovery((r) => !r); setCode('') }}>{recovery ? 'Usar o aplicativo' : 'Usar código de recuperação'}</button>
+          <button type="button" className="mt-1 text-xs text-brand-700 hover:underline" onClick={() => { setRecovery((r) => !r); setCode('') }}>{recovery ? 'Usar o aplicativo' : 'Usar código de recuperação'}</button>
         </div>
         {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
         <div className="flex justify-end gap-2">
@@ -194,7 +195,7 @@ function SessionsCard() {
   return (
     <Panel>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 font-semibold text-gray-900"><Laptop className="h-4 w-4 text-violet-500" /> Onde você está conectado</h2>
+        <h2 className="flex items-center gap-2 font-semibold text-gray-900"><Laptop className="h-4 w-4 text-brand-500" /> Onde você está conectado</h2>
         {data.sessions.length > 1 && (
           <button type="button" className={btnGhost} disabled={others.isPending} onClick={() => { if (window.confirm('Encerrar todas as outras sessões?')) others.mutate() }}><LogOut className="h-4 w-4" /> Encerrar as outras</button>
         )}
@@ -255,23 +256,24 @@ function PasswordCard() {
 }
 
 function CompanyPolicyCard() {
-  const { slug, info } = useWs()
+  const { slug } = useWs()
+  const canView = useCan('security.view')
   const qc = useQueryClient()
   const [error, setError] = useState('')
-  const { data } = useQuery({ queryKey: ['ws', slug, 'security'], queryFn: () => workspaceService.security(slug), enabled: info.me.is_admin })
+  const { data } = useQuery({ queryKey: ['ws', slug, 'security'], queryFn: () => workspaceService.security(slug), enabled: canView })
   const save = useMutation({
     mutationFn: (v: boolean) => workspaceService.saveSecurity(slug, v),
     onSuccess: () => { setError(''); void qc.invalidateQueries({ queryKey: ['ws', slug, 'security'] }) },
     onError: (e) => setError(errMsg(e)),
   })
-  if (!info.me.is_admin || !data) return null
+  if (!canView || !data) return null
 
   return (
     <Panel>
       <h2 className="mb-1 font-semibold text-gray-900">Política da empresa</h2>
       <p className="mb-3 text-sm text-gray-500">Exigir verificação em duas etapas de quem tem acesso a dados sensíveis: dono, RH e financeiro.</p>
       <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-        <input type="checkbox" className="rounded border-gray-300 text-violet-600" checked={data.require_2fa} disabled={!data.can_edit || save.isPending} onChange={(e) => save.mutate(e.target.checked)} />
+        <input type="checkbox" className="rounded border-gray-300 text-brand-600" checked={data.require_2fa} disabled={!data.can_edit || save.isPending} onChange={(e) => save.mutate(e.target.checked)} />
         Exigir para dono, RH e financeiro {!data.can_edit && <span className="text-xs text-gray-400">(somente o dono altera)</span>}
       </label>
       {data.require_2fa && (

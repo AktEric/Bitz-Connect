@@ -6,6 +6,7 @@ import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
 import { cn } from '@/utils/cn'
 import type { HighlightPerson } from '@/types/workspace.types'
+import PersonLink from './PersonLink'
 import { Panel, fmtDate, useWs } from './ui'
 
 export function useHomeHighlights(slug: string) {
@@ -38,7 +39,7 @@ function Carousel<T>({ title, items, render, footer }: { title: string; items: T
       </div>
       {n > 1 && (
         <div className="mt-4 flex justify-center gap-1.5" aria-hidden>
-          {items.map((_, k) => <span key={k} className={cn('h-1.5 rounded-full transition-all', k === at ? 'w-4 bg-violet-600' : 'w-1.5 bg-gray-200')} />)}
+          {items.map((_, k) => <span key={k} className={cn('h-1.5 rounded-full transition-all', k === at ? 'w-4 bg-brand-600' : 'w-1.5 bg-gray-200')} />)}
         </div>
       )}
       {footer}
@@ -50,10 +51,10 @@ function PersonBlock({ person, tag, children }: { person: HighlightPerson; tag?:
   return (
     <div className="flex flex-col items-center text-center">
       <div className="relative">
-        <Avatar src={person.avatar_url} name={person.name} size="xl" className="ring-4 ring-violet-50" />
+        <PersonLink person={person}><Avatar src={person.avatar_url} name={person.name} size="xl" className="ring-4 ring-brand-50" /></PersonLink>
         {tag && <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-md bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">{tag}</span>}
       </div>
-      <p className="mt-3 font-semibold text-gray-900">{person.name}</p>
+      <PersonLink person={person} className="mt-3 font-semibold text-gray-900" />
       {children}
     </div>
   )
@@ -98,7 +99,7 @@ export function NewHiresCard({ slug }: { slug: string }) {
           <p className="mt-1 text-xs text-gray-400">Admissão em {fmtDate(h.hired_at)}</p>
           <button
             type="button" onClick={() => openChat(h.person)}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-violet-200 px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-50"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-brand-200 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
           >
             <MessageCircle className="h-3.5 w-3.5" /> Dar boas-vindas
           </button>
@@ -117,22 +118,22 @@ export function JobsCard({ slug }: { slug: string }) {
       items={data?.jobs ?? []}
       render={(j) => (
         <div className="flex flex-col items-center text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50 text-violet-600"><Briefcase className="h-6 w-6" /></span>
-          <p className="mt-3 font-semibold text-gray-900">{j.title}</p>
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600"><Briefcase className="h-6 w-6" /></span>
+          <Link to={`vagas#${j.uuid}`} className="mt-3 font-semibold text-gray-900 hover:text-brand-700 hover:underline">{j.title}</Link>
           <p className="text-sm text-gray-600">{[j.department, j.contract_type].filter(Boolean).join(' · ')}</p>
           {j.closes_on && <p className="mt-1 text-xs text-gray-400">Inscrições até {fmtDate(j.closes_on)}</p>}
         </div>
       )}
-      footer={<Link to="vagas" className="mt-4 block text-center text-sm font-medium text-violet-600 hover:underline">Ver todas as vagas</Link>}
+      footer={<Link to="vagas" className="mt-4 block text-center text-sm font-medium text-brand-600 hover:underline">Ver todas as vagas</Link>}
     />
   )
 }
 
 /** Confete decorativo (posições fixas, para não "pular" entre renderizações). */
 const CONFETTI = [
-  ['left-[8%] top-[10%]', 'bg-violet-500', 'rotate-12'], ['right-[10%] top-[8%]', 'bg-amber-400', '-rotate-12'],
+  ['left-[8%] top-[10%]', 'bg-brand-500', 'rotate-12'], ['right-[10%] top-[8%]', 'bg-amber-400', '-rotate-12'],
   ['left-[14%] top-[36%]', 'bg-pink-400', 'rotate-45'], ['right-[8%] top-[32%]', 'bg-sky-400', 'rotate-12'],
-  ['left-[48%] top-[3%]', 'bg-emerald-400', '-rotate-45'], ['right-[18%] top-[20%]', 'bg-violet-400', 'rotate-45'],
+  ['left-[48%] top-[3%]', 'bg-emerald-400', '-rotate-45'], ['right-[18%] top-[20%]', 'bg-brand-400', 'rotate-45'],
 ] as const
 
 /** Aniversariantes do dia: cartões com foto e cargo, e um atalho para dar parabéns no chat. */
@@ -147,21 +148,21 @@ export function BirthdaysCard({ slug }: { slug: string }) {
       <h2 className="mb-4 flex items-center gap-2 font-semibold text-gray-900"><PartyPopper className="h-5 w-5 text-pink-500" /> Aniversariantes do dia</h2>
       <ul className="flex gap-4 overflow-x-auto pb-1">
         {people.map((p) => (
-          <li key={p.uuid} className="relative w-52 flex-shrink-0 overflow-hidden rounded-2xl bg-gradient-to-b from-violet-50 to-fuchsia-50 shadow-sm">
+          <li key={p.uuid} className="relative w-52 flex-shrink-0 overflow-hidden rounded-2xl bg-gradient-to-b from-brand-50 to-brand-100 shadow-sm">
             {CONFETTI.map(([pos, color, rot], k) => <span key={k} className={cn('absolute h-2 w-2 rounded-[2px]', pos, color, rot)} aria-hidden />)}
             <div className="relative flex flex-col items-center px-4 pb-4 pt-6 text-center">
-              <Avatar src={p.avatar_url} name={p.name} size="2xl" className="ring-4 ring-white shadow-md" />
-              <p className="mt-3 font-semibold text-gray-900">{p.name}</p>
-              <p className="min-h-[1.25rem] text-xs text-violet-700">{p.job_title}</p>
+              <PersonLink person={p}><Avatar src={p.avatar_url} name={p.name} size="2xl" className="ring-4 ring-white shadow-md" /></PersonLink>
+              <PersonLink person={p} className="mt-3 font-semibold text-gray-900" />
+              <p className="min-h-[1.25rem] text-xs text-brand-700">{p.job_title}</p>
             </div>
             <div className="relative bg-amber-100 px-4 pb-4 pt-5">
               {/* onda que separa a foto do rodapé */}
-              <svg viewBox="0 0 200 16" preserveAspectRatio="none" className="absolute inset-x-0 -top-px h-4 w-full text-fuchsia-50" aria-hidden>
+              <svg viewBox="0 0 200 16" preserveAspectRatio="none" className="absolute inset-x-0 -top-px h-4 w-full text-brand-100" aria-hidden>
                 <path d="M0 0h200v6c-25 10-50 10-75 2S75-2 50 6 0 14 0 8z" fill="currentColor" />
               </svg>
               <button
                 type="button" onClick={() => openChat(p)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:text-violet-700"
+                className="flex w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm hover:text-brand-700"
               >
                 🎉 Dar parabéns
               </button>

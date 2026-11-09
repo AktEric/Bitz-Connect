@@ -51,7 +51,7 @@ function AnswerModal({ slug, survey, onClose }: { slug: string; survey: Survey; 
             <div className="flex flex-wrap gap-1.5">
               {Array.from({ length: q.max - q.min + 1 }, (_, i) => q.min + i).map((v) => (
                 <button key={v} type="button" aria-pressed={scores[q.key] === v} onClick={() => setScores((s) => ({ ...s, [q.key]: v }))}
-                  className={`h-9 min-w-9 rounded-lg border px-2 text-sm ${scores[q.key] === v ? 'border-violet-600 bg-violet-600 text-white' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>{v}</button>
+                  className={`h-9 min-w-9 rounded-lg border px-2 text-sm ${scores[q.key] === v ? 'border-brand-600 bg-brand-600 text-white' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>{v}</button>
               ))}
             </div>
             {q.type === 'scale' && <p className="mt-1 text-[11px] text-gray-400">1 = discordo totalmente · 5 = concordo totalmente</p>}
@@ -128,7 +128,7 @@ function ResultsModal({ slug, uuid, onClose }: { slug: string; uuid: string; onC
                       <li key={h.uuid} className="flex items-center gap-2">
                         <span className={`w-40 shrink-0 truncate text-xs ${h.current ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>{h.title}</span>
                         <div className="relative h-2 flex-1 rounded-full bg-gray-100" aria-hidden="true">
-                          <div className={`absolute top-0 h-2 rounded-full ${h.current ? 'bg-violet-600' : 'bg-violet-300'}`}
+                          <div className={`absolute top-0 h-2 rounded-full ${h.current ? 'bg-brand-600' : 'bg-brand-300'}`}
                             style={{ left: '50%', width: `${Math.abs(h.enps ?? 0) / 2}%`, transform: (h.enps ?? 0) < 0 ? 'translateX(-100%)' : undefined }} />
                         </div>
                         <span className="w-10 shrink-0 text-right text-xs tabular-nums text-gray-700">{h.enps ?? '—'}</span>
@@ -190,7 +190,7 @@ export default function WorkspaceClimatePage() {
                 <p className="text-xs text-gray-500">{s.closes_on ? `Até ${fmtDate(s.closes_on)}` : 'Sem data para encerrar'}{s.responses !== null ? ` · ${s.responses} resposta(s)` : ''}</p>
               </div>
               <Pill tone={s.status === 'open' ? 'green' : 'gray'}>{s.status === 'open' ? 'Aberta' : 'Encerrada'}</Pill>
-              {s.status === 'open' && (s.answered ? <Pill tone="violet">Você respondeu</Pill> : <button type="button" className={btnPrimary} onClick={() => setAnswering(s)}>Responder</button>)}
+              {s.status === 'open' && (s.answered ? <Pill tone="brand">Você respondeu</Pill> : <button type="button" className={btnPrimary} onClick={() => setAnswering(s)}>Responder</button>)}
               {data.can_see_results && <button type="button" className={btnGhost} onClick={() => setResults(s.uuid)}>Resultados</button>}
               {data.can_manage && s.status === 'open' && <button type="button" className={btnGhost} onClick={() => { if (confirm('Encerrar esta pesquisa? Ninguém mais poderá responder.')) close.mutate(s.uuid) }}>Encerrar</button>}
             </Panel>

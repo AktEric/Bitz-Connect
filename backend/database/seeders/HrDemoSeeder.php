@@ -88,6 +88,7 @@ class HrDemoSeeder extends Seeder
             });
         });
 
+        $this->call(CareerDemoSeeder::class);
         $this->credentials();
     }
 

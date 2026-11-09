@@ -88,7 +88,7 @@ export default function GroupInfoPanel({ groupUuid, onBack, onLeft }: Props) {
                 run(update.mutateAsync({ only_admins_can_post: e.target.checked }),
                   e.target.checked ? 'Modo aviso ativado.' : 'Todos podem enviar mensagens.')
               }
-              className="mt-0.5 rounded border-gray-300 text-violet-600"
+              className="mt-0.5 rounded border-gray-300 text-brand-600"
             />
             <span className="text-sm">
               <span className="flex items-center gap-1.5 font-medium text-gray-800"><Megaphone className="h-4 w-4 text-amber-500" />Modo aviso</span>
@@ -122,14 +122,14 @@ export default function GroupInfoPanel({ groupUuid, onBack, onLeft }: Props) {
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Participantes ({group.members.length})</p>
             {canManage && (
-              <button onClick={() => setAdding((v) => !v)} className="flex items-center gap-1 text-xs font-medium text-violet-600 hover:underline">
+              <button onClick={() => setAdding((v) => !v)} className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline">
                 <UserPlus className="h-3.5 w-3.5" />Adicionar
               </button>
             )}
           </div>
 
           {adding && (
-            <div className="mb-3 space-y-3 rounded-xl border border-violet-100 bg-violet-50/40 p-3">
+            <div className="mb-3 space-y-3 rounded-xl border border-brand-100 bg-brand-50/40 p-3">
               {departments.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {departments.map((d) => {
@@ -139,7 +139,7 @@ export default function GroupInfoPanel({ groupUuid, onBack, onLeft }: Props) {
                         key={d.uuid}
                         type="button"
                         onClick={() => setPickedDepts(on ? pickedDepts.filter((x) => x !== d.uuid) : [...pickedDepts, d.uuid])}
-                        className={`rounded-full border px-2.5 py-0.5 text-xs ${on ? 'border-violet-500 bg-white text-violet-700' : 'border-gray-200 bg-white text-gray-600'}`}
+                        className={`rounded-full border px-2.5 py-0.5 text-xs ${on ? 'border-brand-500 bg-white text-brand-700' : 'border-gray-200 bg-white text-gray-600'}`}
                       >
                         Setor {d.name}
                       </button>
@@ -156,7 +156,7 @@ export default function GroupInfoPanel({ groupUuid, onBack, onLeft }: Props) {
                         type="checkbox"
                         checked={picked.includes(m.uuid)}
                         onChange={() => setPicked(picked.includes(m.uuid) ? picked.filter((x) => x !== m.uuid) : [...picked, m.uuid])}
-                        className="rounded border-gray-300 text-violet-600"
+                        className="rounded border-gray-300 text-brand-600"
                       />
                       <Avatar src={m.avatar_url} name={m.name} size="xs" />
                       <span className="truncate text-sm text-gray-800">{m.name}</span>

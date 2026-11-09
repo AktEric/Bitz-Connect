@@ -41,7 +41,7 @@ export default function AreasSection({ slug }: { slug: string }) {
   return (
     <section className="mb-8">
       <div className="mb-1 flex items-center gap-2">
-        <Network className="h-5 w-5 text-violet-600" />
+        <Network className="h-5 w-5 text-brand-600" />
         <h2 className="text-lg font-semibold text-gray-900">Áreas e chefias</h2>
       </div>
       <p className="mb-3 text-sm text-gray-500">

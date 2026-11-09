@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useCan } from './permissions'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Download, FileText, Trash2, Upload } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
@@ -9,6 +10,7 @@ const KIND: Record<Payslip['kind'], string> = { payslip: 'Holerite', receipt: 'C
 
 function UploadModal({ slug, onClose }: { slug: string; onClose: () => void }) {
   const qc = useQueryClient()
+
   const fileRef = useRef<HTMLInputElement>(null)
   const { data: members } = useQuery({ queryKey: ['ws', slug, 'members'], queryFn: () => workspaceService.members(slug) })
   const [user, setUser] = useState('')
@@ -69,9 +71,9 @@ function UploadModal({ slug, onClose }: { slug: string; onClose: () => void }) {
 }
 
 export default function WorkspacePayslipsPage() {
-  const { slug, info } = useWs()
+  const { slug } = useWs()
   const qc = useQueryClient()
-  const isAdmin = info.me.is_admin
+  const isAdmin = useCan('payslips.manage')
   const [scope, setScope] = useState<'mine' | 'all'>('mine')
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
@@ -110,14 +112,14 @@ export default function WorkspacePayslipsPage() {
         <div className="space-y-2">
           {data.items.map((p) => (
             <Panel key={p.uuid} className="flex items-center gap-3 !p-3">
-              <FileText className="h-8 w-8 flex-shrink-0 text-violet-400" />
+              <FileText className="h-8 w-8 flex-shrink-0 text-brand-400" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-gray-900">{p.title}</p>
                 <p className="truncate text-xs text-gray-400">
                   {KIND[p.kind]} · {fmtMonth(p.reference_month)}{scope === 'all' && p.owner ? ` · ${p.owner.name}` : ''}{p.amount_cents != null ? ` · ${fmtMoney(p.amount_cents)}` : ''}
                 </p>
               </div>
-              {!p.viewed && scope === 'mine' && <Pill tone="violet">Novo</Pill>}
+              {!p.viewed && scope === 'mine' && <Pill tone="brand">Novo</Pill>}
               {scope === 'all' && <Pill tone={p.viewed ? 'green' : 'gray'}>{p.viewed ? 'Visto' : 'Não visto'}</Pill>}
               <button className={btnGhost} onClick={() => download(p)}><Download className="h-4 w-4" /> Baixar</button>
               {isAdmin && (

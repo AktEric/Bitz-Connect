@@ -10,7 +10,7 @@ namespace Database\Seeders\Demo;
 class DemoCatalog
 {
     /**
-     * Hotéis. `pro` define assinatura ConnectHotel PRO - Empresa.
+     * Hotéis. `pro` define assinatura Bitz Connect PRO - Empresa.
      * `media` escolhe o pool de fotos coerente com o tipo de propriedade.
      *
      * @return array<int, array<string, mixed>>
@@ -94,7 +94,7 @@ class DemoCatalog
     }
 
     /**
-     * Profissionais. `creator` = assinante ConnectHotel PRO - Consultor
+     * Profissionais. `creator` = assinante Bitz Connect PRO - Consultor
      * (publica vídeos, cursos, mentorias e stories). `hotel` é o índice no
      * catálogo de hotéis; null para consultores independentes.
      *

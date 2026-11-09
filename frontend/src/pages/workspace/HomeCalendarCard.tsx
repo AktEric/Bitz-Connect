@@ -30,8 +30,8 @@ export default function HomeCalendarCard({ slug }: { slug: string }) {
   return (
     <Panel>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 font-semibold text-gray-900"><CalendarDays className="h-4 w-4 text-violet-500" /> Calendário</h2>
-        <Link to="calendario" className="text-sm font-medium text-violet-600">Abrir</Link>
+        <h2 className="flex items-center gap-2 font-semibold text-gray-900"><CalendarDays className="h-4 w-4 text-brand-500" /> Calendário</h2>
+        <Link to="calendario" className="text-sm font-medium text-brand-600">Abrir</Link>
       </div>
 
       {people.length === 0 && next.length === 0 ? (
@@ -50,7 +50,7 @@ export default function HomeCalendarCard({ slug }: { slug: string }) {
           ))}
           {next.map((e, i) => (
             <li key={`e${i}`} className="flex items-center gap-2.5">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-50 text-xs" aria-hidden>{TYPE_META[e.type].emoji}</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-50 text-xs" aria-hidden>{TYPE_META[e.type].emoji}</span>
               <p className="min-w-0 flex-1 truncate text-sm text-gray-700">{e.title}{e.time && <span className="text-gray-400"> · {e.time}</span>}</p>
               <span className="text-xs text-gray-400">{DAY_LABEL(e.date, today)}</span>
             </li>

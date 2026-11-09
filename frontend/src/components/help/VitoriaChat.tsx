@@ -19,7 +19,7 @@ function Rich({ text }: { text: string }) {
     <>
       {text.split(/(\*\*[^*]+\*\*|\*[^*\n]+\*)/g).map((part, i) => {
         if (part.startsWith('**') && part.endsWith('**') && part.length > 4) return <strong key={i}>{part.slice(2, -2)}</strong>
-        if (part.startsWith('*') && part.endsWith('*') && part.length > 2) return <em key={i} className="font-medium not-italic text-violet-700">{part.slice(1, -1)}</em>
+        if (part.startsWith('*') && part.endsWith('*') && part.length > 2) return <em key={i} className="font-medium not-italic text-brand-700">{part.slice(1, -1)}</em>
         return <span key={i}>{part}</span>
       })}
     </>
@@ -104,7 +104,7 @@ export default function VitoriaChat({ workspace, className }: Props) {
           aria-label="Abrir a central de ajuda (Vitória)"
           title="Precisa de ajuda? Fale com a Vitória"
           className={cn(
-            'fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-violet-600 px-4 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-violet-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 lg:bottom-5 lg:right-5',
+            'fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-brand-600 px-4 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 lg:bottom-5 lg:right-5',
             className,
           )}
         >
@@ -118,11 +118,11 @@ export default function VitoriaChat({ workspace, className }: Props) {
           aria-label="Central de ajuda — Vitória"
           className="fixed inset-x-3 bottom-20 z-50 flex h-[min(34rem,calc(100vh-7rem))] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl sm:inset-x-auto sm:right-4 sm:w-[24rem] lg:bottom-5"
         >
-          <header className="flex items-center gap-3 bg-violet-600 px-4 py-3 text-white">
+          <header className="flex items-center gap-3 bg-brand-600 px-4 py-3 text-white">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-base font-semibold" aria-hidden>V</span>
             <div className="min-w-0 flex-1">
               <p className="font-semibold leading-tight">Vitória</p>
-              <p className="text-xs text-violet-100">Central de ajuda</p>
+              <p className="text-xs text-brand-100">Central de ajuda</p>
             </div>
             <button type="button" onClick={reset} aria-label="Nova conversa" title="Nova conversa" className="rounded-lg p-1.5 hover:bg-white/15">
               <RotateCcw className="h-4 w-4" />
@@ -141,7 +141,7 @@ export default function VitoriaChat({ workspace, className }: Props) {
                     key={s}
                     type="button"
                     onClick={() => void send(s)}
-                    className="rounded-full border border-violet-200 bg-white px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-50"
+                    className="rounded-full border border-brand-200 bg-white px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
                   >
                     {s}
                   </button>
@@ -170,13 +170,13 @@ export default function VitoriaChat({ workspace, className }: Props) {
               maxLength={2000}
               placeholder="Escreva sua dúvida…"
               aria-label="Mensagem para a Vitória"
-              className="max-h-28 min-h-[2.5rem] flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              className="max-h-28 min-h-[2.5rem] flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <button
               type="submit"
               disabled={loading || !text.trim()}
               aria-label="Enviar"
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40"
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-40"
             >
               <Send className="h-4 w-4" />
             </button>
@@ -194,7 +194,7 @@ function Bubble({ role, text }: { role: HelpMessage['role']; text: string }) {
       <div
         className={cn(
           'max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed',
-          mine ? 'rounded-br-md bg-violet-600 text-white' : 'rounded-bl-md bg-white text-gray-800 shadow-sm ring-1 ring-gray-200',
+          mine ? 'rounded-br-md bg-brand-600 text-white' : 'rounded-bl-md bg-white text-gray-800 shadow-sm ring-1 ring-gray-200',
         )}
       >
         <Rich text={text} />

@@ -6,6 +6,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Cores da Bitz: azul da marca (#0057D8) e um quase-preto para superfícies escuras
+        brand: {
+          50: '#eef5ff', 100: '#d9e8ff', 200: '#b9d3fd', 300: '#86b3fa', 400: '#4d8ff5',
+          500: '#1f6fee', 600: '#0057d8', 700: '#0047b3', 800: '#003b91', 900: '#002f73', 950: '#001d47',
+        },
+        ink: { 700: '#2a2f3a', 800: '#161a22', 900: '#0b0d12', 950: '#050608' },
         border:      'hsl(var(--border))',
         input:       'hsl(var(--input))',
         ring:        'hsl(var(--ring))',

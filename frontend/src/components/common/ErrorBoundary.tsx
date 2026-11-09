@@ -52,7 +52,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="mt-2 flex gap-2">
             <button
               onClick={this.handleReset}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-violet-700"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
             >
               Tentar novamente
             </button>

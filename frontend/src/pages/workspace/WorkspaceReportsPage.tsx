@@ -75,7 +75,7 @@ export default function WorkspaceReportsPage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {list.map((r) => (
               <button key={r.key} type="button" onClick={() => setKey(r.key)} aria-pressed={key === r.key}
-                className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:border-violet-300 ${key === r.key ? 'border-violet-500 ring-2 ring-violet-100' : 'border-gray-100'}`}>
+                className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:border-brand-300 ${key === r.key ? 'border-brand-500 ring-2 ring-brand-100' : 'border-gray-100'}`}>
                 <span className="block font-semibold text-gray-900">{r.title}</span>
                 <span className="mt-1 block text-xs text-gray-500">{r.description}</span>
               </button>

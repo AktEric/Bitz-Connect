@@ -125,7 +125,7 @@ export default function LoginHotelPage() {
         </div>
 
         <p className="relative z-10 text-xs text-amber-100">
-          © {new Date().getFullYear()} ConnectHotel. Todos os direitos reservados.
+          © {new Date().getFullYear()} Bitz Connect. Todos os direitos reservados.
         </p>
       </div>
 

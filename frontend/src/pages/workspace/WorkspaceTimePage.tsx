@@ -1,3 +1,4 @@
+import { useCan } from './permissions'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -260,7 +261,7 @@ function TeamView({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
             const pill = STATE_PILL[r.state]
             return (
               <li key={uuid}>
-                <button type="button" onClick={() => setSelected(uuid)} className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 ${selected === uuid ? 'bg-violet-50/60' : ''}`}>
+                <button type="button" onClick={() => setSelected(uuid)} className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 ${selected === uuid ? 'bg-brand-50/60' : ''}`}>
                   <Avatar src={r.person?.avatar_url} name={r.person?.name ?? '?'} size="sm" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-gray-900">{r.person?.name}</span>
@@ -288,9 +289,11 @@ function TeamView({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
 
 export default function WorkspaceTimePage() {
   const { slug, info } = useWs()
-  const lead = info.me.is_admin || info.me.is_manager
+  const lead = useCan('time.team')
+  const canClose = useCan('time.closing')
+  const canManagePeople = useCan('people.manage')
   const [params, setParams] = useSearchParams()
-  const tab = info.me.is_admin && params.get('aba') === 'fechamento' ? 'fechamento' : lead && params.get('aba') === 'time' ? 'time' : 'me'
+  const tab = canClose && params.get('aba') === 'fechamento' ? 'fechamento' : lead && params.get('aba') === 'time' ? 'time' : 'me'
 
   return (
     <div>
@@ -302,7 +305,7 @@ export default function WorkspaceTimePage() {
           options={[
             { value: 'me', label: 'Meu ponto' },
             { value: 'time', label: 'Ponto do time' },
-            ...(info.me.is_admin ? [{ value: 'fechamento' as const, label: 'Fechamento' }] : []),
+            ...(canClose ? [{ value: 'fechamento' as const, label: 'Fechamento' }] : []),
           ]}
         />
       )}
@@ -314,7 +317,7 @@ export default function WorkspaceTimePage() {
       ) : tab === 'fechamento' ? (
         <ClosingView slug={slug} isOwner={info.me.access_role === 'owner'} />
       ) : (
-        <TeamView slug={slug} isAdmin={info.me.is_admin} />
+        <TeamView slug={slug} isAdmin={canManagePeople} />
       )}
     </div>
   )

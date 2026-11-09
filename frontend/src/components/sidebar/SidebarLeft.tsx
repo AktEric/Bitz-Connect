@@ -32,10 +32,10 @@ function ProfileCompletion() {
       <div className="mb-3">
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs text-gray-500">{percent}% completo</span>
-          <span className="text-xs font-medium text-violet-600">{percent < 100 ? 'Em andamento' : 'Completo!'}</span>
+          <span className="text-xs font-medium text-brand-600">{percent < 100 ? 'Em andamento' : 'Completo!'}</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-gray-100">
-          <div className="h-1.5 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 transition-all duration-700"
+          <div className="h-1.5 rounded-full bg-gradient-to-r from-brand-500 to-brand-600 transition-all duration-700"
             style={{ width: `${percent}%` }} />
         </div>
       </div>
@@ -43,7 +43,7 @@ function ProfileCompletion() {
         {steps.map((s) => (
           <li key={s.label} className="flex items-center gap-2 text-xs">
             {s.done
-              ? <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-violet-500" />
+              ? <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-brand-500" />
               : <Circle       className="h-3.5 w-3.5 flex-shrink-0 text-gray-200" />}
             <span className={s.done ? 'text-gray-400 line-through' : 'text-gray-600'}>{s.label}</span>
           </li>
@@ -65,13 +65,13 @@ export default function SidebarLeft() {
     <div className="w-full">
       {/* User card */}
       <Card noPad className="mb-3 overflow-hidden">
-        <div className="h-16 w-full bg-gradient-to-r from-violet-600 to-violet-800"
+        <div className="h-16 w-full bg-gradient-to-r from-brand-600 to-brand-800"
           style={user.banner_url ? { backgroundImage: `url(${user.banner_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined} />
         <div className="px-4 pb-4">
           <div className="-mt-7 mb-2">
             <Avatar src={user.avatar_url} name={user.name} size="lg" ring />
           </div>
-          <Link to="/profile" className="block text-sm font-semibold text-gray-900 hover:text-violet-600 transition-colors leading-tight">
+          <Link to="/profile" className="block text-sm font-semibold text-gray-900 hover:text-brand-600 transition-colors leading-tight">
             {user.name}
           </Link>
           <p className="mt-0.5 text-xs text-gray-500 leading-snug truncate">{subtitle}</p>
@@ -81,7 +81,7 @@ export default function SidebarLeft() {
           <div className="mt-3 border-t border-gray-100 pt-3">
             <Link to="/network" className="flex items-center justify-between rounded-lg px-1 py-0.5 hover:bg-gray-50 transition-colors">
               <span className="text-xs text-gray-500">Conexões</span>
-              <span className="text-xs font-semibold text-violet-600">{connectionsCount}</span>
+              <span className="text-xs font-semibold text-brand-600">{connectionsCount}</span>
             </Link>
           </div>
         </div>
@@ -94,7 +94,7 @@ export default function SidebarLeft() {
           {QUICK_LINKS.map(({ label, to, Icon }) => (
             <li key={label}>
               <Link to={to}
-                className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-gray-600 hover:bg-violet-50 hover:text-violet-700 transition-colors">
+                className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-gray-600 hover:bg-brand-50 hover:text-brand-700 transition-colors">
                 <Icon className="h-4 w-4 flex-shrink-0" />
                 {label}
               </Link>

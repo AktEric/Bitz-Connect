@@ -1,3 +1,4 @@
+import { useCan } from './permissions'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -104,7 +105,7 @@ function RequestDetail({ slug, uuid, canDecide, canResolve, onClose }: { slug: s
           <p className="text-base font-medium text-gray-900">{r.title}</p>
           {r.type === 'ticket' && (
             <p className="flex flex-wrap items-center gap-2 text-gray-600">
-              {r.category && <Pill tone="violet">{CATEGORY_LABEL[r.category]}</Pill>}
+              {r.category && <Pill tone="brand">{CATEGORY_LABEL[r.category]}</Pill>}
               {r.assigned_to && <span>Atendido por <b>{r.assigned_to.name}</b></span>}
               {r.due_at && (r.status === 'pending' || r.status === 'in_progress') && <Pill tone={r.overdue ? 'red' : 'gray'}>{r.overdue ? 'Prazo vencido' : `Prazo: ${fmtDate(r.due_at)}`}</Pill>}
             </p>
@@ -158,8 +159,9 @@ function RequestDetail({ slug, uuid, canDecide, canResolve, onClose }: { slug: s
 }
 
 export default function WorkspaceRequestsPage() {
-  const { slug, info } = useWs()
-  const canReview = info.me.is_admin || info.me.is_manager
+  const { slug } = useWs()
+  const canReview = useCan('requests.review')
+  const canSeeAll = useCan('people.manage')
   const [params] = useSearchParams()
   const [scope, setScope] = useState<'mine' | 'review' | 'all'>(canReview && params.get('aba') === 'aprovar' ? 'review' : 'mine')
   const [creating, setCreating] = useState(false)
@@ -169,7 +171,7 @@ export default function WorkspaceRequestsPage() {
 
   const options: { value: 'mine' | 'review' | 'all'; label: string }[] = [{ value: 'mine', label: 'Minhas' }]
   if (canReview) options.unshift({ value: 'review', label: 'Para analisar' })
-  if (info.me.is_admin) options.push({ value: 'all', label: 'Todas' })
+  if (canSeeAll) options.push({ value: 'all', label: 'Todas' })
 
   return (
     <div>
@@ -199,7 +201,7 @@ export default function WorkspaceRequestsPage() {
       )}
 
       {creating && <NewRequestModal slug={slug} onClose={() => setCreating(false)} />}
-      {openId && <RequestDetail slug={slug} uuid={openId} canDecide={canReview} canResolve={info.me.is_admin} onClose={() => setOpenId(null)} />}
+      {openId && <RequestDetail slug={slug} uuid={openId} canDecide={canReview} canResolve={canSeeAll} onClose={() => setOpenId(null)} />}
     </div>
   )
 }

@@ -84,7 +84,7 @@ export default function VideosPage() {
       {/* Botão flutuante de publicar */}
       <button
         onClick={handlePublishClick}
-        className="absolute right-4 top-4 z-20 flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-2 text-sm font-medium text-white shadow-lg hover:bg-violet-700"
+        className="absolute right-4 top-4 z-20 flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-2 text-sm font-medium text-white shadow-lg hover:bg-brand-700"
       >
         <Plus className="h-4 w-4" /> Publicar
       </button>
@@ -126,7 +126,7 @@ export default function VideosPage() {
         open={upgradeOpen}
         onClose={() => setUpgradeOpen(false)}
         title="Publique vídeos profissionais"
-        description="A publicação de vídeos é exclusiva do ConnectHotel PRO - Consultor."
+        description="A publicação de vídeos é exclusiva do Bitz Connect PRO - Consultor."
       />
     </div>
   )

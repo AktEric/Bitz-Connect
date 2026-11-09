@@ -62,7 +62,7 @@ class CourseController extends Controller
     public function store(CourseRequest $request): JsonResponse
     {
         if ($request->user()->cannot('create_courses')) {
-            return $this->forbidden('A criação de cursos é exclusiva do ConnectHotel PRO - Consultor.');
+            return $this->forbidden('A criação de cursos é exclusiva do Bitz Connect PRO - Consultor.');
         }
 
         $course = $this->courses->create(CreateCourseDTO::fromArray($request->validated(), $request->user()->id));

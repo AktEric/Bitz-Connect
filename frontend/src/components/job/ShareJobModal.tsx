@@ -110,7 +110,7 @@ export default function ShareJobModal({ job, onClose }: Props) {
             className={[
               'flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors',
               tab === 'friend'
-                ? 'text-violet-600 border-b-2 border-violet-600'
+                ? 'text-brand-600 border-b-2 border-brand-600'
                 : 'text-gray-500 hover:text-gray-700',
             ].join(' ')}
           >
@@ -122,7 +122,7 @@ export default function ShareJobModal({ job, onClose }: Props) {
             className={[
               'flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors',
               tab === 'feed'
-                ? 'text-violet-600 border-b-2 border-violet-600'
+                ? 'text-brand-600 border-b-2 border-brand-600'
                 : 'text-gray-500 hover:text-gray-700',
             ].join(' ')}
           >
@@ -136,7 +136,7 @@ export default function ShareJobModal({ job, onClose }: Props) {
           <>
             {/* Search */}
             <div className="px-4 pt-3 pb-2">
-              <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100 transition-all">
+              <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-100 transition-all">
                 <Search className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
                 <input
                   autoFocus
@@ -187,7 +187,7 @@ export default function ShareJobModal({ job, onClose }: Props) {
                               'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all',
                               isSent
                                 ? 'bg-green-50 text-green-600 cursor-default'
-                                : 'bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-60',
+                                : 'bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-60',
                             ].join(' ')}
                           >
                             {isLoading ? (
@@ -230,7 +230,7 @@ export default function ShareJobModal({ job, onClose }: Props) {
                 </div>
                 <button
                   onClick={onClose}
-                  className="rounded-xl bg-violet-600 px-6 py-2 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
+                  className="rounded-xl bg-brand-600 px-6 py-2 text-sm font-medium text-white hover:bg-brand-700 transition-colors"
                 >
                   Fechar
                 </button>
@@ -248,7 +248,7 @@ export default function ShareJobModal({ job, onClose }: Props) {
                     rows={3}
                     maxLength={3000}
                     placeholder="Escreva uma mensagem para acompanhar a vaga..."
-                    className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-400 transition"
+                    className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 transition"
                   />
                 </div>
 
@@ -261,7 +261,7 @@ export default function ShareJobModal({ job, onClose }: Props) {
                 <button
                   onClick={() => shareToFeed.mutate()}
                   disabled={shareToFeed.isPending}
-                  className="w-full rounded-xl bg-violet-600 py-2.5 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                  className="w-full rounded-xl bg-brand-600 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
                 >
                   {shareToFeed.isPending ? (
                     <><Loader2 className="h-4 w-4 animate-spin" /> Publicando...</>

@@ -74,7 +74,7 @@ function ConversationItem({
     <button
       onClick={onClick}
       className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-colors ${
-        isActive ? 'bg-primary/10' : hasUnread ? 'bg-violet-50 hover:bg-violet-100' : 'hover:bg-gray-50'
+        isActive ? 'bg-primary/10' : hasUnread ? 'bg-brand-50 hover:bg-brand-100' : 'hover:bg-gray-50'
       }`}
     >
       {party.type === 'hotel' ? (

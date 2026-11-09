@@ -84,11 +84,11 @@ export default function CommandPalette({ slug, pages, onClose }: { slug: string;
                 <button
                   type="button" role="option" aria-selected={i === active}
                   onMouseEnter={() => setActive(i)} onClick={() => choose(r)}
-                  className={cn('flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm', i === active ? 'bg-violet-50 text-violet-900' : 'text-gray-700')}
+                  className={cn('flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm', i === active ? 'bg-brand-50 text-brand-900' : 'text-gray-700')}
                 >
                   <r.Icon className="h-4 w-4 flex-shrink-0 text-gray-400" />
                   <span className="min-w-0 flex-1 truncate">{r.title}{r.hint && <span className="ml-2 text-xs text-gray-400">{r.hint}</span>}</span>
-                  {i === active && <CornerDownLeft className="h-3.5 w-3.5 text-violet-400" />}
+                  {i === active && <CornerDownLeft className="h-3.5 w-3.5 text-brand-400" />}
                 </button>
               </li>
             )

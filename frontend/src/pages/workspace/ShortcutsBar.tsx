@@ -54,7 +54,7 @@ export default function ShortcutsBar({ slug, items }: { slug: string; items: Nav
             className={({ isActive }) =>
               cn(
                 'relative inline-flex flex-shrink-0 items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
-                isActive && !to.includes('?') ? 'bg-violet-600 text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100',
+                isActive && !to.includes('?') ? 'bg-brand-600 text-white shadow-sm' : 'text-gray-700 hover:bg-gray-100',
               )
             }
           >
@@ -85,7 +85,7 @@ export default function ShortcutsBar({ slug, items }: { slug: string; items: Nav
                     >
                       <Icon className="h-4 w-4 text-gray-400" />
                       <span className="flex-1 truncate">{label}</span>
-                      <span className={cn('flex h-5 w-5 items-center justify-center rounded-md border', on ? 'border-violet-600 bg-violet-600 text-white' : 'border-gray-300')}>
+                      <span className={cn('flex h-5 w-5 items-center justify-center rounded-md border', on ? 'border-brand-600 bg-brand-600 text-white' : 'border-gray-300')}>
                         {on && <Check className="h-3.5 w-3.5" />}
                       </span>
                     </button>
@@ -93,7 +93,7 @@ export default function ShortcutsBar({ slug, items }: { slug: string; items: Nav
                 )
               })}
             </ul>
-            <button type="button" onClick={() => save(DEFAULTS)} className="mt-1 w-full rounded-xl px-3 py-2 text-left text-xs font-medium text-violet-600 hover:bg-violet-50">
+            <button type="button" onClick={() => save(DEFAULTS)} className="mt-1 w-full rounded-xl px-3 py-2 text-left text-xs font-medium text-brand-600 hover:bg-brand-50">
               Restaurar atalhos padrão
             </button>
           </div>

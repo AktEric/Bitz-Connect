@@ -24,7 +24,7 @@ export function StoryJobActions({ job, liked, likesCount, onLike, onShare }: Sto
       </button>
       <button
         onClick={() => navigate(`/jobs/${job.uuid}`)}
-        className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2.5 text-sm font-semibold text-violet-700 transition-colors hover:bg-white/90"
+        className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-white/90"
       >
         <Send className="h-4 w-4" /> Candidatar-se
       </button>

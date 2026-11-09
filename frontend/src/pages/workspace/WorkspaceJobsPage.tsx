@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, MapPin, MessageCircle, Plus, Users } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
-import { Avatar } from '@/components/ui/Avatar'
+import PersonLink, { PersonAvatarLink } from './PersonLink'
+import { useCan } from './permissions'
 import type { JobApplicationItem, JobItem } from '@/types/workspace.types'
-import { Empty, Modal, PageHeader, Panel, Pill, Spinner, btnGhost, btnPrimary, errMsg, fmtDate, inputCls, labelCls, useWs } from './ui'
+import { Empty, Modal, PageHeader, Panel, Pill, Spinner, Tabs, btnGhost, btnPrimary, errMsg, fmtDate, inputCls, labelCls, useWs } from './ui'
 
 const STATUS_LABEL: Record<JobApplicationItem['status'], string> = { new: 'Nova', reviewing: 'Em análise', rejected: 'Não avançou', hired: 'Contratado' }
 
@@ -49,7 +50,7 @@ function JobForm({ slug, job, onClose }: { slug: string; job?: JobItem; onClose:
           <div><label className={labelCls} htmlFor="j-close">Inscrições até</label><input id="j-close" type="date" className={inputCls} value={f.closes_on} onChange={(e) => set('closes_on', e.target.value)} /></div>
         </div>
         <label className="flex cursor-pointer items-start gap-2 text-sm text-gray-700">
-          <input type="checkbox" className="mt-0.5 rounded border-gray-300 text-violet-600" checked={f.public} onChange={(e) => set('public', e.target.checked)} />
+          <input type="checkbox" className="mt-0.5 rounded border-gray-300 text-brand-600" checked={f.public} onChange={(e) => set('public', e.target.checked)} />
           <span>Divulgar por link público (WhatsApp, redes)<br /><span className="text-xs text-gray-400">Qualquer pessoa com o link vê a vaga, sem entrar no sistema. Candidatos de fora usam o contato abaixo.</span></span>
         </label>
         {f.public && <div><label className={labelCls} htmlFor="j-contact">Contato para candidatos externos</label><input id="j-contact" className={inputCls} placeholder="e-mail ou WhatsApp do RH" value={f.contact} onChange={(e) => set('contact', e.target.value)} /></div>}
@@ -78,8 +79,8 @@ function Applicants({ slug, job, onClose }: { slug: string; job: JobItem; onClos
           {data.map((a) => (
             <li key={a.uuid} className="rounded-xl border border-gray-100 p-3">
               <div className="flex items-center gap-3">
-                <Avatar src={a.person?.avatar_url} name={a.person?.name ?? '?'} size="sm" />
-                <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-gray-900">{a.person?.name}</p><p className="truncate text-xs text-gray-500">{[a.person?.job_title, a.department].filter(Boolean).join(' · ')}</p></div>
+                <PersonAvatarLink person={a.person} size="sm" />
+                <div className="min-w-0 flex-1"><PersonLink person={a.person} className="block truncate text-sm font-semibold text-gray-900" /><p className="truncate text-xs text-gray-500">{[a.person?.job_title, a.department].filter(Boolean).join(' · ')}</p></div>
                 <select className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs" aria-label="Situação" value={a.status} onChange={(e) => set.mutate({ app: a.uuid, status: e.target.value as JobApplicationItem['status'] })}>
                   {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
@@ -166,17 +167,28 @@ export default function WorkspaceJobsPage() {
   const { data, isLoading } = useQuery({ queryKey: ['ws', slug, 'jobs'], queryFn: () => workspaceService.jobs(slug) })
   const [form, setForm] = useState<JobItem | 'new' | null>(null)
   const [apps, setApps] = useState<JobItem | null>(null)
+  const [view, setView] = useState<'all' | 'mine'>('all')
+  const canManage = useCan('jobs.manage')
+  const items = (data?.items ?? []).filter((j) => view === 'all' || j.applied)
+  const appliedCount = (data?.items ?? []).filter((j) => j.applied).length
+
+  // link vindo do Início (vagas#uuid): rola até a vaga
+  useEffect(() => {
+    const id = window.location.hash.slice(1)
+    if (id && data) document.getElementById(id)?.scrollIntoView({ block: 'center' })
+  }, [data])
 
   return (
     <div>
       <PageHeader
         title="Vagas"
         subtitle="Oportunidades abertas na empresa: candidate-se ou divulgue as da sua área."
-        actions={data?.can_create ? <button type="button" className={btnPrimary} onClick={() => setForm('new')}><Plus size={16} /> Nova vaga</button> : undefined}
+        actions={canManage && data?.can_create ? <button type="button" className={btnPrimary} onClick={() => setForm('new')}><Plus size={16} /> Nova vaga</button> : undefined}
       />
-      {isLoading ? <Spinner /> : !data?.items.length ? <Empty text="Nenhuma vaga aberta no momento." /> : (
+      <Tabs value={view} onChange={setView} options={[{ value: 'all', label: 'Todas as vagas' }, { value: 'mine', label: `Minhas candidaturas (${appliedCount})` }]} />
+      {isLoading ? <Spinner /> : !items.length ? <Empty text={view === 'mine' ? 'Você ainda não se candidatou a nenhuma vaga.' : 'Nenhuma vaga aberta no momento.'} /> : (
         <div className="space-y-3">
-          {data.items.map((j) => <JobCard key={j.uuid} slug={slug} job={j} company={info.hotel.name} onEdit={() => setForm(j)} onApplicants={() => setApps(j)} />)}
+          {items.map((j) => <div key={j.uuid} id={j.uuid}><JobCard slug={slug} job={j} company={info.hotel.name} onEdit={() => setForm(j)} onApplicants={() => setApps(j)} /></div>)}
         </div>
       )}
       {form && <JobForm slug={slug} job={form === 'new' ? undefined : form} onClose={() => setForm(null)} />}

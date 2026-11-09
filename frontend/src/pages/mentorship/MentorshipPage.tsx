@@ -39,7 +39,7 @@ export default function MentorshipPage() {
       <div className="rounded-2xl border border-gray-100 bg-white p-5">
         <div className="flex items-center gap-2 text-primary">
           <Handshake className="h-6 w-6" />
-          {m.category && <span className="rounded bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">{m.category}</span>}
+          {m.category && <span className="rounded bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">{m.category}</span>}
           {m.status === 'draft' && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Rascunho</span>}
         </div>
 
@@ -74,7 +74,7 @@ export default function MentorshipPage() {
               Gerenciar mentoria
             </Button>
           ) : m.my_booking_status ? (
-            <span className="inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-3 py-2 text-sm font-medium text-violet-700">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-2 text-sm font-medium text-brand-700">
               <CheckCircle className="h-4 w-4" /> {BOOKING_LABELS[m.my_booking_status]}
             </span>
           ) : (
@@ -144,7 +144,7 @@ function BookingsPanel({ mentorshipUuid }: { mentorshipUuid: string }) {
               )}
               {b.status === 'accepted' && (
                 <div className="mt-3">
-                  <button onClick={() => updateBooking.mutate({ bookingUuid: b.uuid, status: 'completed' })} className="flex items-center gap-1 rounded-md bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-100">
+                  <button onClick={() => updateBooking.mutate({ bookingUuid: b.uuid, status: 'completed' })} className="flex items-center gap-1 rounded-md bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100">
                     <CheckCircle className="h-3.5 w-3.5" /> Marcar como concluída
                   </button>
                 </div>

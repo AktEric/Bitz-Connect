@@ -62,7 +62,7 @@ export default function CreatorPage() {
       <div className="mx-auto max-w-2xl px-4 py-12">
         <EmptyState
           title="Este usuário ainda não é um criador PRO"
-          description="A página de criador está disponível para assinantes do ConnectHotel PRO - Consultor."
+          description="A página de criador está disponível para assinantes do Bitz Connect PRO - Consultor."
           icon={<VideoIcon className="h-8 w-8" />}
           action={{ label: 'Ver perfil', onClick: () => { window.location.href = `/users/${creator.uuid}` } }}
         />
@@ -76,7 +76,7 @@ export default function CreatorPage() {
   return (
     <div className="mx-auto max-w-4xl pb-10">
       {/* Banner */}
-      <div className="relative h-40 w-full overflow-hidden rounded-b-xl bg-gradient-to-r from-violet-500 to-indigo-600 sm:h-52">
+      <div className="relative h-40 w-full overflow-hidden rounded-b-xl bg-gradient-to-r from-brand-500 to-ink-900 sm:h-52">
         {creator.banner_url && <img src={creator.banner_url} alt="" className="h-full w-full object-cover" />}
       </div>
 

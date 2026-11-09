@@ -7,7 +7,7 @@ use App\Enums\SubscriptionPlan;
 |--------------------------------------------------------------------------
 | Subscription Plan Catalog
 |--------------------------------------------------------------------------
-| Single source of truth for the plans offered by ConnectHotel. Adding a new
+| Single source of truth for the plans offered by Bitz Connect. Adding a new
 | plan or benefit is done here — the EntitlementService, pricing page and API
 | all read from this catalog, so no plan-specific logic lives elsewhere.
 |
@@ -47,7 +47,7 @@ return [
         ],
 
         SubscriptionPlan::ProConsultor->value => [
-            'name'        => 'ConnectHotel PRO — Consultor',
+            'name'        => 'Bitz Connect PRO — Consultor',
             'tagline'     => 'Para consultores independentes que criam conteúdo.',
             'price_cents' => 4990,
             'price_note'  => '+ 2,9% por consultoria ou venda transacionada pela plataforma',
@@ -81,7 +81,7 @@ return [
         ],
 
         SubscriptionPlan::ProEmpresa->value => [
-            'name'        => 'ConnectHotel PRO — Empresa',
+            'name'        => 'Bitz Connect PRO — Empresa',
             'tagline'     => 'Para empresas de qualquer segmento que recrutam e se destacam.',
             'price_cents' => 9990,
             'interval'    => 'month',

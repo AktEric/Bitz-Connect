@@ -41,7 +41,7 @@ function DevicesList({ slug }: { slug: string }) {
 
   return (
     <div className="mt-6">
-      <h3 className="mb-2 flex items-center gap-2 text-base font-semibold text-gray-900"><Laptop className="h-4 w-4 text-violet-600" /> Dispositivos do ponto</h3>
+      <h3 className="mb-2 flex items-center gap-2 text-base font-semibold text-gray-900"><Laptop className="h-4 w-4 text-brand-600" /> Dispositivos do ponto</h3>
       {error && <p className="mb-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{error}</p>}
       {!data?.length ? (
         <div className="rounded-xl border border-dashed border-gray-200 bg-white p-4 text-sm text-gray-400">
@@ -151,7 +151,7 @@ export default function PunchSettingsSection({ slug }: { slug: string }) {
   return (
     <section className="mb-8">
       <div className="mb-1 flex items-center gap-2">
-        <MapPin className="h-5 w-5 text-violet-600" />
+        <MapPin className="h-5 w-5 text-brand-600" />
         <h2 className="text-lg font-semibold text-gray-900">Ponto: local, aparelho e rede</h2>
       </div>
       <p className="mb-3 text-sm text-gray-500">
@@ -164,7 +164,7 @@ export default function PunchSettingsSection({ slug }: { slug: string }) {
         </div>
 
         <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-          <input type="checkbox" className="rounded border-gray-300 text-violet-600" checked={fenceOn} onChange={(e) => { setFenceOn(e.target.checked); touch() }} />
+          <input type="checkbox" className="rounded border-gray-300 text-brand-600" checked={fenceOn} onChange={(e) => { setFenceOn(e.target.checked); touch() }} />
           Usar cerca geográfica (local de trabalho)
         </label>
 
@@ -177,7 +177,7 @@ export default function PunchSettingsSection({ slug }: { slug: string }) {
             </div>
             <button type="button" className={btnGhost} onClick={useHere}><Crosshair className="h-4 w-4" /> Usar minha localização atual</button>
             <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-              <input type="checkbox" className="rounded border-gray-300 text-violet-600" checked={block} onChange={(e) => { setBlock(e.target.checked); touch() }} />
+              <input type="checkbox" className="rounded border-gray-300 text-brand-600" checked={block} onChange={(e) => { setBlock(e.target.checked); touch() }} />
               Bloquear marcações fora do raio (sem isso, apenas sinaliza “fora do local”)
             </label>
           </div>
@@ -195,7 +195,7 @@ export default function PunchSettingsSection({ slug }: { slug: string }) {
         </div>
 
         <div className="border-t border-gray-100 pt-4">
-          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-900"><Wifi className="h-4 w-4 text-violet-600" /> Redes autorizadas (por IP)</div>
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-900"><Wifi className="h-4 w-4 text-brand-600" /> Redes autorizadas (por IP)</div>
           {networks.length === 0 && <p className="mb-2 text-xs text-gray-500">Nenhuma rede cadastrada: o IP é registrado em cada marcação, sem verificação.</p>}
           <div className="space-y-2">
             {networks.map((n, i) => (
@@ -216,7 +216,7 @@ export default function PunchSettingsSection({ slug }: { slug: string }) {
           </div>
           {networks.length > 0 && (
             <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-              <input type="checkbox" className="rounded border-gray-300 text-violet-600" checked={netBlock} onChange={(e) => { setNetBlock(e.target.checked); touch() }} />
+              <input type="checkbox" className="rounded border-gray-300 text-brand-600" checked={netBlock} onChange={(e) => { setNetBlock(e.target.checked); touch() }} />
               Bloquear marcações fora dessas redes (sem isso, apenas sinaliza “fora da rede”)
             </label>
           )}

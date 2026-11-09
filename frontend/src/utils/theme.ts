@@ -11,7 +11,7 @@ export function getTheme(): Theme {
 
 export function applyTheme(t: Theme) {
   document.documentElement.classList.toggle('dark', t === 'dark')
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'dark' ? '#0f1117' : '#6d28d9')
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'dark' ? '#0f1117' : '#0057d8')
 }
 
 export function setTheme(t: Theme) {

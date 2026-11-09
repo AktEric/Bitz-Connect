@@ -75,7 +75,7 @@ export default function BankCard({ slug, userUuid, canPost }: { slug: string; us
     <Panel className="mt-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 font-semibold text-gray-900"><Hourglass className="h-4 w-4 text-violet-500" /> Banco de horas{userUuid && data.user ? ` · ${data.user.name}` : ''}</h2>
+          <h2 className="flex items-center gap-2 font-semibold text-gray-900"><Hourglass className="h-4 w-4 text-brand-500" /> Banco de horas{userUuid && data.user ? ` · ${data.user.name}` : ''}</h2>
           <p className={`mt-2 text-3xl font-bold tabular-nums ${negative ? 'text-red-600' : 'text-emerald-600'}`}>{data.balance_minutes > 0 ? '+' : ''}{fmtMinutes(data.balance_minutes)}</p>
           <p className="text-xs text-gray-500">{negative ? 'a compensar' : 'a receber em folga ou pagamento'}</p>
         </div>

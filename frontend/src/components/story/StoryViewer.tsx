@@ -134,7 +134,7 @@ export function StoryViewer({ groups, initialIndex, onClose }: StoryViewerProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-      <div className="relative flex h-full w-full max-w-md flex-col overflow-hidden bg-gradient-to-br from-[#431BFF] to-[#7C3AED] sm:h-[92vh] sm:rounded-2xl">
+      <div className="relative flex h-full w-full max-w-md flex-col overflow-hidden bg-gradient-to-br from-[#0057d8] to-[#0b0d12] sm:h-[92vh] sm:rounded-2xl">
         {story.image_url && (
           <>
             <img src={story.image_url} alt="" className="absolute inset-0 z-0 h-full w-full object-cover" />

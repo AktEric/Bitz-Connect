@@ -24,19 +24,19 @@ export function NewsWidget() {
   return (
     <Card className="mb-3">
       <div className="flex items-center gap-2 mb-3">
-        <TrendingUp className="h-4 w-4 text-violet-500" />
+        <TrendingUp className="h-4 w-4 text-brand-500" />
         <CardTitle>Novidades do mercado</CardTitle>
       </div>
       <ul className="space-y-3">
         {visible.map((n) => (
           <li key={n.id} className="group cursor-pointer">
-            <p className="text-sm text-gray-700 group-hover:text-violet-600 transition-colors leading-snug">{n.title}</p>
+            <p className="text-sm text-gray-700 group-hover:text-brand-600 transition-colors leading-snug">{n.title}</p>
             <p className="text-xs text-gray-400 mt-0.5">há {n.ago}</p>
           </li>
         ))}
       </ul>
       {!all && (
-        <button onClick={() => setAll(true)} className="mt-3 text-xs font-medium text-violet-600 hover:underline">
+        <button onClick={() => setAll(true)} className="mt-3 text-xs font-medium text-brand-600 hover:underline">
           Ver mais
         </button>
       )}
@@ -63,7 +63,7 @@ export function HotelHighlights() {
             <Link to={`/hotels/${h.slug}`} className="flex items-center gap-2.5 group">
               <Avatar src={h.logo_url} name={h.name} size="sm" />
               <div className="min-w-0">
-                <p className="flex items-center gap-1 truncate text-sm font-medium text-gray-800 group-hover:text-violet-600 transition-colors">
+                <p className="flex items-center gap-1 truncate text-sm font-medium text-gray-800 group-hover:text-brand-600 transition-colors">
                   <span className="truncate">{h.name}</span>
                   <PremiumBadge plan={h.plan} compact />
                 </p>
@@ -108,7 +108,7 @@ export function RecommendedJobs() {
               <Link to={`/jobs/${job.uuid}`} className="flex items-center gap-2.5 group">
                 <Avatar src={job.hotel.logo_url} name={job.hotel.name} size="sm" className="rounded-lg" />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-gray-800 group-hover:text-violet-600 transition-colors">{job.title}</p>
+                  <p className="truncate text-sm font-medium text-gray-800 group-hover:text-brand-600 transition-colors">{job.title}</p>
                   {job.city && (
                     <p className="flex items-center gap-0.5 text-xs text-gray-400">
                       <MapPin className="h-3 w-3" />{job.city}
@@ -120,7 +120,7 @@ export function RecommendedJobs() {
           ))}
         </ul>
       )}
-      <Link to="/jobs" className="mt-3 flex items-center gap-1 text-xs font-medium text-violet-600 hover:underline">
+      <Link to="/jobs" className="mt-3 flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline">
         <ExternalLink className="h-3 w-3" />Ver todas as vagas
       </Link>
     </Card>

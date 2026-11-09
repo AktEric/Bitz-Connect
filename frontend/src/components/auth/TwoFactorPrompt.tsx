@@ -37,7 +37,7 @@ export default function TwoFactorPrompt() {
         onSubmit={(e) => { e.preventDefault(); if (ok) finish(recovery ? { recovery_code: clean } : { code: clean }) }}
       >
         <div className="mb-3 flex items-center gap-2">
-          <span className="rounded-full bg-violet-50 p-2 text-violet-600"><ShieldCheck className="h-5 w-5" /></span>
+          <span className="rounded-full bg-brand-50 p-2 text-brand-600"><ShieldCheck className="h-5 w-5" /></span>
           <h2 id="tf-title" className="text-lg font-semibold text-gray-900">Verificação em duas etapas</h2>
         </div>
         <p className="mb-3 text-sm text-gray-600">
@@ -52,12 +52,12 @@ export default function TwoFactorPrompt() {
           maxLength={recovery ? 20 : 7}
           placeholder={recovery ? 'xxxxx-xxxxx' : '000000'}
           aria-label={recovery ? 'Código de recuperação' : 'Código de 6 dígitos'}
-          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-center text-lg tracking-widest focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100"
+          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-center text-lg tracking-widest focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
         />
         {pending.message && <p className="mt-2 text-sm text-red-600" role="alert">{pending.message}</p>}
-        <button type="submit" disabled={!ok} className="mt-4 w-full rounded-xl bg-violet-600 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50">Entrar</button>
+        <button type="submit" disabled={!ok} className="mt-4 w-full rounded-xl bg-brand-600 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50">Entrar</button>
         <div className="mt-3 flex items-center justify-between text-xs">
-          <button type="button" className="text-violet-700 hover:underline" onClick={() => { setRecovery((r) => !r); setCode('') }}>
+          <button type="button" className="text-brand-700 hover:underline" onClick={() => { setRecovery((r) => !r); setCode('') }}>
             {recovery ? 'Usar o aplicativo' : 'Usar código de recuperação'}
           </button>
           <button type="button" className="text-gray-500 hover:underline" onClick={() => finish(null)}>Cancelar</button>

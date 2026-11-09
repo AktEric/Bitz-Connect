@@ -85,7 +85,7 @@ export default function PostForm({ hotelUuid, hotelName, hotelLogoUrl, placehold
               'focus:bg-white focus:ring-2',
               isOverLimit
                 ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                : 'border-gray-200 focus:border-violet-400 focus:ring-violet-100',
+                : 'border-gray-200 focus:border-brand-400 focus:ring-brand-100',
             ].join(' ')}
           />
 
@@ -123,7 +123,7 @@ export default function PostForm({ hotelUuid, hotelName, hotelLogoUrl, placehold
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={!!image}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-violet-600 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-brand-600 disabled:opacity-40 transition-colors"
                 aria-label="Adicionar imagem"
               >
                 <Image className="h-4 w-4" />
@@ -140,7 +140,7 @@ export default function PostForm({ hotelUuid, hotelName, hotelLogoUrl, placehold
               <button
                 type="submit"
                 disabled={isEmpty || isOverLimit || createPost.isPending}
-                className="flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 active:bg-violet-800 disabled:opacity-50 transition-colors shadow-sm"
+                className="flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 active:bg-brand-800 disabled:opacity-50 transition-colors shadow-sm"
               >
                 {createPost.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {createPost.isPending ? 'Publicando...' : 'Publicar'}

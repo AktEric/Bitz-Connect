@@ -110,7 +110,7 @@ export default function ExperienceForm({
             Vincular a hotel cadastrado <span className="text-xs text-gray-400">(opcional)</span>
           </label>
           {selectedHotelName ? (
-            <div className="flex items-center gap-2 rounded-md border border-violet-300 bg-violet-50 px-3 py-2">
+            <div className="flex items-center gap-2 rounded-md border border-brand-300 bg-brand-50 px-3 py-2">
               <span className="flex-1 text-sm text-gray-800">{selectedHotelName}</span>
               <button
                 type="button"
