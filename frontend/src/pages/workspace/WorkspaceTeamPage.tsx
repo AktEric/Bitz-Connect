@@ -5,54 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Link2, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
-import type { WorkspaceMember } from '@/types/workspace.types'
-import { Empty, Modal, PageHeader, Panel, Pill, Spinner, Tabs, btnGhost, btnPrimary, errMsg, fmtDate, inputCls, labelCls, useWs } from './ui'
-
-function EditMemberModal({ slug, member, members, onClose }: { slug: string; member: WorkspaceMember; members: WorkspaceMember[]; onClose: () => void }) {
-  const qc = useQueryClient()
-  const { data: departments } = useQuery({ queryKey: ['ws', slug, 'departments'], queryFn: () => workspaceService.departments(slug) })
-  const [jobTitle, setJobTitle] = useState(member.job_title ?? '')
-  const [hiredAt, setHiredAt] = useState(member.hired_at ?? '')
-  const [dept, setDept] = useState(member.department?.uuid ?? '')
-  const [manager, setManager] = useState(member.manager?.uuid ?? '')
-  const [error, setError] = useState('')
-
-  const save = useMutation({
-    mutationFn: () => workspaceService.updateMember(slug, member.uuid, {
-      job_title: jobTitle.trim() || null, hired_at: hiredAt || null, department_uuid: dept || null, manager_uuid: manager || null,
-    }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['ws', slug, 'members'] }); qc.invalidateQueries({ queryKey: ['workspace', slug] }); onClose() },
-    onError: (e) => setError(errMsg(e)),
-  })
-
-  return (
-    <Modal title={`Perfil de ${member.name}`} onClose={onClose}>
-      <div className="space-y-3">
-        <div><label className={labelCls}>Cargo</label><input className={inputCls} value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} maxLength={120} /></div>
-        <div><label className={labelCls}>Data de admissão</label><input type="date" className={inputCls} value={hiredAt} onChange={(e) => setHiredAt(e.target.value)} /></div>
-        <div>
-          <label className={labelCls}>Setor</label>
-          <select className={inputCls} value={dept} onChange={(e) => setDept(e.target.value)}>
-            <option value="">Sem setor</option>
-            {departments?.map((d) => <option key={d.uuid} value={d.uuid}>{d.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className={labelCls}>Gestor direto</label>
-          <select className={inputCls} value={manager} onChange={(e) => setManager(e.target.value)}>
-            <option value="">Sem gestor</option>
-            {members.filter((m) => m.uuid !== member.uuid).map((m) => <option key={m.uuid} value={m.uuid}>{m.name}</option>)}
-          </select>
-        </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <div className="flex justify-end gap-2 pt-2">
-          <button className={btnGhost} onClick={onClose}>Cancelar</button>
-          <button className={btnPrimary} disabled={save.isPending} onClick={() => save.mutate()}>Salvar</button>
-        </div>
-      </div>
-    </Modal>
-  )
-}
+import { Empty, PageHeader, Panel, Pill, Spinner, Tabs, btnGhost, btnPrimary, errMsg, fmtDate, inputCls, labelCls, useWs } from './ui'
 
 function InvitesPanel({ slug }: { slug: string }) {
   const qc = useQueryClient()
@@ -164,7 +117,6 @@ export default function WorkspaceTeamPage() {
   const [params] = useSearchParams()
   const [q, setQ] = useState(params.get('q') ?? '')
   const [dept, setDept] = useState('')
-  const [editing, setEditing] = useState<WorkspaceMember | null>(null)
 
   const { data: members, isLoading } = useQuery({ queryKey: ['ws', slug, 'members'], queryFn: () => workspaceService.members(slug) })
   const departments = useMemo(() => [...new Set((members ?? []).map((m) => m.department?.name).filter(Boolean) as string[])].sort(), [members])
@@ -207,7 +159,7 @@ export default function WorkspaceTeamPage() {
                     {m.hired_at && <p className="text-xs text-gray-400">Desde {fmtDate(m.hired_at)}</p>}
                   </div>
                   {canEditPeople && (
-                    <button className="text-gray-400 hover:text-brand-600" aria-label={`Editar ${m.name}`} onClick={() => setEditing(m)}><Pencil className="h-4 w-4" /></button>
+                    <Link to={`/w/${slug}/cadastro?pessoa=${m.uuid}`} className="text-gray-400 hover:text-brand-600" aria-label={`Abrir cadastro de ${m.name}`} title="Abrir no Cadastro de pessoas"><Pencil className="h-4 w-4" /></Link>
                   )}
                 </Panel>
               ))}
@@ -216,7 +168,6 @@ export default function WorkspaceTeamPage() {
         </>
       )}
 
-      {editing && members && <EditMemberModal slug={slug} member={editing} members={members} onClose={() => setEditing(null)} />}
     </div>
   )
 }

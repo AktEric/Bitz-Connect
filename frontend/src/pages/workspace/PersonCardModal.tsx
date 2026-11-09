@@ -1,12 +1,9 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, Cake, Film, MapPin, Smile, Utensils } from 'lucide-react'
+import { BookOpen, Film, MapPin, Smile, Utensils } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
-import { Avatar } from '@/components/ui/Avatar'
 import type { PersonRecord } from '@/types/workspace.types'
-import { Modal, Spinner, btnGhost, btnPrimary, errMsg, fmtDate, inputCls, labelCls } from './ui'
-
-const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+import { Spinner, btnPrimary, errMsg, fmtDate, inputCls, labelCls } from './ui'
 
 export function ProfileFacts({ profile }: { profile: Record<string, string | null> }) {
   const rows = [
@@ -41,8 +38,8 @@ const RECORD_SECTIONS: { title: string; fields: { key: keyof PersonRecord; label
   { title: 'Dados bancários', fields: [{ key: 'bank', label: 'Banco' }, { key: 'agency', label: 'Agência' }, { key: 'account', label: 'Conta' }, { key: 'account_type', label: 'Tipo de conta' }, { key: 'pix', label: 'Chave Pix' }] },
 ]
 
-/** Ficha cadastral: o RH preenche; a própria pessoa só lê. */
-export function RecordSection({ slug, uuid }: { slug: string; uuid: string }) {
+/** Ficha cadastral: só lê. Os campos de edição aparecem apenas na tela de Cadastro de pessoas (`editable`), nunca no perfil. */
+export function RecordSection({ slug, uuid, editable = false }: { slug: string; uuid: string; editable?: boolean }) {
   const qc = useQueryClient()
   const key = ['ws', slug, 'record', uuid]
   const { data, isLoading, error } = useQuery({ queryKey: key, queryFn: () => workspaceService.personRecord(slug, uuid) })
@@ -56,6 +53,7 @@ export function RecordSection({ slug, uuid }: { slug: string; uuid: string }) {
   if (isLoading) return <Spinner />
   if (error || !data) return <p className="text-sm text-red-600">{errMsg(error)}</p>
   const val = (k: keyof PersonRecord) => (k in draft ? draft[k] : data[k]) as string | null
+  const canEdit = editable && data.can_edit
 
   return (
     <div className="space-y-4">
@@ -66,7 +64,7 @@ export function RecordSection({ slug, uuid }: { slug: string; uuid: string }) {
             {sec.fields.map((f) => (
               <div key={f.key} className={f.key === 'street' || f.key === 'pix' || f.key === 'emergency_name' ? 'col-span-2' : ''}>
                 <label className={labelCls} htmlFor={`rec-${f.key}`}>{f.label}</label>
-                {data.can_edit ? (
+                {canEdit ? (
                   <input id={`rec-${f.key}`} type={f.type ?? 'text'} className={inputCls} value={val(f.key) ?? ''} onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))} />
                 ) : (
                   <p className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-900">{f.key === 'birth_date' && val(f.key) ? fmtDate(val(f.key) as string) : val(f.key) || '—'}</p>
@@ -76,45 +74,12 @@ export function RecordSection({ slug, uuid }: { slug: string; uuid: string }) {
           </div>
         </fieldset>
       ))}
-      {data.can_edit ? (
+      {canEdit ? (
         <div className="flex items-center justify-end gap-3">
           {msg && <span className="text-sm text-gray-500" role="status">{msg}</span>}
           <button type="button" className={btnPrimary} disabled={save.isPending || !Object.keys(draft).length} onClick={() => save.mutate()}>Salvar ficha</button>
         </div>
       ) : <p className="text-xs text-gray-400">Estes dados são cadastrados pelo RH. Para corrigir algo, fale com o RH.</p>}
     </div>
-  )
-}
-
-/** Cartão da pessoa: perfil público para todos; ficha cadastral só para o RH. */
-export default function PersonCardModal({ slug, uuid, isAdmin, onClose }: { slug: string; uuid: string; isAdmin: boolean; onClose: () => void }) {
-  const { data, isLoading } = useQuery({ queryKey: ['ws', slug, 'card', uuid], queryFn: () => workspaceService.personCard(slug, uuid) })
-  const [tab, setTab] = useState<'profile' | 'record'>('profile')
-
-  return (
-    <Modal title={data?.person?.name ?? 'Perfil'} onClose={onClose}>
-      {isLoading || !data ? <Spinner /> : (
-        <>
-          <div className="mb-4 flex items-center gap-3">
-            <Avatar src={data.person?.avatar_url} name={data.person?.name ?? '?'} size="xl" />
-            <div className="min-w-0">
-              <p className="font-semibold text-gray-900">{data.person?.name}</p>
-              <p className="text-sm text-gray-600">{[data.person?.job_title, data.department].filter(Boolean).join(' · ') || 'Cargo não informado'}</p>
-              <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-gray-400">
-                {data.hired_at && <span>Desde {fmtDate(data.hired_at)}</span>}
-                {data.birthday && <span className="inline-flex items-center gap-1"><Cake className="h-3 w-3" /> {data.birthday.day} de {MONTHS[data.birthday.month - 1]}</span>}
-              </p>
-            </div>
-          </div>
-          {isAdmin && (
-            <div className="mb-4 flex gap-2">
-              <button type="button" className={tab === 'profile' ? btnPrimary : btnGhost} onClick={() => setTab('profile')}>Perfil</button>
-              <button type="button" className={tab === 'record' ? btnPrimary : btnGhost} onClick={() => setTab('record')}>Ficha cadastral</button>
-            </div>
-          )}
-          {tab === 'profile' ? <ProfileFacts profile={data.profile as unknown as Record<string, string | null>} /> : <RecordSection slug={slug} uuid={uuid} />}
-        </>
-      )}
-    </Modal>
   )
 }

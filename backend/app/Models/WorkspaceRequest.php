@@ -36,6 +36,11 @@ class WorkspaceRequest extends Model
         return $this->hasMany(WorkspaceRequestComment::class);
     }
 
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(RequestApproval::class, 'workspace_request_id')->orderBy('position');
+    }
+
     public function getRouteKeyName(): string
     {
         return 'uuid';

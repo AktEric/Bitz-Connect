@@ -1,12 +1,13 @@
 import { useCan } from './permissions'
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
+import { Eye, GitBranch, Plus, Search } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
 import type { RequestStatus, RequestType, TicketCategory, WorkspaceRequest } from '@/types/workspace.types'
-import { Empty, Modal, PageHeader, Panel, Pill, Spinner, Tabs, btnGhost, btnPrimary, errMsg, fmtDate, fmtMoney, inputCls, labelCls, timeAgo, useWs } from './ui'
+import RequestFlowTimeline from './RequestFlowTimeline'
+import { Empty, Modal, PageHeader, Pill, Spinner, Tabs, btnGhost, btnPrimary, errMsg, fmtDate, fmtMoney, inputCls, labelCls, timeAgo, useWs } from './ui'
 
 const TYPE_LABEL: Record<RequestType, string> = {
   vacation: 'Férias', document: 'Documento', reimbursement: 'Reembolso', schedule: 'Escala / horário', other: 'Outro', ticket: 'Chamado ao RH',
@@ -27,6 +28,10 @@ function NewRequestModal({ slug, onClose }: { slug: string; onClose: () => void 
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<TicketCategory>('time')
   const [error, setError] = useState('')
+
+  const { data: flows } = useQuery({ queryKey: ['ws', slug, 'request-flows'], queryFn: () => workspaceService.requestFlows(slug), enabled: type !== 'ticket' })
+  const route = flows?.types.find((t) => t.type === type)
+  const roleLabel = (k: string) => flows?.roles.find((r) => r.key === k)?.label ?? k
 
   const create = useMutation({
     mutationFn: () => workspaceService.createRequest(slug, {
@@ -69,6 +74,7 @@ function NewRequestModal({ slug, onClose }: { slug: string; onClose: () => void 
           <div><label className={labelCls}>Valor (R$)</label><input className={inputCls} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" /></div>
         )}
         <div><label className={labelCls}>Detalhes</label><textarea className={inputCls} rows={3} maxLength={3000} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+        {route && <p className="flex flex-wrap items-center gap-1.5 rounded-xl bg-gray-50 px-3 py-2 text-xs text-gray-600"><GitBranch className="h-3.5 w-3.5" /> Passa por: {route.steps.map((s) => roleLabel(s)).join(' → ')}</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
         <div className="flex justify-end gap-2">
           <button className={btnGhost} onClick={onClose}>Cancelar</button>
@@ -79,7 +85,7 @@ function NewRequestModal({ slug, onClose }: { slug: string; onClose: () => void 
   )
 }
 
-function RequestDetail({ slug, uuid, canDecide, canResolve, onClose }: { slug: string; uuid: string; canDecide: boolean; canResolve: boolean; onClose: () => void }) {
+function RequestDetail({ slug, uuid, canResolve, onClose }: { slug: string; uuid: string; canResolve: boolean; onClose: () => void }) {
   const qc = useQueryClient()
   const key = ['ws', slug, 'request', uuid]
   const { data: r, isLoading } = useQuery({ queryKey: key, queryFn: () => workspaceService.request(slug, uuid) })
@@ -113,8 +119,14 @@ function RequestDetail({ slug, uuid, canDecide, canResolve, onClose }: { slug: s
           {r.starts_on && <p className="text-gray-600">Período: {fmtDate(r.starts_on)} a {fmtDate(r.ends_on)}</p>}
           {r.amount_cents != null && <p className="text-gray-600">Valor: {fmtMoney(r.amount_cents)}</p>}
           {r.description && <p className="whitespace-pre-wrap text-gray-600">{r.description}</p>}
-          {r.status !== 'pending' && r.status !== 'in_progress' && r.status !== 'cancelled' && (
-            <p className="rounded-xl bg-gray-50 p-3 text-gray-600">{r.type === 'ticket' ? 'Resolvido' : 'Analisada'} por {r.decided_by?.name ?? '—'} em {fmtDate(r.decided_at)}{r.decision_note ? ` — ${r.decision_note}` : ''}</p>
+          {r.type === 'ticket' && r.status !== 'pending' && r.status !== 'in_progress' && r.status !== 'cancelled' && (
+            <p className="rounded-xl bg-gray-50 p-3 text-gray-600">Resolvido por {r.decided_by?.name ?? '—'} em {fmtDate(r.decided_at)}{r.decision_note ? ` — ${r.decision_note}` : ''}</p>
+          )}
+          {r.type !== 'ticket' && !!r.approvals?.length && (
+            <div className="rounded-xl border border-gray-100 p-3">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Andamento da aprovação{r.stage ? ` · ${r.stage}` : ''}</p>
+              <RequestFlowTimeline steps={r.approvals} />
+            </div>
           )}
 
           <div className="border-t border-gray-100 pt-3">
@@ -138,9 +150,9 @@ function RequestDetail({ slug, uuid, canDecide, canResolve, onClose }: { slug: s
               <button className={`${btnPrimary} mt-3 w-full`} disabled={resolve.isPending || note.trim().length < 5} onClick={() => resolve.mutate()}>Marcar como resolvido</button>
             </div>
           )}
-          {r.type !== 'ticket' && r.status === 'pending' && canDecide && !r.is_mine && (
+          {r.type !== 'ticket' && r.status === 'pending' && r.can_decide && !r.is_mine && (
             <div className="border-t border-gray-100 pt-3">
-              <label className={labelCls}>Observação (obrigatória ao recusar)</label>
+              <label className={labelCls}>Sua etapa: {r.stage_role ? `análise do ${r.approvals?.find((a) => a.is_current)?.label ?? ''}` : 'análise'}. Observação (obrigatória ao recusar)</label>
               <input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} />
               {error && <p className="mt-2 text-red-600">{error}</p>}
               <div className="mt-3 flex gap-2">
@@ -162,46 +174,85 @@ export default function WorkspaceRequestsPage() {
   const { slug } = useWs()
   const canReview = useCan('requests.review')
   const canSeeAll = useCan('people.manage')
+  const canConfigure = useCan('requests.configure')
   const [params] = useSearchParams()
   const [scope, setScope] = useState<'mine' | 'review' | 'all'>(canReview && params.get('aba') === 'aprovar' ? 'review' : 'mine')
   const [creating, setCreating] = useState(false)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [q, setQ] = useState('')
 
   const { data, isLoading } = useQuery({ queryKey: ['ws', slug, 'requests', scope], queryFn: () => workspaceService.requests(slug, { scope }) })
 
-  const options: { value: 'mine' | 'review' | 'all'; label: string }[] = [{ value: 'mine', label: 'Minhas' }]
-  if (canReview) options.unshift({ value: 'review', label: 'Para analisar' })
+  const options: { value: 'mine' | 'review' | 'all'; label: string }[] = [{ value: 'mine', label: 'Minhas solicitações' }]
+  if (canReview) options.push({ value: 'review', label: 'Para aprovar' })
   if (canSeeAll) options.push({ value: 'all', label: 'Todas' })
+
+  const items = (data?.items ?? []).filter((r: WorkspaceRequest) => !q.trim()
+    || `${r.title} ${TYPE_LABEL[r.type]} ${r.description ?? ''} ${r.requester?.name ?? ''}`.toLowerCase().includes(q.trim().toLowerCase()))
+  const showWho = scope !== 'mine'
 
   return (
     <div>
       <PageHeader
         title="Solicitações"
         subtitle="Férias, documentos, reembolsos, chamados ao RH e pedidos ao seu gestor."
-        actions={<button className={btnPrimary} onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> Nova</button>}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            {canConfigure && <Link to={`/w/${slug}/solicitacoes/fluxos`} className={btnGhost}><GitBranch className="h-4 w-4" /> Fluxos de aprovação</Link>}
+            <button className={btnPrimary} onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> Nova solicitação</button>
+          </div>
+        }
       />
-      {options.length > 1 && <Tabs value={scope} onChange={setScope} options={options} />}
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        {options.length > 1 && <Tabs value={scope} onChange={setScope} options={options} />}
+        <div className="relative min-w-[14rem] flex-1 sm:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <input type="search" aria-label="Buscar solicitação" className={`${inputCls} pl-9`} placeholder="Buscar solicitação" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+      </div>
 
-      {isLoading ? <Spinner /> : !data?.items.length ? <Empty text="Nenhuma solicitação por aqui." /> : (
-        <div className="space-y-2">
-          {data.items.map((r: WorkspaceRequest) => (
-            <Panel key={r.uuid} className="!p-3">
-              <button type="button" className="flex w-full items-center gap-3 text-left" onClick={() => setOpenId(r.uuid)}>
-                <Avatar src={r.requester?.avatar_url} name={r.requester?.name ?? '?'} size="md" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-gray-900">{r.title}</p>
-                  <p className="truncate text-xs text-gray-400">{r.requester?.name} · {TYPE_LABEL[r.type]} · {timeAgo(r.created_at)}</p>
-                </div>
-                {r.overdue && <Pill tone="red">Prazo vencido</Pill>}
-                <Pill tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Pill>
-              </button>
-            </Panel>
-          ))}
+      {isLoading ? <Spinner /> : !items.length ? <Empty text="Nenhuma solicitação por aqui." /> : (
+        <div className="ws-card overflow-x-auto rounded-2xl bg-white">
+          <table className="w-full min-w-[40rem] text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <th scope="col" className="px-4 py-3">Data</th>
+                {showWho && <th scope="col" className="px-3 py-3">Solicitante</th>}
+                <th scope="col" className="px-3 py-3">Assunto</th>
+                <th scope="col" className="hidden px-3 py-3 md:table-cell">Tipo</th>
+                <th scope="col" className="hidden px-3 py-3 lg:table-cell">Mensagem</th>
+                <th scope="col" className="px-3 py-3">Situação</th>
+                <th scope="col" className="px-3 py-3 text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {items.map((r: WorkspaceRequest) => (
+                <tr key={r.uuid} className="hover:bg-gray-50/70">
+                  <td className="whitespace-nowrap px-4 py-3 text-gray-600">{fmtDate(r.created_at)}</td>
+                  {showWho && <td className="px-3 py-3"><span className="flex items-center gap-2"><Avatar src={r.requester?.avatar_url} name={r.requester?.name ?? '?'} size="xs" /><span className="max-w-[9rem] truncate text-gray-800">{r.requester?.name}</span></span></td>}
+                  <td className="px-3 py-3 font-medium text-gray-900">{r.title}</td>
+                  <td className="hidden px-3 py-3 text-gray-600 md:table-cell">{TYPE_LABEL[r.type]}</td>
+                  <td className="hidden max-w-[16rem] truncate px-3 py-3 text-gray-500 lg:table-cell">{r.description ?? '—'}</td>
+                  <td className="px-3 py-3">
+                    <div className="flex flex-col items-start gap-1">
+                      <Pill tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Pill>
+                      {r.stage && <span className="text-xs text-gray-500">{r.stage}{r.steps_total ? ` (${(r.steps_done ?? 0) + 1}/${r.steps_total})` : ''}</span>}
+                      {r.overdue && <Pill tone="red">Prazo vencido</Pill>}
+                      {r.can_decide && <span className="text-xs font-semibold text-brand-600">Sua vez de analisar</span>}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <button type="button" onClick={() => setOpenId(r.uuid)} className="rounded-full border border-gray-200 p-2 text-gray-600 hover:border-brand-300 hover:text-brand-700" aria-label={`Ver detalhes: ${r.title}`} title="Ver detalhes e andamento"><Eye className="h-4 w-4" /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
       {creating && <NewRequestModal slug={slug} onClose={() => setCreating(false)} />}
-      {openId && <RequestDetail slug={slug} uuid={openId} canDecide={canReview} canResolve={canSeeAll} onClose={() => setOpenId(null)} />}
+      {openId && <RequestDetail slug={slug} uuid={openId} canResolve={canSeeAll} onClose={() => setOpenId(null)} />}
     </div>
   )
 }

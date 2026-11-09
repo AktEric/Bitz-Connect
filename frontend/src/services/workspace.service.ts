@@ -6,7 +6,7 @@ import type {
   Paged, Payslip, PayslipSignatureProof, SignPayslipInput, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
-  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult, PersonCard, PersonProfileFields, ReactionList, CareerPayload, CareerInput, PersonOrg, MyProfile, PersonRecord, JobItem, JobApplicationItem, PublicJob, HomeHighlights,
+  CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult, PersonCard, PersonProfileFields, RequestFlowConfig, ReactionList, CareerPayload, CareerInput, PersonOrg, MyProfile, PersonRecord, JobItem, JobApplicationItem, PublicJob, HomeHighlights,
 } from '@/types/workspace.types'
 
 const w = (slug: string) => `/workspaces/${slug}`
@@ -155,6 +155,8 @@ const workspaceService = {
 
   // Solicitações
   requests: (slug: string, params: { scope?: string; status?: string }) => get<Paged<WorkspaceRequest>>(`${w(slug)}/requests`, params),
+  requestFlows: (slug: string) => get<RequestFlowConfig>(`${w(slug)}/request-flows`),
+  saveRequestFlow: (slug: string, type: string, steps: string[]) => api.put<ApiResponse<RequestFlowConfig>>(`${w(slug)}/request-flows/${type}`, { steps }).then((r) => r.data.data),
   request: (slug: string, uuid: string) => get<WorkspaceRequest>(`${w(slug)}/requests/${uuid}`),
   createRequest: (slug: string, body: Record<string, unknown>) => post<WorkspaceRequest>(`${w(slug)}/requests`, body),
   decideRequest: (slug: string, uuid: string, decision: 'approved' | 'rejected', note?: string) =>

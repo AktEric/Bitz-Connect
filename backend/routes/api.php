@@ -370,6 +370,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/feed/{post}/comments',         [WorkspaceFeedController::class, 'comment']);
 
         // Solicitações
+        Route::get('/request-flows',                 [\App\Http\Controllers\Api\V1\RequestFlowController::class, 'index']);
+        Route::put('/request-flows/{type}',          [\App\Http\Controllers\Api\V1\RequestFlowController::class, 'update']);
         Route::get('/requests',                      [WorkspaceRequestController::class, 'index']);
         Route::post('/requests',                     [WorkspaceRequestController::class, 'store']);
         Route::get('/requests/{uuid}',               [WorkspaceRequestController::class, 'show']);

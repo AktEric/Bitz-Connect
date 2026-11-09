@@ -22,7 +22,7 @@ export type Capability =
   | 'people.view' | 'people.manage' | 'career.manage' | 'areas.manage' | 'invites.manage' | 'onboarding.view'
   | 'roles.view' | 'roles.manage' | 'security.view' | 'security.manage' | 'audit.view'
   | 'calendar.manage' | 'calendar.holiday' | 'climate.manage' | 'climate.results'
-  | 'requests.review' | 'goals.manage' | 'development.manage' | 'time.team' | 'time.settings' | 'time.closing' | 'schedules.manage' | 'payslips.manage'
+  | 'requests.review' | 'requests.configure' | 'goals.manage' | 'development.manage' | 'time.team' | 'time.settings' | 'time.closing' | 'schedules.manage' | 'payslips.manage'
   | 'dashboard.view' | 'reports.view'
 
 export interface WorkspaceInfo {
@@ -166,6 +166,25 @@ export type RequestType = 'vacation' | 'document' | 'reimbursement' | 'schedule'
 export type RequestStatus = 'pending' | 'in_progress' | 'resolved' | 'approved' | 'rejected' | 'cancelled'
 export type TicketCategory = 'time' | 'payroll' | 'benefits' | 'documents' | 'other'
 
+export type ApprovalRole = 'manager' | 'hr' | 'finance' | 'director'
+export interface RequestStep {
+  position: number
+  role: ApprovalRole
+  label: string
+  status: 'waiting' | 'pending' | 'approved' | 'rejected' | 'skipped'
+  is_current: boolean
+  decided_by: WorkspacePerson | null
+  decided_at: string | null
+  note: string | null
+  /** Quem deve analisar esta etapa (só enquanto ela não foi decidida). */
+  approvers: WorkspacePerson[]
+}
+export interface RequestFlowConfig {
+  types: { type: Exclude<RequestType, 'ticket'>; label: string; steps: ApprovalRole[]; is_default: boolean }[]
+  roles: { key: ApprovalRole; label: string }[]
+  can_edit: boolean
+}
+
 export interface WorkspaceRequest {
   uuid: string
   type: RequestType
@@ -186,6 +205,13 @@ export interface WorkspaceRequest {
   due_at?: string | null
   first_response_at?: string | null
   overdue?: boolean
+  /** Fluxo de aprovação (só em pedidos que não são chamados). */
+  stage?: string | null
+  stage_role?: ApprovalRole | null
+  steps_total?: number
+  steps_done?: number
+  can_decide?: boolean
+  approvals?: RequestStep[]
   comments?: { uuid: number; body: string; created_at: string; author: WorkspacePerson | null }[]
 }
 

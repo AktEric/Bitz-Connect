@@ -96,7 +96,8 @@ class WorkspaceController extends Controller
         }
 
         $before = $this->access->accessRole($target, $hotel);
-        $target->update(['access_role' => $data['access_role']]);
+        // `role` legado acompanha o papel: senão quem foi rebaixado continuaria administrando pelo painel da empresa
+        $target->update(['access_role' => $data['access_role'], 'role' => in_array($data['access_role'], ['owner', 'hr'], true) ? 'admin' : 'employee']);
         AuditLog::record($request, $hotel, 'role.changed', $target->user, ['from' => $before, 'to' => $data['access_role']]);
 
         return $this->success('Papel atualizado com sucesso.', [
@@ -224,12 +225,21 @@ class WorkspaceController extends Controller
         $isAdmin   = $this->access->isAdmin($membership);
         $isManager = $this->access->isManager($user, $hotel);
 
-        // Solicitações que dependem de mim: admin vê todas as pendentes; gestor, as da equipe.
-        $reviewQuery = WorkspaceRequest::where('hotel_id', $hotel->id)->whereIn('status', $isAdmin ? ['pending', 'in_progress'] : ['pending'])
-            ->where('requester_id', '!=', $user->id);
-        if (! $isAdmin) {
-            $reviewQuery->where('type', '!=', 'ticket')->whereIn('requester_id', $this->access->reportIds($user, $hotel) ?: [0]);
+        // Solicitações que dependem de mim: chamados ao RH (RH/dono) + pedidos cuja etapa atual eu posso decidir.
+        $toReview = 0;
+        if ($isAdmin) {
+            $toReview += WorkspaceRequest::where('hotel_id', $hotel->id)->where('type', 'ticket')->whereIn('status', ['pending', 'in_progress'])
+                ->where('requester_id', '!=', $user->id)->count();
         }
+        $approvals = app(\App\Domain\Workspace\Services\RequestApprovals::class);
+        WorkspaceRequest::with(['requester', 'approvals'])->where('hotel_id', $hotel->id)->where('type', '!=', 'ticket')->where('status', 'pending')
+            ->where('requester_id', '!=', $user->id)->limit(300)->get()
+            ->each(function ($r) use (&$toReview, $approvals, $user, $membership, $hotel) {
+                $approvals->ensureFlow($r, $hotel);
+                if ($approvals->actionableFor($user, $membership, $r, $hotel)) {
+                    $toReview++;
+                }
+            });
 
         return $this->success('Workspace carregado com sucesso.', [
             'hotel' => [
@@ -261,7 +271,7 @@ class WorkspaceController extends Controller
             ],
             'counts' => [
                 'members'            => HotelUser::where('hotel_id', $hotel->id)->where('status', 'approved')->count(),
-                'requests_to_review' => ($isAdmin || $isManager) ? $reviewQuery->count() : 0,
+                'requests_to_review' => $toReview,
                 'my_open_requests'   => WorkspaceRequest::where('hotel_id', $hotel->id)
                     ->where('requester_id', $user->id)->whereIn('status', ['pending', 'in_progress'])->count(),
                 'new_payslips'       => Payslip::where('hotel_id', $hotel->id)

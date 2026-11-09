@@ -62,6 +62,8 @@ const WorkspacePayslipsPage = lazy(() => import('@/pages/workspace/WorkspacePays
 const WorkspaceGoalsPage = lazy(() => import('@/pages/workspace/WorkspaceGoalsPage'))
 const WorkspaceDevelopmentPage = lazy(() => import('@/pages/workspace/WorkspaceDevelopmentPage'))
 const WorkspaceMarketplacePage = lazy(() => import('@/pages/workspace/WorkspaceMarketplacePage'))
+const WorkspacePeopleAdminPage = lazy(() => import('@/pages/workspace/WorkspacePeopleAdminPage'))
+const WorkspaceRequestFlowsPage = lazy(() => import('@/pages/workspace/WorkspaceRequestFlowsPage'))
 const WorkspaceAdminPage = lazy(() => import('@/pages/workspace/WorkspaceAdminPage'))
 const WorkspaceCalendarPage = lazy(() => import('@/pages/workspace/WorkspaceCalendarPage'))
 const WorkspaceSecurityPage = lazy(() => import('@/pages/workspace/WorkspaceSecurityPage'))
@@ -125,6 +127,7 @@ export default function AppRoutes() {
             <Route path="auditoria" element={<RequireCan cap="audit.view"><WorkspaceAuditPage /></RequireCan>} />
             <Route path="pesquisas" element={<WorkspaceClimatePage />} />
             <Route path="organograma" element={<WorkspaceOrgChartPage />} />
+            <Route path="cadastro" element={<RequireCan cap="people.manage"><WorkspacePeopleAdminPage /></RequireCan>} />
             <Route path="vagas" element={<WorkspaceJobsPage />} />
             <Route path="marketplace" element={<RequireCan cap="marketplace.view"><WorkspaceMarketplacePage /></RequireCan>} />
             <Route path="perfil" element={<WorkspaceProfilePage />} />
@@ -135,6 +138,7 @@ export default function AppRoutes() {
             <Route path="equipe" element={<WorkspaceTeamPage />} />
             <Route path="configuracoes" element={<RequireCan cap="roles.view"><WorkspaceAdminPage /></RequireCan>} />
             <Route path="solicitacoes" element={<WorkspaceRequestsPage />} />
+            <Route path="solicitacoes/fluxos" element={<RequireCan cap="requests.configure"><WorkspaceRequestFlowsPage /></RequireCan>} />
             <Route path="recebimentos" element={<WorkspacePayslipsPage />} />
             <Route path="metas" element={<WorkspaceGoalsPage />} />
             <Route path="desenvolvimento" element={<WorkspaceDevelopmentPage />} />

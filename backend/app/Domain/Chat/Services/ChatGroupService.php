@@ -27,23 +27,25 @@ class ChatGroupService
             ->exists();
     }
 
+    /**
+     * Administra a empresa (dono/RH). Segue o MESMO critério do Workspace: o papel de acesso, quando definido, prevalece
+     * sobre o `role` legado; sem papel de acesso, `role = admin` vale como dono.
+     */
+    private function adminScope($query)
+    {
+        return $query->where('status', 'approved')->where(fn ($q) => $q->whereIn('access_role', ['owner', 'hr'])
+            ->orWhere(fn ($q2) => $q2->whereNull('access_role')->where('role', 'admin')));
+    }
+
     public function isCompanyAdmin(User $user, int $hotelId): bool
     {
-        return HotelUser::where('hotel_id', $hotelId)
-            ->where('user_id', $user->id)
-            ->where('role', 'admin')
-            ->where('status', 'approved')
-            ->exists();
+        return $this->adminScope(HotelUser::where('hotel_id', $hotelId)->where('user_id', $user->id))->exists();
     }
 
     /** @return int[] ids das empresas em que o usuário é administrador aprovado */
     public function adminHotelIds(User $user): array
     {
-        return HotelUser::where('user_id', $user->id)
-            ->where('role', 'admin')
-            ->where('status', 'approved')
-            ->pluck('hotel_id')
-            ->all();
+        return $this->adminScope(HotelUser::where('user_id', $user->id))->pluck('hotel_id')->all();
     }
 
     public function canManage(User $user, ChatGroup $group, ?ChatGroupMember $membership): bool

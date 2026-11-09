@@ -57,7 +57,8 @@ class WorkspacePermissions
             'climate.manage'   => $admin,
             'climate.results'  => $summary,
             // acompanhamento
-            'requests.review'  => $lead,
+            'requests.review'  => $lead || in_array($membership->access_role, ['finance', 'director'], true),
+            'requests.configure' => $admin,
             'goals.manage'     => $lead,
             'development.manage' => $lead,
             'time.team'        => $lead,
