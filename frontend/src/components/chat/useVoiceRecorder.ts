@@ -48,8 +48,17 @@ export function useVoiceRecorder() {
     }
     try {
       stream.current = await navigator.mediaDevices.getUserMedia({ audio: true })
-    } catch {
-      setError('Permita o uso do microfone no navegador para gravar.')
+    } catch (e) {
+      const name = e instanceof DOMException ? e.name : ''
+      setError(
+        name === 'NotAllowedError' || name === 'SecurityError'
+          ? 'O microfone está bloqueado. Clique no cadeado ao lado do endereço do site, permita o microfone e tente de novo.'
+          : name === 'NotFoundError' || name === 'OverconstrainedError'
+            ? 'Nenhum microfone foi encontrado neste computador.'
+            : name === 'NotReadableError'
+              ? 'O microfone está sendo usado por outro programa.'
+              : 'Não foi possível acessar o microfone.',
+      )
       return false
     }
     const mimeType = MIME_CANDIDATES.find((m) => MediaRecorder.isTypeSupported(m))
