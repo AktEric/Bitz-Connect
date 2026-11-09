@@ -67,13 +67,21 @@ export default function WorkspaceHomePage() {
       {/* Três colunas como no Voors: meu espaço | mural | destaques da empresa */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_20rem]">
         <aside className="space-y-5 xl:order-1" aria-label="Meu espaço">
-          <Panel className="text-center">
-            <PersonAvatarLink person={{ uuid: user?.uuid ?? '', name: user?.name ?? '', avatar_url: user?.avatar_url }} size="2xl" className="mx-auto" />
-            <PersonLink person={user?.uuid ? { uuid: user.uuid, name: user.name } : null} className="mt-3 block font-semibold text-gray-900">
-              {greeting()}, {firstName}
-            </PersonLink>
-            <p className="text-xs text-gray-500">{[info.me.job_title, info.me.department].filter(Boolean).join(' · ') || info.hotel.name}</p>
-            <Link to="perfil" className="mt-3 inline-block text-xs font-medium text-brand-600 hover:underline">Ver meu perfil e carreira</Link>
+          <Panel className="!p-4">
+            <div className="flex items-center gap-3">
+              <PersonAvatarLink person={{ uuid: user?.uuid ?? '', name: user?.name ?? '', avatar_url: user?.avatar_url }} size="xl" className="ring-2 ring-brand-100" />
+              <div className="min-w-0">
+                <p className="text-xs text-gray-400">{greeting()},</p>
+                <PersonLink person={user?.uuid ? { uuid: user.uuid, name: user.name } : null} className="block truncate text-base font-semibold text-gray-900">
+                  {firstName}
+                </PersonLink>
+                {info.me.job_title && <p className="truncate text-xs font-medium text-brand-700">{info.me.job_title}</p>}
+                <p className="truncate text-xs text-gray-500">{info.me.department ?? info.hotel.name}</p>
+              </div>
+            </div>
+            <Link to="perfil" className="mt-4 flex items-center justify-center gap-1 rounded-full bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700 transition hover:bg-brand-100">
+              Ver meu perfil e carreira <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
           </Panel>
 
           <ClockCard slug={slug} compact />

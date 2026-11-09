@@ -3,13 +3,13 @@
 namespace App\Domain\Help\Services;
 
 /**
- * Motor LOCAL da Vitória: sem IA externa e sem custo.
+ * Motor LOCAL da Bianca: sem IA externa e sem custo.
  *
  * - Papo simples (oi, tudo bem?, obrigado, tchau, quem é você) por padrões.
- * - Dúvidas sobre o sistema: busca (BM25) na base resources/help/vitoria.md, com sinônimos,
+ * - Dúvidas sobre o sistema: busca (BM25) na base resources/help/bianca.md, com sinônimos,
  *   tolerância a erro de digitação e acentos. Responde com o trecho da base, sem inventar.
  */
-class VitoriaLocal
+class BiancaLocal
 {
     private const STOPWORDS = [
         'a','o','as','os','um','uma','uns','umas','de','da','do','das','dos','em','no','na','nos','nas','por','para','pra','pro',
@@ -59,7 +59,7 @@ class VitoriaLocal
     ];
 
     /** Seções da base que não servem como resposta. */
-    private const SKIP_SECTIONS = ['Como responder', 'Base de conhecimento da Vitória (central de ajuda)'];
+    private const SKIP_SECTIONS = ['Como responder', 'Base de conhecimento da Bianca (central de ajuda)'];
 
     /** @var array<int, array{heading: string, text: string, tokens: array<int, string>}>|null */
     private ?array $chunks = null;
@@ -205,8 +205,8 @@ class VitoriaLocal
 
         $has = fn (string $re): bool => (bool) preg_match($re, $t);
 
-        if ($short && $has('/\b(quem e voce|quem eh voce|qual (e )?(o )?seu nome|como (voce )?(se )?chama|voce e (um )?(robo|ia|humana|real)|voce e a vitoria)\b/')) {
-            return 'Eu sou a Vitória, a assistente virtual da central de ajuda. 😊 Conheço o sistema e posso te explicar como fazer as coisas — organograma, perfil, ponto, mural, solicitações e muito mais.';
+        if ($short && $has('/\b(quem e voce|quem eh voce|qual (e )?(o )?seu nome|como (voce )?(se )?chama|voce e (um )?(robo|ia|humana|real)|voce e a bianca)\b/')) {
+            return 'Eu sou a Bianca, a assistente virtual da central de ajuda. 😊 Conheço o sistema e posso te explicar como fazer as coisas — organograma, perfil, ponto, mural, solicitações e muito mais.';
         }
         if ($short && $has('/\b(o que (voce )?(sabe|faz|pode)|em que (voce )?(pode|consegue) ajudar|como (voce )?(pode|consegue) ajudar|me ajuda|preciso de ajuda)\b/') && count($words) <= 6) {
             return 'Posso te explicar como usar o sistema: montar o organograma, ver as pessoas da empresa, editar o perfil, bater o ponto, pedir férias, usar o mural e o que cada papel pode fazer. É só perguntar do seu jeito. 😉';
@@ -225,7 +225,7 @@ class VitoriaLocal
         }
         if ($short && $has('/\b(bom dia|boa tarde|boa noite|oi+|ola+|opa|eae|eai|hey|hello|salve|fala ai|oie)\b/') && count($words) <= 4) {
             return $this->pick([
-                'Oi! Tudo bem? 😊 Sou a Vitória. Como posso te ajudar hoje?',
+                'Oi! Tudo bem? 😊 Sou a Bianca. Como posso te ajudar hoje?',
                 'Olá! Que bom te ver por aqui. Em que posso ajudar?',
             ]);
         }
@@ -426,7 +426,7 @@ class VitoriaLocal
             return;
         }
         $this->chunks = [];
-        $path = $this->knowledgePath ?? resource_path('help/vitoria.md');
+        $path = $this->knowledgePath ?? resource_path('help/bianca.md');
         if (! is_file($path)) {
             return;
         }

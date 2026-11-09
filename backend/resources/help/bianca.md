@@ -1,4 +1,4 @@
-# Base de conhecimento da Vitória (central de ajuda)
+# Base de conhecimento da Bianca (central de ajuda)
 
 > Este arquivo é lido a cada conversa. Mantenha-o em sincronia com o sistema: quando uma tela ou regra mudar, atualize aqui.
 

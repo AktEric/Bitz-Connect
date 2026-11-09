@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useLocation } from 'react-router-dom'
 import { MessageCircleQuestion, Send, X, RotateCcw } from 'lucide-react'
-import { askVitoria, type HelpMessage } from '@/services/help.service'
+import { askBianca, type HelpMessage } from '@/services/help.service'
 import { cn } from '@/utils/cn'
 
-const GREETING = 'Oi! Eu sou a Vitória, a assistente da central de ajuda. Pode me perguntar como fazer qualquer coisa no sistema — ou só bater um papo. 😊'
+const GREETING = 'Oi! Eu sou a Bianca, a assistente da central de ajuda. Pode me perguntar como fazer qualquer coisa no sistema — ou só bater um papo. 😊'
 
 const SUGGESTIONS = [
   'Como monto o organograma?',
@@ -27,13 +27,13 @@ function Rich({ text }: { text: string }) {
 }
 
 interface Props {
-  /** slug do Workspace atual, quando estiver dentro de uma empresa (a Vitória adapta a resposta ao papel da pessoa). */
+  /** slug do Workspace atual, quando estiver dentro de uma empresa (a Bianca adapta a resposta ao papel da pessoa). */
   workspace?: string
   /** classes extras para posicionar o botão flutuante. */
   className?: string
 }
 
-export default function VitoriaChat({ workspace, className }: Props) {
+export default function BiancaChat({ workspace, className }: Props) {
   const location = useLocation()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<HelpMessage[]>([])
@@ -67,7 +67,7 @@ export default function VitoriaChat({ workspace, className }: Props) {
     setError(null)
     setLoading(true)
     try {
-      const reply = await askVitoria(next, { workspace, page: location.pathname })
+      const reply = await askBianca(next, { workspace, page: location.pathname })
       setMessages([...next, { role: 'assistant', content: reply }])
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -101,8 +101,8 @@ export default function VitoriaChat({ workspace, className }: Props) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Abrir a central de ajuda (Vitória)"
-          title="Precisa de ajuda? Fale com a Vitória"
+          aria-label="Abrir a central de ajuda (Bianca)"
+          title="Precisa de ajuda? Fale com a Bianca"
           className={cn(
             'fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-brand-600 px-4 py-3 text-sm font-medium text-white shadow-lg transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 lg:bottom-5 lg:right-5',
             className,
@@ -115,13 +115,13 @@ export default function VitoriaChat({ workspace, className }: Props) {
       {open && (
         <div
           role="dialog"
-          aria-label="Central de ajuda — Vitória"
+          aria-label="Central de ajuda — Bianca"
           className="fixed inset-x-3 bottom-20 z-50 flex h-[min(34rem,calc(100vh-7rem))] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl sm:inset-x-auto sm:right-4 sm:w-[24rem] lg:bottom-5"
         >
           <header className="flex items-center gap-3 bg-brand-600 px-4 py-3 text-white">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-base font-semibold" aria-hidden>V</span>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold leading-tight">Vitória</p>
+              <p className="font-semibold leading-tight">Bianca</p>
               <p className="text-xs text-brand-100">Central de ajuda</p>
             </div>
             <button type="button" onClick={reset} aria-label="Nova conversa" title="Nova conversa" className="rounded-lg p-1.5 hover:bg-white/15">
@@ -150,7 +150,7 @@ export default function VitoriaChat({ workspace, className }: Props) {
             )}
             {messages.map((m, i) => <Bubble key={i} role={m.role} text={m.content} />)}
             {loading && (
-              <div className="flex items-center gap-1 pl-1" aria-label="Vitória está digitando">
+              <div className="flex items-center gap-1 pl-1" aria-label="Bianca está digitando">
                 {[0, 150, 300].map((d) => (
                   <span key={d} className="h-2 w-2 animate-bounce rounded-full bg-gray-400" style={{ animationDelay: `${d}ms` }} />
                 ))}
@@ -169,7 +169,7 @@ export default function VitoriaChat({ workspace, className }: Props) {
               rows={1}
               maxLength={2000}
               placeholder="Escreva sua dúvida…"
-              aria-label="Mensagem para a Vitória"
+              aria-label="Mensagem para a Bianca"
               className="max-h-28 min-h-[2.5rem] flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <button
