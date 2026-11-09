@@ -94,7 +94,7 @@ export type ReactionType = 'like' | 'love' | 'celebrate' | 'clap' | 'laugh' | 's
 export interface ReactionList {
   total: number
   counts: Record<ReactionType, number>
-  items: { reaction: ReactionType; person: WorkspacePerson }[]
+  items: { reaction: ReactionType; person: WorkspacePerson; reacted_at: string; mine: boolean }[]
 }
 
 /** Uma etapa da trajetória da pessoa na empresa (`ended_on` nulo = cargo atual). */

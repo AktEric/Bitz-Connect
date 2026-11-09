@@ -28,16 +28,16 @@ export const matches = (n: OrgNode, q: string): boolean =>
 /** Linhas de ligação da árvore: líder no topo, ligado aos liderados por traços (estilo organograma clássico). */
 export const TREE_CSS = `
 .orgtree{--org-line:#9ca3af}
-.orgtree ul{display:flex;justify-content:center;padding-top:22px;position:relative;margin:0;list-style:none}
-.orgtree li{display:flex;flex-direction:column;align-items:center;position:relative;padding:22px 8px 0}
-.orgtree li::before,.orgtree li::after{content:'';position:absolute;top:0;right:50%;border-top:2px solid var(--org-line);width:50%;height:22px}
-.orgtree li::after{right:auto;left:50%;border-left:2px solid var(--org-line)}
+.orgtree ul{display:flex;justify-content:center;padding-top:16px;position:relative;margin:0;list-style:none}
+.orgtree li{display:flex;flex-direction:column;align-items:center;position:relative;padding:16px 5px 0}
+.orgtree li::before,.orgtree li::after{content:'';position:absolute;top:0;right:50%;border-top:1.5px solid var(--org-line);width:50%;height:16px}
+.orgtree li::after{right:auto;left:50%;border-left:1.5px solid var(--org-line)}
 .orgtree li:only-child::before,.orgtree li:only-child::after{display:none}
 .orgtree li:only-child{padding-top:0}
 .orgtree li:first-child::before,.orgtree li:last-child::after{border:0 none}
-.orgtree li:last-child::before{border-right:2px solid var(--org-line);border-radius:0 8px 0 0}
+.orgtree li:last-child::before{border-right:1.5px solid var(--org-line);border-radius:0 8px 0 0}
 .orgtree li:first-child::after{border-radius:8px 0 0 0}
-.orgtree ul ul::before{content:'';position:absolute;top:0;left:50%;border-left:2px solid var(--org-line);height:22px}
+.orgtree ul ul::before{content:'';position:absolute;top:0;left:50%;border-left:1.5px solid var(--org-line);height:16px}
 .orgtree>ul{padding-top:0}
 .orgtree>ul>li{padding-top:0}
 .orgtree>ul>li::before,.orgtree>ul>li::after{display:none}
@@ -50,20 +50,22 @@ function Card({ n, slug, expanded, toggle, hit, me, fixed }: { n: OrgNode; slug:
     <div className="relative">
       <Link
         to={`/w/${slug}/pessoas/${n.m.uuid}`}
-        className={cn('flex w-44 flex-col items-center rounded-2xl border bg-white px-3 pb-4 pt-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md', hit || me ? 'border-brand-400 ring-2 ring-brand-200' : 'border-gray-200')}
+        title={[n.m.name, n.m.job_title, n.m.department?.name].filter(Boolean).join(' · ')}
+        className={cn('flex min-w-[9.5rem] max-w-[13rem] items-center gap-2 rounded-full border bg-white py-1.5 pl-1.5 pr-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md', hit || me ? 'border-brand-400 ring-2 ring-brand-200' : 'border-gray-200')}
       >
-        <Avatar src={n.m.avatar_url} name={n.m.name} size="lg" />
-        <span className="mt-2 w-full truncate text-sm font-semibold text-gray-900">{n.m.name}</span>
-        <span className="w-full truncate text-xs text-brand-700">{n.m.job_title ?? 'Sem cargo'}</span>
-        {n.m.department && <span className="w-full truncate text-[11px] text-gray-400">{n.m.department.name}</span>}
+        <Avatar src={n.m.avatar_url} name={n.m.name} size="sm" className="flex-shrink-0" />
+        <span className="min-w-0 text-left leading-tight">
+          <span className="block truncate text-xs font-semibold text-gray-900">{n.m.name}</span>
+          <span className="block truncate text-[10px] text-brand-700">{n.m.job_title ?? 'Sem cargo'}</span>
+        </span>
       </Link>
       {n.children.length > 0 && !fixed && (
         <button
           type="button" onClick={toggle} aria-expanded={expanded}
           aria-label={`${expanded ? 'Recolher' : 'Expandir'} equipe de ${n.m.name} (${total} ${total === 1 ? 'pessoa' : 'pessoas'})`}
-          className="absolute -bottom-3 left-1/2 flex h-6 min-w-6 -translate-x-1/2 items-center justify-center gap-0.5 rounded-full border border-gray-300 bg-white px-1.5 text-[11px] font-semibold text-gray-600 shadow-sm hover:border-brand-400 hover:text-brand-700"
+          className="absolute -bottom-2.5 left-1/2 flex h-5 min-w-5 -translate-x-1/2 items-center justify-center gap-0.5 rounded-full border border-gray-300 bg-white px-1 text-[10px] font-semibold text-gray-600 shadow-sm hover:border-brand-400 hover:text-brand-700"
         >
-          {expanded ? <Minus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}{!expanded && total}
+          {expanded ? <Minus className="h-2.5 w-2.5" /> : <Plus className="h-2.5 w-2.5" />}{!expanded && total}
         </button>
       )}
     </div>
@@ -98,9 +100,9 @@ export function OrgTreeView({ roots, slug, term = '', open, toggle, highlight, c
         <ul>
           {company ? (
             <li>
-              <div className="flex w-52 flex-col items-center rounded-2xl bg-brand-600 px-3 py-3 text-center text-white shadow-sm">
-                <Avatar src={company.avatar_url} name={company.name} size="lg" />
-                <span className="mt-2 w-full truncate text-sm font-semibold">{company.name}</span>
+              <div className="flex min-w-[10rem] max-w-[15rem] items-center gap-2 rounded-full bg-brand-600 py-1.5 pl-1.5 pr-5 text-white shadow-sm">
+                <Avatar src={company.avatar_url} name={company.name} size="sm" />
+                <span className="truncate text-xs font-semibold">{company.name}</span>
               </div>
               <ul>{roots.map((n) => <Branch key={n.m.uuid} n={n} slug={slug} term={term} open={open} toggle={toggle} highlight={highlight} fixed={fixed} />)}</ul>
             </li>

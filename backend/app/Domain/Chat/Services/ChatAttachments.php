@@ -84,8 +84,16 @@ class ChatAttachments
      *
      * @return array{0:string,1:string,2:array}|string|null
      */
-    public function rich(?string $type, mixed $metadata): array|string|null
+    public function rich(?string $type, mixed $metadata, ?User $sender = null): array|string|null
     {
+        if ($type === 'sticker' && is_array($metadata) && isset($metadata['sticker_uuid'])) {
+            // figurinha própria: só quem a tem na coleção pode enviá-la
+            $uuid = $metadata['sticker_uuid'];
+            $sticker = is_string($uuid) ? \App\Models\Sticker::where('uuid', $uuid)->first() : null;
+            $stickers = app(Stickers::class);
+
+            return $sticker && $sender && $stickers->holds($sender, $sticker) ? ['sticker', '🏷️ Figurinha', ['sticker_uuid' => $sticker->uuid]] : 'Figurinha inválida.';
+        }
         if ($type === 'sticker') {
             $id = is_array($metadata) ? ($metadata['id'] ?? null) : null;
 

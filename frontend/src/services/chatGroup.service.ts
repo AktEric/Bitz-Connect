@@ -42,6 +42,17 @@ const chatGroupService = {
     return res.data.data
   },
 
+  async setAvatar(groupUuid: string, file: File): Promise<{ avatar_url: string }> {
+    const fd = new FormData()
+    fd.append('photo', file)
+    const res = await api.post<ApiResponse<{ avatar_url: string }>>(`/chat-groups/${groupUuid}/avatar`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    return res.data.data
+  },
+
+  async removeAvatar(groupUuid: string): Promise<void> {
+    await api.delete(`/chat-groups/${groupUuid}/avatar`)
+  },
+
   async remove(groupUuid: string): Promise<void> {
     await api.delete(`/chat-groups/${groupUuid}`)
   },

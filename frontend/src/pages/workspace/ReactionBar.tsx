@@ -4,6 +4,7 @@ import { ThumbsUp } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
 import type { FeedPost, ReactionType } from '@/types/workspace.types'
 import { cn } from '@/utils/cn'
+import { reactionTime } from '@/components/chat/ReactionDetails'
 import PersonLink, { PersonAvatarLink } from './PersonLink'
 import { Modal, Spinner } from './ui'
 
@@ -20,7 +21,7 @@ export const REACTION_META: Record<ReactionType, { emoji: string; label: string 
 export const REACTION_ORDER: ReactionType[] = ['like', 'love', 'celebrate', 'clap', 'laugh', 'surprised', 'thinking', 'sad']
 
 /** Quem reagiu, com filtro por tipo. Cada pessoa leva ao perfil. */
-export function ReactionsModal({ slug, post, onClose }: { slug: string; post: FeedPost; onClose: () => void }) {
+export function ReactionsModal({ slug, post, onClose, onRemove }: { slug: string; post: FeedPost; onClose: () => void; onRemove: () => void }) {
   const [filter, setFilter] = useState<ReactionType | 'all'>('all')
   const { data, isLoading } = useQuery({ queryKey: ['ws', slug, 'reactions', post.uuid], queryFn: () => workspaceService.postReactions(slug, post.uuid) })
   const items = (data?.items ?? []).filter((i) => filter === 'all' || i.reaction === filter)
@@ -46,10 +47,12 @@ export function ReactionsModal({ slug, post, onClose }: { slug: string; post: Fe
               <li key={i.person.uuid} className="flex items-center gap-3 py-2">
                 <PersonAvatarLink person={i.person} />
                 <div className="min-w-0 flex-1">
-                  <PersonLink person={i.person} className="block truncate text-sm font-medium text-gray-900" />
-                  {i.person.job_title && <p className="truncate text-xs text-gray-500">{i.person.job_title}</p>}
+                  <PersonLink person={i.person} className="block truncate text-sm font-medium text-gray-900">{i.mine ? 'Você' : i.person.name}</PersonLink>
+                  <p className="truncate text-xs text-gray-400">{i.mine ? 'Toque no seu emoji para remover · ' : ''}{reactionTime(i.reacted_at)}</p>
                 </div>
-                <span className="text-xl" title={REACTION_META[i.reaction].label}>{REACTION_META[i.reaction].emoji}</span>
+                {i.mine
+                  ? <button type="button" onClick={() => { onRemove(); onClose() }} className="rounded-full px-1 text-xl hover:bg-gray-100" title="Remover minha reação" aria-label={`Remover minha reação (${REACTION_META[i.reaction].label})`}>{REACTION_META[i.reaction].emoji}</button>
+                  : <span className="text-xl" title={REACTION_META[i.reaction].label}>{REACTION_META[i.reaction].emoji}</span>}
               </li>
             ))}
           </ul>
@@ -110,7 +113,7 @@ export default function ReactionBar({ slug, post }: { slug: string; post: FeedPo
           {post.likes_count}
         </button>
       )}
-      {who && <ReactionsModal slug={slug} post={post} onClose={() => setWho(false)} />}
+      {who && <ReactionsModal slug={slug} post={post} onClose={() => setWho(false)} onRemove={() => react.mutate(null)} />}
     </div>
   )
 }

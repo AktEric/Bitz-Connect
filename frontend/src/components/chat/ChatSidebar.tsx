@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Info, Lock, Megaphone, MessageSquare, Plus, Send, Users, X } from 'lucide-react'
+import { ArrowLeft, Info, Lock, Settings, Megaphone, MessageSquare, Plus, Send, Users, X } from 'lucide-react'
 import { useConversations, useMarkRead, useMessages, useSendMessage } from '@/hooks/useChat'
 import {
   useChatGroup,
@@ -10,6 +10,8 @@ import {
   useSendGroupMessage,
 } from '@/hooks/useChatGroups'
 import { useMyHotels } from '@/hooks/useHotel'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import chatService from '@/services/chat.service'
 import { useToast } from '@/contexts/ToastContext'
 import { Avatar } from '@/components/ui/Avatar'
 import { cn } from '@/utils/cn'
@@ -47,6 +49,29 @@ function formatTime(iso: string): string {
  * Barra lateral de chat (painel deslizante, disponível em qualquer tela):
  * grupos da empresa e acesso às conversas diretas.
  */
+/** Preferências do chat: confirmação de leitura (visualizado), como no WhatsApp. */
+function ChatSettings() {
+  const qc = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const { data } = useQuery({ queryKey: ['chat', 'settings'], queryFn: () => chatService.getSettings(), enabled: open })
+  const save = useMutation({ mutationFn: (on: boolean) => chatService.setReadReceipts(on), onSuccess: (d) => { qc.setQueryData(['chat', 'settings'], d); qc.invalidateQueries({ queryKey: ['chat', 'messages'] }) } })
+
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label="Preferências do chat" title="Preferências do chat" className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100"><Settings className="h-5 w-5" /></button>
+      {open && (
+        <div role="dialog" aria-label="Preferências do chat" className="absolute right-0 top-full z-20 mt-1 w-72 rounded-xl border border-gray-100 bg-white p-3 shadow-xl">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input type="checkbox" role="switch" className="mt-1 rounded border-gray-300 text-brand-600" checked={data?.read_receipts ?? true} disabled={!data || save.isPending} onChange={(e) => save.mutate(e.target.checked)} />
+            <span className="text-sm"><span className="block font-medium text-gray-900">Confirmação de leitura</span>
+              <span className="text-xs text-gray-500">Mostra o “visualizado” (✓✓ azul). Se desligar, ninguém vê quando você leu, e você também não vê quando os outros leram.</span></span>
+          </label>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ChatSidebar({ open = false, onClose = () => {}, docked = false, requestedGroup, requestedDirect, onOpenWindow }: Props) {
   const navigate = useNavigate()
   const [tab, setTab] = useState<'groups' | 'direct'>('groups')
@@ -78,7 +103,7 @@ export default function ChatSidebar({ open = false, onClose = () => {}, docked =
 
   function openGroup(uuid: string) {
     const g = groups.find((x) => x.uuid === uuid)
-    if (onOpenWindow && g) return onOpenWindow({ kind: 'group', uuid, name: g.name, avatar_url: g.hotel?.avatar_url ?? null })
+    if (onOpenWindow && g) return onOpenWindow({ kind: 'group', uuid, name: g.name, avatar_url: g.avatar_url ?? g.hotel?.avatar_url ?? null })
     setActiveGroup(uuid)
     setView('thread')
   }
@@ -103,6 +128,7 @@ export default function ChatSidebar({ open = false, onClose = () => {}, docked =
             <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
               <h2 className="text-base font-semibold text-gray-900">Chat</h2>
               <div className="flex items-center gap-1">
+                <ChatSettings />
                 {isCompanyAdmin && (
                   <button
                     onClick={() => setCreating(true)}
@@ -244,7 +270,7 @@ function GroupList({
         <li key={g.uuid}>
           <button onClick={() => onOpen(g.uuid)} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50">
             <span className="relative">
-              <Avatar src={g.hotel?.avatar_url} name={g.name} size="md" />
+              <Avatar src={g.avatar_url ?? g.hotel?.avatar_url} name={g.name} size="md" />
               {g.only_admins_can_post && (
                 <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-white ring-2 ring-white">
                   <Megaphone className="h-2.5 w-2.5" />
@@ -325,7 +351,7 @@ function GroupThread({
           <ArrowLeft className="h-5 w-5" />
         </button>
         <button onClick={onInfo} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
-          <Avatar src={group?.hotel?.avatar_url} name={group?.name ?? '?'} size="sm" />
+          <Avatar src={group?.avatar_url ?? group?.hotel?.avatar_url} name={group?.name ?? '?'} size="sm" />
           <span className="min-w-0">
             <span className="block truncate text-sm font-semibold text-gray-900">{group?.name ?? 'Grupo'}</span>
             <span className="block truncate text-xs text-gray-400">{group ? `${group.members_count} participantes` : ' '}</span>

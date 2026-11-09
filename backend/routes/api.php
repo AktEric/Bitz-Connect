@@ -223,6 +223,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('chat')->group(function () {
         Route::get('/unread-count',           [ChatController::class, 'unreadCount']);
         Route::get('/attachments/{uuid}',     [ChatController::class, 'attachment']);
+        Route::post('/messages/{uuid}/react', [ChatController::class, 'react'])->middleware('throttle:120,1');
+        Route::get('/messages/{uuid}/reactions', [ChatController::class, 'reactionList']);
         Route::get('/gifs',                   [\App\Http\Controllers\Api\V1\GifController::class, 'search'])->middleware('throttle:60,1');
         Route::get('/conversations',          [ChatController::class, 'conversations']);
         // Conversa pessoal com a caixa compartilhada de um hotel
@@ -233,6 +235,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{user}/messages',       [ChatController::class, 'send']);
         Route::patch('/{user}/read',          [ChatController::class, 'markRead']);
     });
+
+    Route::get('/stickers',                [\App\Http\Controllers\Api\V1\StickerController::class, 'index']);
+    Route::post('/stickers',               [\App\Http\Controllers\Api\V1\StickerController::class, 'store'])->middleware('throttle:30,1');
+    Route::post('/stickers/{uuid}/save',   [\App\Http\Controllers\Api\V1\StickerController::class, 'save']);
+    Route::delete('/stickers/{uuid}',      [\App\Http\Controllers\Api\V1\StickerController::class, 'destroy']);
+    Route::get('/stickers/{uuid}/image',   [\App\Http\Controllers\Api\V1\StickerController::class, 'image']);
+    Route::get('/me/chat-settings', [\App\Http\Controllers\Api\V1\ChatSettingsController::class, 'show']);
+    Route::put('/me/chat-settings', [\App\Http\Controllers\Api\V1\ChatSettingsController::class, 'update']);
 
     // Central de ajuda (Bianca)
     Route::post('/help/chat', [\App\Http\Controllers\Api\V1\HelpChatController::class, 'chat'])->middleware('throttle:20,1');
@@ -427,6 +437,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/chat-groups/unread-count',                  [ChatGroupController::class, 'unreadCount']);
     Route::get('/chat-groups/{group}',                       [ChatGroupController::class, 'show']);
     Route::patch('/chat-groups/{group}',                     [ChatGroupController::class, 'update']);
+    Route::post('/chat-groups/{group}/avatar',               [ChatGroupController::class, 'setAvatar'])->middleware('throttle:30,1');
+    Route::delete('/chat-groups/{group}/avatar',             [ChatGroupController::class, 'removeAvatar']);
     Route::delete('/chat-groups/{group}',                    [ChatGroupController::class, 'destroy']);
     Route::post('/chat-groups/{group}/members',              [ChatGroupController::class, 'addMembers']);
     Route::delete('/chat-groups/{group}/members/{user}',     [ChatGroupController::class, 'removeMember']);
