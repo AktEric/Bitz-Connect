@@ -52,7 +52,7 @@ function SocialEditor({ slug }: { slug: string }) {
         ))}
       </div>
       <label className="mt-4 flex cursor-pointer items-start gap-2 text-sm text-gray-700">
-        <input type="checkbox" className="mt-0.5 rounded border-gray-300 text-violet-600" checked={visible ?? data.birthday_visible} onChange={(e) => setVisible(e.target.checked)} />
+        <input type="checkbox" className="mt-0.5 rounded border-gray-300 text-brand-600" checked={visible ?? data.birthday_visible} onChange={(e) => setVisible(e.target.checked)} />
         <span>Mostrar meu aniversário para a equipe e receber os parabéns no mural<br />
           <span className="text-xs text-gray-400">{data.has_birth_date ? 'Só o dia e o mês aparecem; o ano fica visível apenas para você e para o RH.' : 'Sua data de nascimento ainda não foi cadastrada pelo RH.'}</span>
         </span>
@@ -76,7 +76,7 @@ function Notices() {
       {items.map((n) => {
         const body = (
           <div className="flex items-start gap-3 px-4 py-3">
-            <Bell className={`mt-0.5 h-4 w-4 flex-shrink-0 ${n.read ? 'text-gray-300' : 'text-violet-600'}`} />
+            <Bell className={`mt-0.5 h-4 w-4 flex-shrink-0 ${n.read ? 'text-gray-300' : 'text-brand-600'}`} />
             <div className="min-w-0 flex-1">
               <p className={`text-sm ${n.read ? 'text-gray-600' : 'font-semibold text-gray-900'}`}>{n.title}</p>
               {n.description && <p className="truncate text-xs text-gray-500">{n.description}</p>}
@@ -149,7 +149,7 @@ export default function ProfileView({ uuid, self }: { uuid: string; self: boolea
           {self && (
             <>
               <button type="button" onClick={() => fileRef.current?.click()} disabled={avatar.isPending} aria-label="Trocar foto"
-                className="absolute -bottom-1 -right-1 rounded-full bg-violet-600 p-2 text-white shadow hover:bg-violet-700"><Camera className="h-4 w-4" /></button>
+                className="absolute -bottom-1 -right-1 rounded-full bg-brand-600 p-2 text-white shadow hover:bg-brand-700"><Camera className="h-4 w-4" /></button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) avatar.mutate(f); e.target.value = '' }} />
             </>
           )}
@@ -160,7 +160,7 @@ export default function ProfileView({ uuid, self }: { uuid: string; self: boolea
           <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-gray-400">
             {card.hired_at && <span>Desde {fmtDate(card.hired_at)}</span>}
             {b && <span className="inline-flex items-center gap-1"><Cake className="h-3 w-3" /> {b.day} de {MONTHS[b.month - 1]}</span>}
-            {msg && <span role="status" className="text-violet-600">{msg}</span>}
+            {msg && <span role="status" className="text-brand-600">{msg}</span>}
           </p>
         </div>
       </Panel>
@@ -168,7 +168,7 @@ export default function ProfileView({ uuid, self }: { uuid: string; self: boolea
       <div role="tablist" aria-label="Seções do perfil" className="flex gap-1 overflow-x-auto border-b border-gray-200">
         {tabs.map((t) => (
           <button key={t.key} role="tab" aria-selected={tab === t.key} type="button" onClick={() => setTab(t.key)}
-            className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition ${tab === t.key ? 'border-violet-600 text-violet-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
+            className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition ${tab === t.key ? 'border-brand-600 text-brand-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`}>
             {t.label}
           </button>
         ))}

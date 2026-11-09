@@ -67,7 +67,7 @@ const TONES = {
   green: 'bg-emerald-50 text-emerald-700',
   red: 'bg-red-50 text-red-700',
   amber: 'bg-amber-50 text-amber-700',
-  violet: 'bg-violet-50 text-violet-700',
+  brand: 'bg-brand-50 text-brand-700',
   blue: 'bg-blue-50 text-blue-700',
 } as const
 
@@ -75,9 +75,9 @@ export function Pill({ tone = 'gray', children }: { tone?: keyof typeof TONES; c
   return <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', TONES[tone])}>{children}</span>
 }
 
-export const btnPrimary = 'inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50'
+export const btnPrimary = 'inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50'
 export const btnGhost = 'inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50'
-export const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100'
+export const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100'
 export const labelCls = 'mb-1 block text-xs font-medium text-gray-600'
 
 export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {

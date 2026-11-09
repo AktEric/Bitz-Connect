@@ -55,9 +55,9 @@ export default function WorkspaceHomePage() {
         </div>
         <nav className="flex flex-wrap gap-2 lg:hidden" aria-label="Atalhos">
           {actions.map(({ to, label, Icon, badge }) => (
-            <Link key={to + label} to={to} className="relative inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:border-violet-300 hover:text-violet-700">
+            <Link key={to + label} to={to} className="relative inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:border-brand-300 hover:text-brand-700">
               <Icon className="h-4 w-4" /> {label}
-              {!!badge && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-violet-600" />}
+              {!!badge && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-brand-600" />}
             </Link>
           ))}
         </nav>
@@ -73,10 +73,10 @@ export default function WorkspaceHomePage() {
           <ClockCard slug={slug} compact />
           <OnboardingCard slug={slug} enabled={info.me.is_admin} />
           {lead && (
-            <Panel className="border-violet-100 bg-violet-50/40">
+            <Panel className="border-brand-100 bg-brand-50/40">
               <h2 className="mb-3 font-semibold text-gray-900">Para você, gestor</h2>
               <Link to="solicitacoes?aba=aprovar" className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm">
-                <ClipboardList className="h-5 w-5 text-violet-600" />
+                <ClipboardList className="h-5 w-5 text-brand-600" />
                 <span className="flex-1 text-sm text-gray-700"><b>{c.requests_to_review}</b> {c.requests_to_review === 1 ? 'pedido aguarda' : 'pedidos aguardam'} sua análise</span>
                 <ChevronRight className="h-4 w-4 text-gray-300" />
               </Link>
@@ -109,8 +109,8 @@ export default function WorkspaceHomePage() {
             </div>
 
             <div className="mt-4 flex items-center justify-between">
-              <h3 className="flex items-center gap-1.5 text-sm font-medium text-gray-700"><Target className="h-4 w-4 text-violet-500" /> Minhas metas</h3>
-              <Link to="metas" className="text-xs font-medium text-violet-600">Ver todas</Link>
+              <h3 className="flex items-center gap-1.5 text-sm font-medium text-gray-700"><Target className="h-4 w-4 text-brand-500" /> Minhas metas</h3>
+              <Link to="metas" className="text-xs font-medium text-brand-600">Ver todas</Link>
             </div>
             {!goals?.length ? (
               <p className="mt-1 text-sm text-gray-400">Sem metas no momento.</p>
@@ -120,7 +120,7 @@ export default function WorkspaceHomePage() {
                   <li key={g.uuid}>
                     <div className="flex justify-between text-sm"><span className="truncate text-gray-700">{g.title}</span><span className="text-gray-500">{Math.round(g.progress)}%</span></div>
                     <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100">
-                      <div className="h-full rounded-full bg-violet-500" style={{ width: `${Math.min(100, g.progress)}%` }} />
+                      <div className="h-full rounded-full bg-brand-500" style={{ width: `${Math.min(100, g.progress)}%` }} />
                     </div>
                     <p className="mt-0.5 text-[11px] text-gray-400">até {fmtDate(g.period_end)}</p>
                   </li>

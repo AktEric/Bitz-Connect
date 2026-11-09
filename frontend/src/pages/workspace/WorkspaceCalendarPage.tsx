@@ -54,7 +54,7 @@ function NewEventModal({ slug, day, canHoliday, onClose }: { slug: string; day: 
         {kind === 'event' && (
           <>
             <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-              <input type="checkbox" className="rounded border-gray-300 text-violet-600" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} /> Dia inteiro
+              <input type="checkbox" className="rounded border-gray-300 text-brand-600" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} /> Dia inteiro
             </label>
             {!allDay && (
               <div className="grid gap-3 sm:grid-cols-2">
@@ -97,7 +97,7 @@ function BirthdayModal({ slug, me, onClose }: { slug: string; me: { birth_date: 
       <div className="space-y-3">
         <p className="rounded-xl bg-gray-50 px-3 py-2 text-sm text-gray-600">{me.birth_date ? 'Sua data de nascimento foi cadastrada pelo RH.' : 'Sua data de nascimento ainda não foi cadastrada. Peça ao RH.'}</p>
         <label className="flex cursor-pointer items-start gap-2 text-sm text-gray-700">
-          <input type="checkbox" className="mt-0.5 rounded border-gray-300 text-violet-600" checked={visible} onChange={(e) => setVisible(e.target.checked)} />
+          <input type="checkbox" className="mt-0.5 rounded border-gray-300 text-brand-600" checked={visible} onChange={(e) => setVisible(e.target.checked)} />
           <span>Mostrar meu aniversário para a equipe<br /><span className="text-xs text-gray-400">Só o dia e o mês aparecem; o ano de nascimento fica visível apenas para você e para o RH.</span></span>
         </label>
         {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
@@ -155,7 +155,7 @@ function EventCard({ slug, item }: { slug: string; item: CalendarItem }) {
   const opts: [RsvpStatus, string][] = [['going', 'Vou'], ['maybe', 'Talvez'], ['no', 'Não vou']]
 
   return (
-    <div className="mt-2 rounded-xl bg-violet-50/60 px-3 py-2">
+    <div className="mt-2 rounded-xl bg-brand-50/60 px-3 py-2">
       {ev.description && <p className="mb-2 whitespace-pre-wrap text-sm text-gray-600">{ev.description}</p>}
       {ev.kind === 'event' && (
         <div className="flex flex-wrap items-center gap-1.5">
@@ -163,7 +163,7 @@ function EventCard({ slug, item }: { slug: string; item: CalendarItem }) {
             <button
               key={s} type="button" aria-pressed={ev.rsvp.mine === s} disabled={rsvp.isPending}
               onClick={() => rsvp.mutate(ev.rsvp.mine === s ? null : s)}
-              className={cn('rounded-full border px-3 py-1 text-xs font-medium', ev.rsvp.mine === s ? 'border-violet-600 bg-violet-600 text-white' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50')}
+              className={cn('rounded-full border px-3 py-1 text-xs font-medium', ev.rsvp.mine === s ? 'border-brand-600 bg-brand-600 text-white' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50')}
             >
               {l}
             </button>
@@ -186,7 +186,7 @@ function DayList({ slug, day, items }: { slug: string; day: string; items: Calen
     <Panel>
       <h2 className="mb-3 font-semibold capitalize text-gray-900">
         {d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-        {day === ymd(new Date()) && <Pill tone="violet"> hoje</Pill>}
+        {day === ymd(new Date()) && <Pill tone="brand"> hoje</Pill>}
       </h2>
       {items.length === 0 ? <p className="text-sm text-gray-400">Nada marcado para este dia.</p> : (
         <ul className="space-y-3">
@@ -288,9 +288,9 @@ export default function WorkspaceCalendarPage() {
                 return (
                   <button
                     key={key} type="button" onClick={() => setSelected(key)} aria-label={`${d.getDate()} de ${d.toLocaleDateString('pt-BR', { month: 'long' })}${list.length ? `, ${list.length} item(ns)` : ''}`}
-                    className={cn('flex min-h-[3.5rem] flex-col items-stretch gap-0.5 border-b border-r border-gray-50 p-1 text-left align-top transition-colors hover:bg-violet-50/50 sm:min-h-[5.5rem]', !inMonth && 'bg-gray-50/60', selected === key && 'bg-violet-50 ring-2 ring-inset ring-violet-300')}
+                    className={cn('flex min-h-[3.5rem] flex-col items-stretch gap-0.5 border-b border-r border-gray-50 p-1 text-left align-top transition-colors hover:bg-brand-50/50 sm:min-h-[5.5rem]', !inMonth && 'bg-gray-50/60', selected === key && 'bg-brand-50 ring-2 ring-inset ring-brand-300')}
                   >
-                    <span className={cn('flex h-6 w-6 items-center justify-center rounded-full text-xs', key === today ? 'bg-violet-600 font-semibold text-white' : inMonth ? 'text-gray-800' : 'text-gray-300')}>{d.getDate()}</span>
+                    <span className={cn('flex h-6 w-6 items-center justify-center rounded-full text-xs', key === today ? 'bg-brand-600 font-semibold text-white' : inMonth ? 'text-gray-800' : 'text-gray-300')}>{d.getDate()}</span>
                     <span className="hidden flex-col gap-0.5 sm:flex">
                       {list.slice(0, 3).map((it, i) => (
                         <span key={i} className={cn('truncate rounded px-1 text-[10px] leading-4', TYPE_META[it.type].chip)}>{TYPE_META[it.type].emoji} {itemLabel(it)}</span>

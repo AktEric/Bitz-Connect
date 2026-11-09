@@ -95,7 +95,7 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
   const del = useMutation({ mutationFn: () => workspaceService.deletePost(slug, post.uuid), onSuccess: refresh })
 
   return (
-    <Panel className={post.kind === 'birthday' ? 'border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50' : post.kind === 'kudos' ? 'border-amber-100 bg-gradient-to-br from-amber-50 via-white to-violet-50' : undefined}>
+    <Panel className={post.kind === 'birthday' ? 'border-pink-100 bg-gradient-to-br from-pink-50 via-white to-amber-50' : post.kind === 'kudos' ? 'border-amber-100 bg-gradient-to-br from-amber-50 via-white to-brand-50' : undefined}>
       {post.kind === 'kudos' && post.subject && (
         <div className="mb-3 flex items-center gap-3 rounded-2xl bg-white/70 p-3">
           <span className="text-3xl" aria-hidden>{BADGES[post.badge ?? '']?.emoji ?? '⭐'}</span>
@@ -245,7 +245,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
 
   const posts = feed.data?.pages.flatMap((p) => p.items) ?? []
   const groups = feed.data?.pages[0]?.groups ?? []
-  const chip = (active: boolean) => `whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition ${active ? 'border-violet-600 text-violet-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`
+  const chip = (active: boolean) => `whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition ${active ? 'border-brand-600 text-brand-700' : 'border-transparent text-gray-500 hover:text-gray-800'}`
   const tool = 'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50'
   const pick = (g: string) => { setGroup(g); setDept(g && g !== 'company' ? g : '') }
   const canPublish = (body.trim() || photos.length > 0 || video) && !publish.isPending && !processing
@@ -298,7 +298,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
             }} />
             <button type="button" className={tool} onClick={() => videoRef.current?.click()}><Video className="h-4 w-4" /> {video ? 'Trocar vídeo' : 'Vídeo'}</button>
             {video && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-xs text-violet-700">{video.name.slice(0, 24)} <button type="button" aria-label="Remover vídeo" onClick={() => setVideo(null)}><X className="h-3 w-3" /></button></span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs text-brand-700">{video.name.slice(0, 24)} <button type="button" aria-label="Remover vídeo" onClick={() => setVideo(null)}><X className="h-3 w-3" /></button></span>
             )}
             <button type="button" className={tool} onClick={() => setPollOpen(true)}>📊 Enquete</button>
             <button type="button" className={tool} onClick={() => setKudos(true)}>🌟 Reconhecer</button>

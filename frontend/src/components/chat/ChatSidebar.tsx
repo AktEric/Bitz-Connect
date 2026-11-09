@@ -101,7 +101,7 @@ export default function ChatSidebar({ open = false, onClose = () => {}, docked =
                 {isCompanyAdmin && (
                   <button
                     onClick={() => setCreating(true)}
-                    className="flex items-center gap-1 rounded-lg bg-violet-50 px-2.5 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-100"
+                    className="flex items-center gap-1 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100"
                   >
                     <Plus className="h-3.5 w-3.5" />Novo grupo
                   </button>
@@ -121,7 +121,7 @@ export default function ChatSidebar({ open = false, onClose = () => {}, docked =
                   onClick={() => setTab(key)}
                   className={cn(
                     'flex-1 border-b-2 py-2.5 font-medium transition-colors',
-                    tab === key ? 'border-violet-600 text-violet-700' : 'border-transparent text-gray-500 hover:text-gray-800',
+                    tab === key ? 'border-brand-600 text-brand-700' : 'border-transparent text-gray-500 hover:text-gray-800',
                   )}
                 >
                   {label}
@@ -157,7 +157,7 @@ export default function ChatSidebar({ open = false, onClose = () => {}, docked =
                           <span className="block truncate text-xs text-gray-500">{c.last_message.content}</span>
                         </span>
                         {c.unread_count > 0 && (
-                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-violet-600 px-1.5 text-[11px] font-bold text-white">{c.unread_count}</span>
+                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-bold text-white">{c.unread_count}</span>
                         )}
                       </button>
                     </li>
@@ -223,7 +223,7 @@ function GroupList({
             : 'Quando a empresa adicionar você a um grupo, ele aparece aqui.'}
         </p>
         {canCreate && (
-          <button onClick={onCreate} className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700">
+          <button onClick={onCreate} className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700">
             Criar primeiro grupo
           </button>
         )}
@@ -256,7 +256,7 @@ function GroupList({
               </span>
             </span>
             {g.unread_count > 0 && !g.notifications_muted && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-violet-600 px-1.5 text-[11px] font-bold text-white">{g.unread_count > 99 ? '99+' : g.unread_count}</span>
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-bold text-white">{g.unread_count > 99 ? '99+' : g.unread_count}</span>
             )}
           </button>
         </li>
@@ -357,7 +357,7 @@ function GroupThread({
                 m.is_announcement
                   ? 'border border-amber-200 bg-amber-50 text-amber-900'
                   : m.is_mine
-                    ? 'bg-violet-600 text-white'
+                    ? 'bg-brand-600 text-white'
                     : 'bg-white text-gray-800',
               )}
             >
@@ -366,9 +366,9 @@ function GroupThread({
                   <Megaphone className="h-3 w-3" />Aviso
                 </p>
               )}
-              {!m.is_mine && <p className="mb-0.5 text-xs font-semibold text-violet-600">{m.sender.name}</p>}
+              {!m.is_mine && <p className="mb-0.5 text-xs font-semibold text-brand-600">{m.sender.name}</p>}
               <p className="whitespace-pre-wrap break-words">{m.content}</p>
-              <p className={cn('mt-1 text-right text-[10px]', m.is_mine && !m.is_announcement ? 'text-violet-200' : 'text-gray-400')}>
+              <p className={cn('mt-1 text-right text-[10px]', m.is_mine && !m.is_announcement ? 'text-brand-200' : 'text-gray-400')}>
                 {formatTime(m.created_at)}
               </p>
             </div>
@@ -407,7 +407,7 @@ function GroupThread({
             <button
               onClick={handleSend}
               disabled={!text.trim() || send.isPending}
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white transition-colors hover:bg-violet-700 disabled:opacity-40"
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white transition-colors hover:bg-brand-700 disabled:opacity-40"
               aria-label="Enviar"
             >
               <Send className="h-4 w-4" />
@@ -485,9 +485,9 @@ function DirectThread({
         )}
         {messages.map((m) => (
           <div key={m.uuid} className={cn('flex', m.is_mine && 'justify-end')}>
-            <div className={cn('max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm', m.is_mine ? 'bg-violet-600 text-white' : 'bg-white text-gray-800')}>
+            <div className={cn('max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm', m.is_mine ? 'bg-brand-600 text-white' : 'bg-white text-gray-800')}>
               <p className="whitespace-pre-wrap break-words">{m.content}</p>
-              <p className={cn('mt-1 text-right text-[10px]', m.is_mine ? 'text-violet-200' : 'text-gray-400')}>{formatTime(m.created_at)}</p>
+              <p className={cn('mt-1 text-right text-[10px]', m.is_mine ? 'text-brand-200' : 'text-gray-400')}>{formatTime(m.created_at)}</p>
             </div>
           </div>
         ))}
@@ -513,7 +513,7 @@ function DirectThread({
           <button
             onClick={handleSend}
             disabled={!text.trim() || send.isPending}
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white transition-colors hover:bg-violet-700 disabled:opacity-40"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white transition-colors hover:bg-brand-700 disabled:opacity-40"
             aria-label="Enviar"
           >
             <Send className="h-4 w-4" />

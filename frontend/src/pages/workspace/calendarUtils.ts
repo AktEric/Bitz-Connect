@@ -9,7 +9,7 @@ export const TYPE_META: Record<CalendarItemType, { label: string; emoji: string;
   birthday: { label: 'Aniversários', emoji: '🎂', chip: 'bg-pink-50 text-pink-700', dot: 'bg-pink-400' },
   anniversary: { label: 'Tempo de casa', emoji: '🎉', chip: 'bg-amber-50 text-amber-700', dot: 'bg-amber-400' },
   holiday: { label: 'Feriados', emoji: '🏳️', chip: 'bg-gray-100 text-gray-700', dot: 'bg-gray-400' },
-  event: { label: 'Eventos', emoji: '📅', chip: 'bg-violet-50 text-violet-700', dot: 'bg-violet-500' },
+  event: { label: 'Eventos', emoji: '📅', chip: 'bg-brand-50 text-brand-700', dot: 'bg-brand-500' },
   vacation: { label: 'Férias', emoji: '🏖️', chip: 'bg-sky-50 text-sky-700', dot: 'bg-sky-400' },
 }
 export const TYPE_ORDER: CalendarItemType[] = ['event', 'holiday', 'birthday', 'anniversary', 'vacation']

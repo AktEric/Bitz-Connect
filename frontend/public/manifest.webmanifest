@@ -1,14 +1,25 @@
 {
-  "name": "Projeto Inovação — Workspace",
-  "short_name": "Workspace",
+  "name": "Bitz Connect",
+  "short_name": "Bitz Connect",
   "description": "Ponto, mural, calendário e RH da sua empresa.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#6d28d9",
+  "theme_color": "#0057d8",
   "lang": "pt-BR",
   "icons": [
-    { "src": "/logo-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "/logo-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }

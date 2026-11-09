@@ -49,7 +49,7 @@ function JobForm({ slug, job, onClose }: { slug: string; job?: JobItem; onClose:
           <div><label className={labelCls} htmlFor="j-close">Inscrições até</label><input id="j-close" type="date" className={inputCls} value={f.closes_on} onChange={(e) => set('closes_on', e.target.value)} /></div>
         </div>
         <label className="flex cursor-pointer items-start gap-2 text-sm text-gray-700">
-          <input type="checkbox" className="mt-0.5 rounded border-gray-300 text-violet-600" checked={f.public} onChange={(e) => set('public', e.target.checked)} />
+          <input type="checkbox" className="mt-0.5 rounded border-gray-300 text-brand-600" checked={f.public} onChange={(e) => set('public', e.target.checked)} />
           <span>Divulgar por link público (WhatsApp, redes)<br /><span className="text-xs text-gray-400">Qualquer pessoa com o link vê a vaga, sem entrar no sistema. Candidatos de fora usam o contato abaixo.</span></span>
         </label>
         {f.public && <div><label className={labelCls} htmlFor="j-contact">Contato para candidatos externos</label><input id="j-contact" className={inputCls} placeholder="e-mail ou WhatsApp do RH" value={f.contact} onChange={(e) => set('contact', e.target.value)} /></div>}

@@ -58,7 +58,7 @@ function ScheduleModal({ slug, schedule, onClose }: { slug: string; schedule: Wo
               <button
                 key={p.label}
                 type="button"
-                className="rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-violet-50 hover:text-violet-700"
+                className="rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-700"
                 onClick={() => setHours(Object.fromEntries(DAYS.map((d) => [d.dow, String(p.hours[d.dow])])))}
               >
                 {p.label}
@@ -117,7 +117,7 @@ export default function WorkspaceSchedulesSection({ slug }: { slug: string }) {
     <section className="mb-8">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <CalendarClock className="h-5 w-5 text-violet-600" />
+          <CalendarClock className="h-5 w-5 text-brand-600" />
           <h2 className="text-lg font-semibold text-gray-900">Jornadas de trabalho</h2>
         </div>
         <button type="button" className={btnPrimary} onClick={() => setEditing('new')}><Plus className="h-4 w-4" /> Nova jornada</button>

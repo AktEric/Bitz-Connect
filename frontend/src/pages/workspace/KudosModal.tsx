@@ -43,7 +43,7 @@ export default function KudosModal({ slug, onClose }: { slug: string; onClose: (
           <div className="flex flex-wrap gap-2">
             {Object.entries(BADGES).map(([k, b]) => (
               <button key={k} type="button" aria-pressed={badge === k} onClick={() => setBadge(k)}
-                className={`rounded-full border px-3 py-1.5 text-sm ${badge === k ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>{b.emoji} {b.label}</button>
+                className={`rounded-full border px-3 py-1.5 text-sm ${badge === k ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>{b.emoji} {b.label}</button>
             ))}
           </div>
         </div>

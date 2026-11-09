@@ -24,7 +24,7 @@ export function StoryMentorshipActions({ mentorship, liked, likesCount, onLike, 
       </button>
       <button
         onClick={() => navigate(`/mentorships/${mentorship.uuid}`)}
-        className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2.5 text-sm font-semibold text-violet-700 transition-colors hover:bg-white/90"
+        className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white px-3 py-2.5 text-sm font-semibold text-brand-700 transition-colors hover:bg-white/90"
       >
         <ExternalLink className="h-4 w-4" /> Acessar mentoria
       </button>

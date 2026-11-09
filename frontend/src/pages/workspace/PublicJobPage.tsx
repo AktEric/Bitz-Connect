@@ -15,7 +15,7 @@ export default function PublicJobPage() {
           <div className="text-center"><Briefcase className="mx-auto h-8 w-8 text-gray-300" /><p className="mt-2 font-semibold text-gray-900">Esta vaga não está mais disponível</p></div>
         ) : (
           <>
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">{data.company}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">{data.company}</p>
             <h1 className="mt-1 text-2xl font-bold text-gray-900">{data.title}</h1>
             <p className="mt-1 flex flex-wrap gap-x-3 text-sm text-gray-500">
               {data.department && <span>{data.department}</span>}
@@ -24,7 +24,7 @@ export default function PublicJobPage() {
             </p>
             <p className="mt-4 whitespace-pre-wrap text-sm text-gray-700">{data.description}</p>
             {data.requirements && <p className="mt-3 whitespace-pre-wrap text-sm text-gray-600"><b>Requisitos: </b>{data.requirements}</p>}
-            {data.contact && <p className="mt-5 rounded-xl bg-violet-50 px-4 py-3 text-sm text-violet-900">Para se candidatar, fale com: <b>{data.contact}</b></p>}
+            {data.contact && <p className="mt-5 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-900">Para se candidatar, fale com: <b>{data.contact}</b></p>}
             {data.closes_on && <p className="mt-2 text-xs text-gray-400">Inscrições até {data.closes_on.split('-').reverse().join('/')}</p>}
           </>
         )}

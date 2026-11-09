@@ -197,13 +197,13 @@ export default function WorkspaceTeamPage() {
                 <Panel key={m.uuid} className="flex items-start gap-3 !p-3">
                   <Link to={`/w/${slug}/pessoas/${m.uuid}`} aria-label={`Ver perfil de ${m.name}`}><Avatar src={m.avatar_url} name={m.name} size="lg" /></Link>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-gray-900">{m.name} {m.role === 'admin' && <Pill tone="violet">RH/Gestão</Pill>}</p>
+                    <p className="truncate font-semibold text-gray-900">{m.name} {m.role === 'admin' && <Pill tone="brand">RH/Gestão</Pill>}</p>
                     <p className="truncate text-sm text-gray-600">{m.job_title ?? 'Cargo não informado'}</p>
                     <p className="truncate text-xs text-gray-400">{[m.department?.name, m.manager ? `Gestor: ${m.manager.name}` : null].filter(Boolean).join(' · ')}</p>
                     {m.hired_at && <p className="text-xs text-gray-400">Desde {fmtDate(m.hired_at)}</p>}
                   </div>
                   {info.me.is_admin && (
-                    <button className="text-gray-400 hover:text-violet-600" aria-label={`Editar ${m.name}`} onClick={() => setEditing(m)}><Pencil className="h-4 w-4" /></button>
+                    <button className="text-gray-400 hover:text-brand-600" aria-label={`Editar ${m.name}`} onClick={() => setEditing(m)}><Pencil className="h-4 w-4" /></button>
                   )}
                 </Panel>
               ))}

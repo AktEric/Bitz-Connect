@@ -45,7 +45,7 @@ const NAV_EXTRA = [
   { to: '/courses',      label: 'Cursos',           Icon: GraduationCap },
   { to: '/mentorships',  label: 'Mentorias',        Icon: Handshake },
   { to: '/connections',  label: 'Conexões',         Icon: Users },
-  { to: '/plans',        label: 'ConnectHotel PRO', Icon: Sparkles },
+  { to: '/plans',        label: 'Bitz Connect PRO', Icon: Sparkles },
 ] as const
 
 // Bottom navigation (mobile) — 6 items
@@ -64,7 +64,7 @@ const DRAWER_ITEMS = [
   { to: '/videos',   label: 'Vídeos',        Icon: VideoIcon,  enabled: true },
   { to: '/courses',  label: 'Cursos',        Icon: GraduationCap, enabled: true },
   { to: '/mentorships', label: 'Mentorias',  Icon: Handshake,  enabled: true },
-  { to: '/plans',    label: 'ConnectHotel PRO', Icon: Sparkles, enabled: true },
+  { to: '/plans',    label: 'Bitz Connect PRO', Icon: Sparkles, enabled: true },
   { to: '/w',        label: 'Minha empresa', Icon: Building2,  enabled: true },
   { to: '/hotels',   label: 'Minhas Empresas',   Icon: Building2,  enabled: true },
   { to: '/saved',    label: 'Itens salvos',  Icon: Bookmark,   enabled: false },
@@ -92,7 +92,7 @@ function SideNavItem({
         cn(
           'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
           isActive
-            ? 'bg-violet-50 text-violet-700'
+            ? 'bg-brand-50 text-brand-700'
             : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
           collapsed && 'justify-center px-2',
         )
@@ -101,7 +101,7 @@ function SideNavItem({
       {({ isActive }) => (
         <>
           <div className="relative flex-shrink-0">
-            <Icon className={cn('h-5 w-5 flex-shrink-0', isActive ? 'text-violet-600' : '')} />
+            <Icon className={cn('h-5 w-5 flex-shrink-0', isActive ? 'text-brand-600' : '')} />
             {badge && badge > 0 && (
               <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
                 {badge > 9 ? '9+' : badge}
@@ -110,7 +110,7 @@ function SideNavItem({
           </div>
           {!collapsed && <span className="truncate">{label}</span>}
           {isActive && !collapsed && (
-            <span className="ml-auto h-5 w-1 rounded-full bg-violet-600" />
+            <span className="ml-auto h-5 w-1 rounded-full bg-brand-600" />
           )}
         </>
       )}
@@ -139,19 +139,19 @@ function PremiumCard({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div className="relative mx-3 mb-3 rounded-2xl bg-gradient-to-br from-violet-600 to-violet-800 p-4 text-white">
+    <div className="relative mx-3 mb-3 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-4 text-white">
       <button
         onClick={handleDismiss}
         aria-label="Fechar"
-        className="absolute right-2 top-2 rounded-md p-1 text-violet-200 hover:bg-white/10 hover:text-white transition-colors"
+        className="absolute right-2 top-2 rounded-md p-1 text-brand-200 hover:bg-white/10 hover:text-white transition-colors"
       >
         <X className="h-3.5 w-3.5" />
       </button>
       <div className="flex items-center gap-2 mb-2">
         <Sparkles className="h-4 w-4 text-yellow-300" />
-        <span className="text-xs font-semibold">ConnectHotel Pro</span>
+        <span className="text-xs font-semibold">Bitz Connect Pro</span>
       </div>
-      <p className="text-xs text-violet-200 leading-snug mb-3">
+      <p className="text-xs text-brand-200 leading-snug mb-3">
         Acesse análises avançadas, destaque seu perfil e muito mais.
       </p>
       <button
@@ -220,7 +220,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
           className={({ isActive }) =>
             cn(
               'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
-              isActive ? 'bg-violet-50 text-violet-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+              isActive ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
               collapsed && 'justify-center px-2',
             )
           }
@@ -342,7 +342,7 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
                 className={({ isActive }) =>
                   cn(
                     'flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium transition-colors',
-                    isActive ? 'bg-violet-50 text-violet-700' : 'text-gray-700 hover:bg-gray-50',
+                    isActive ? 'bg-brand-50 text-brand-700' : 'text-gray-700 hover:bg-gray-50',
                   )
                 }
               >
@@ -412,7 +412,7 @@ function BottomNav() {
             className={({ isActive }) =>
               cn(
                 'flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors',
-                isActive ? 'text-violet-600' : 'text-gray-500',
+                isActive ? 'text-brand-600' : 'text-gray-500',
               )
             }
           >
@@ -469,7 +469,7 @@ function GroupChatButton({ onClick }: { onClick: () => void }) {
     >
       <MessagesSquare className="h-5 w-5" />
       {count > 0 && (
-        <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">
+        <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white">
           {count > 9 ? '9+' : count}
         </span>
       )}
@@ -527,7 +527,7 @@ function Topbar({ sidebarWidth, onOpenChat }: { sidebarWidth: number; onOpenChat
     >
       <Link
         to="/search"
-        className="flex flex-1 max-w-sm items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400 hover:border-violet-300 hover:bg-white transition-all"
+        className="flex flex-1 max-w-sm items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400 hover:border-brand-300 hover:bg-white transition-all"
       >
         <Search className="h-4 w-4 flex-shrink-0" />
         <span>Pesquisar pessoas, empresas, vagas...</span>

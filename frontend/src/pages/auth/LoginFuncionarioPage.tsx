@@ -83,7 +83,7 @@ export default function LoginFuncionarioPage() {
   const input = 'w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100 px-4 py-10">
       <div className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-7 shadow-sm">
         <Link to="/" className="mb-6 flex justify-center"><Logo iconClassName="h-9 w-9" textClassName="text-lg" /></Link>
         <h1 className="text-center text-2xl font-bold text-gray-900">Entrar na sua empresa</h1>

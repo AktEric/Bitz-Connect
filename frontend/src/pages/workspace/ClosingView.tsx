@@ -123,7 +123,7 @@ export default function ClosingView({ slug, isOwner }: { slug: string; isOwner: 
             <li key={m.month}>
               <button
                 type="button" onClick={() => setPicked(m.month)}
-                className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm hover:bg-gray-50 ${month === m.month ? 'bg-violet-50/60' : ''}`}
+                className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm hover:bg-gray-50 ${month === m.month ? 'bg-brand-50/60' : ''}`}
               >
                 <span className="capitalize text-gray-800">{fmtMonth(m.month)}</span>
                 {m.status === 'closed' ? <Lock className="h-4 w-4 text-emerald-600" aria-label="Fechado" /> : <span className="h-2 w-2 rounded-full bg-amber-400" aria-label="Em aberto" />}

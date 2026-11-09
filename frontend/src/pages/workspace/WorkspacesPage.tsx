@@ -29,7 +29,7 @@ export default function WorkspacesPage() {
                   {[w.job_title, w.department].filter(Boolean).join(' · ') || w.hotel.segment || 'Colaborador'}
                 </p>
               </div>
-              {w.role === 'admin' ? <Pill tone="violet">RH / Gestão</Pill> : <Building2 className="h-5 w-5 text-gray-300" />}
+              {w.role === 'admin' ? <Pill tone="brand">RH / Gestão</Pill> : <Building2 className="h-5 w-5 text-gray-300" />}
             </Link>
           ))}
         </div>

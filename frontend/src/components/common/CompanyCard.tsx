@@ -59,7 +59,7 @@ export function CompanyCard({
       {onFollow && (
         <button
           onClick={onFollow}
-          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-full bg-violet-600 py-2 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
+          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-full bg-brand-600 py-2 text-sm font-medium text-white hover:bg-brand-700 transition-colors"
         >
           <UserPlus className="h-4 w-4" />
           Seguir

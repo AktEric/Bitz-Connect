@@ -42,7 +42,7 @@ function RolesSection({ slug }: { slug: string }) {
   return (
     <section className="mb-8">
       <div className="mb-3 flex items-center gap-2">
-        <ShieldCheck className="h-5 w-5 text-violet-600" />
+        <ShieldCheck className="h-5 w-5 text-brand-600" />
         <h2 className="text-lg font-semibold text-gray-900">Papéis de acesso</h2>
       </div>
       <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -77,7 +77,7 @@ function RolesSection({ slug }: { slug: string }) {
                   {ROLE_ORDER.map((r) => <option key={r} value={r}>{ROLE_INFO[r].label}</option>)}
                 </select>
               ) : (
-                <Pill tone="violet">{ROLE_INFO[row.access_role].label}</Pill>
+                <Pill tone="brand">{ROLE_INFO[row.access_role].label}</Pill>
               )}
             </div>
           ))}
@@ -111,7 +111,7 @@ function TemplateSection({ slug }: { slug: string }) {
   return (
     <section>
       <div className="mb-1 flex items-center gap-2">
-        <LayoutTemplate className="h-5 w-5 text-violet-600" />
+        <LayoutTemplate className="h-5 w-5 text-brand-600" />
         <h2 className="text-lg font-semibold text-gray-900">Estrutura por segmento</h2>
       </div>
       <p className="mb-3 text-sm text-gray-500">
@@ -123,7 +123,7 @@ function TemplateSection({ slug }: { slug: string }) {
             key={t.key}
             type="button"
             onClick={() => { setSelected(t.key); setResult(null); setError('') }}
-            className={`rounded-xl border p-3 text-left transition-colors ${selected === t.key ? 'border-violet-400 bg-violet-50' : 'border-gray-100 bg-white hover:border-gray-200'}`}
+            className={`rounded-xl border p-3 text-left transition-colors ${selected === t.key ? 'border-brand-400 bg-brand-50' : 'border-gray-100 bg-white hover:border-gray-200'}`}
           >
             <div className="text-sm font-semibold text-gray-900">{t.label}</div>
             <div className="text-xs text-gray-500">{t.departments.length} setores sugeridos</div>

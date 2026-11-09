@@ -10,7 +10,7 @@ const TYPE: Record<PlanItemType, string> = { course: 'Curso', mentoring: 'Mentor
 const STATUS: { value: PlanItemStatus; label: string }[] = [{ value: 'todo', label: 'A fazer' }, { value: 'doing', label: 'Em andamento' }, { value: 'done', label: 'Concluído' }]
 
 function Bar({ value }: { value: number }) {
-  return <div className="h-1.5 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-violet-500" style={{ width: `${value}%` }} /></div>
+  return <div className="h-1.5 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-brand-500" style={{ width: `${value}%` }} /></div>
 }
 
 function NewPlanModal({ slug, onClose }: { slug: string; onClose: () => void }) {

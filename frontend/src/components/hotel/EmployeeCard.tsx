@@ -45,7 +45,7 @@ export function EmployeeCard({ employee }: EmployeeCardProps) {
           <UserLink
             uuid={employee.uuid}
             name={employee.name}
-            className="text-sm font-semibold text-gray-900 hover:text-violet-600 transition-colors"
+            className="text-sm font-semibold text-gray-900 hover:text-brand-600 transition-colors"
           />
           {employee.verified && (
             <span className="flex items-center gap-1 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">

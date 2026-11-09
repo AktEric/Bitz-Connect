@@ -91,7 +91,7 @@ export default function HotelLayout() {
           className={`${navLinkBase} justify-center border border-white/25 bg-white/10 text-white hover:bg-white/20`}
         >
           <Globe className="h-4 w-4 flex-shrink-0" />
-          <span>Acessar ConnectHotel</span>
+          <span>Acessar Bitz Connect</span>
         </Link>
       </div>
 

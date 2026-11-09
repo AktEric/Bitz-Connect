@@ -19,7 +19,7 @@ export function MentorshipCard({ mentorship }: MentorshipCardProps) {
     >
       <div className="flex items-center gap-2 text-primary">
         <Handshake className="h-5 w-5" />
-        {mentorship.category && <span className="rounded bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700">{mentorship.category}</span>}
+        {mentorship.category && <span className="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium text-brand-700">{mentorship.category}</span>}
       </div>
 
       <h3 className="mt-2 line-clamp-2 text-sm font-semibold text-gray-900">{mentorship.title}</h3>

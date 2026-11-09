@@ -6,11 +6,11 @@ import { Avatar } from '@/components/ui/Avatar'
 import type { Goal, GoalStatus } from '@/types/workspace.types'
 import { Empty, Modal, PageHeader, Panel, Pill, Spinner, Tabs, btnGhost, btnPrimary, errMsg, fmtDate, inputCls, labelCls, useWs } from './ui'
 
-const STATUS: Record<GoalStatus, { label: string; tone: 'violet' | 'green' | 'red' | 'gray' }> = {
-  active: { label: 'Em andamento', tone: 'violet' }, achieved: { label: 'Batida', tone: 'green' },
+const STATUS: Record<GoalStatus, { label: string; tone: 'brand' | 'green' | 'red' | 'gray' }> = {
+  active: { label: 'Em andamento', tone: 'brand' }, achieved: { label: 'Batida', tone: 'green' },
   missed: { label: 'Não batida', tone: 'red' }, cancelled: { label: 'Cancelada', tone: 'gray' },
 }
-const BAR: Record<GoalStatus, string> = { active: 'bg-violet-500', achieved: 'bg-emerald-500', missed: 'bg-red-400', cancelled: 'bg-gray-300' }
+const BAR: Record<GoalStatus, string> = { active: 'bg-brand-500', achieved: 'bg-emerald-500', missed: 'bg-red-400', cancelled: 'bg-gray-300' }
 
 function NewGoalModal({ slug, onClose }: { slug: string; onClose: () => void }) {
   const qc = useQueryClient()

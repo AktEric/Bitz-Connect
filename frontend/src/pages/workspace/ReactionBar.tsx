@@ -34,7 +34,7 @@ export default function ReactionBar({ slug, post }: { slug: string; post: FeedPo
           onClick={() => choose(mine ?? 'like')}
           onFocus={() => setPicker(true)}
           aria-pressed={!!mine}
-          className={cn('flex items-center gap-1.5 rounded-lg px-1 py-0.5 transition-colors', mine ? 'font-medium text-violet-700' : 'hover:text-gray-700')}
+          className={cn('flex items-center gap-1.5 rounded-lg px-1 py-0.5 transition-colors', mine ? 'font-medium text-brand-700' : 'hover:text-gray-700')}
         >
           {mine ? <span className="text-base leading-none">{REACTION_META[mine].emoji}</span> : <ThumbsUp className="h-4 w-4" />}
           {mine ? REACTION_META[mine].label : 'Reagir'}
@@ -46,7 +46,7 @@ export default function ReactionBar({ slug, post }: { slug: string; post: FeedPo
                 <button
                   key={r} type="button" role="menuitem" title={REACTION_META[r].label} aria-label={REACTION_META[r].label}
                   onClick={() => choose(r)}
-                  className={cn('rounded-full px-1.5 py-0.5 text-xl transition-transform hover:scale-125', mine === r && 'bg-violet-50')}
+                  className={cn('rounded-full px-1.5 py-0.5 text-xl transition-transform hover:scale-125', mine === r && 'bg-brand-50')}
                 >
                   {REACTION_META[r].emoji}
                 </button>

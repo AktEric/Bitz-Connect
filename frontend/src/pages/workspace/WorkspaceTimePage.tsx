@@ -260,7 +260,7 @@ function TeamView({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
             const pill = STATE_PILL[r.state]
             return (
               <li key={uuid}>
-                <button type="button" onClick={() => setSelected(uuid)} className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 ${selected === uuid ? 'bg-violet-50/60' : ''}`}>
+                <button type="button" onClick={() => setSelected(uuid)} className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 ${selected === uuid ? 'bg-brand-50/60' : ''}`}>
                   <Avatar src={r.person?.avatar_url} name={r.person?.name ?? '?'} size="sm" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-gray-900">{r.person?.name}</span>

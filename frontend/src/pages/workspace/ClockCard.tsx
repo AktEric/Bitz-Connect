@@ -118,18 +118,18 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
   }
 
   return (
-    <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-violet-700 via-violet-600 to-indigo-600 p-5 text-white shadow-lg sm:p-6">
+    <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-ink-900 via-brand-800 to-brand-600 p-5 text-white shadow-lg sm:p-6">
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
           <span className={cn('h-2 w-2 rounded-full', ui.dot)} /> {ui.label}
         </span>
-        <span className="text-xs capitalize text-violet-100">{date}</span>
+        <span className="text-xs capitalize text-brand-100">{date}</span>
       </div>
 
       <p className={cn('mt-4 font-semibold tabular-nums tracking-tight', compact ? 'text-4xl' : 'text-5xl sm:text-6xl')}>{time}</p>
 
       <div className="mt-4">
-        <div className="mb-1 flex justify-between text-xs text-violet-100">
+        <div className="mb-1 flex justify-between text-xs text-brand-100">
           <span>Hoje: {data ? fmtMinutes(live) : '—'}</span>
           <span>{dayOff ? 'Hoje é folga na sua escala' : `Jornada: ${data ? fmtMinutes(data.daily_minutes) : '8h00'}`}</span>
         </div>
@@ -146,7 +146,7 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
               type="button"
               disabled={punch.isPending || isLoading || deviceBlocked}
               onClick={() => doPunch(primary)}
-              className="inline-flex min-w-[10rem] flex-1 items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-violet-700 shadow-sm transition hover:bg-violet-50 disabled:opacity-60 sm:flex-none"
+              className="inline-flex min-w-[10rem] flex-1 items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-brand-700 shadow-sm transition hover:bg-brand-50 disabled:opacity-60 sm:flex-none"
             >
               <Icon className="h-4 w-4" /> {ACTION_LABEL[primary]}
             </button>
@@ -167,7 +167,7 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
           )
         })}
       </div>
-      {locating && <p className="mt-3 text-xs text-violet-100">Obtendo sua localização…</p>}
+      {locating && <p className="mt-3 text-xs text-brand-100">Obtendo sua localização…</p>}
       {error && <p className="mt-3 rounded-xl bg-red-500/20 px-3 py-2 text-xs text-white" role="alert">{error}</p>}
       {deviceBlocked && (
         <p className="mt-3 rounded-xl bg-amber-400/20 px-3 py-2 text-xs text-white" role="status">
@@ -201,7 +201,7 @@ export default function ClockCard({ slug, compact = false }: { slug: string; com
       )}
 
       {!compact && !!data?.entries.length && (
-        <ol className="mt-5 flex flex-wrap gap-x-5 gap-y-1 border-t border-white/15 pt-3 text-xs text-violet-100">
+        <ol className="mt-5 flex flex-wrap gap-x-5 gap-y-1 border-t border-white/15 pt-3 text-xs text-brand-100">
           {data.entries.map((e) => (
             <li key={e.uuid}>
               <span className="font-semibold text-white">{fmtClock(e.punched_at)}</span> {TYPE_LABEL[e.type]}

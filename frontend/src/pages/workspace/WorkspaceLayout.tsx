@@ -53,7 +53,7 @@ export default function WorkspaceLayout() {
       <div className="ws-bg min-h-screen px-4 py-20 text-center">
         <p className="font-medium text-gray-700">Você não tem acesso a este Workspace.</p>
         <p className="mt-1 text-sm text-gray-400">O acesso é liberado após o vínculo com a empresa ser aprovado.</p>
-        <Link to="/w" className="mt-4 inline-block text-sm font-medium text-violet-600">Ver minhas empresas</Link>
+        <Link to="/w" className="mt-4 inline-block text-sm font-medium text-brand-600">Ver minhas empresas</Link>
       </div>
     )
   }
@@ -133,7 +133,7 @@ export default function WorkspaceLayout() {
 
           <button
             type="button" onClick={() => setSearchOpen(true)} aria-label="Buscar (Ctrl+K)"
-            className="hidden w-full items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-400 transition hover:border-violet-300 hover:bg-white md:flex"
+            className="hidden w-full items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-400 transition hover:border-brand-300 hover:bg-white md:flex"
           >
             <span className="flex-1 truncate text-left">Buscar pessoas, páginas…</span>
             <kbd className="hidden rounded border border-gray-200 px-1.5 py-0.5 text-[10px] font-normal text-gray-400 lg:block">Ctrl K</kbd>
@@ -208,7 +208,7 @@ export default function WorkspaceLayout() {
             key={label}
             to={to}
             end={end}
-            className={({ isActive }) => cn('flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium', isActive ? 'text-violet-700' : 'text-gray-500')}
+            className={({ isActive }) => cn('flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium', isActive ? 'text-brand-700' : 'text-gray-500')}
           >
             <Icon className="h-5 w-5" /> {label}
           </NavLink>

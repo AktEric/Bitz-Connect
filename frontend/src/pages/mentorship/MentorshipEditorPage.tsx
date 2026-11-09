@@ -42,12 +42,12 @@ export default function MentorshipEditorPage() {
     return (
       <div className="mx-auto max-w-lg px-4 py-12 text-center">
         <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-          <Sparkles className="h-3.5 w-3.5" /> ConnectHotel PRO — Consultor
+          <Sparkles className="h-3.5 w-3.5" /> Bitz Connect PRO — Consultor
         </span>
         <h1 className="mt-3 text-xl font-semibold text-gray-900">Oferecer mentorias é um recurso PRO</h1>
         <p className="mt-1 text-sm text-gray-500">Assine o plano Consultor para oferecer mentorias.</p>
         <Button className="mt-4" icon={<Sparkles className="h-4 w-4" />} onClick={() => navigate('/plans')}>
-          Conhecer ConnectHotel PRO
+          Conhecer Bitz Connect PRO
         </Button>
       </div>
     )

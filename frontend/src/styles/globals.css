@@ -5,9 +5,9 @@
 @layer base {
   :root {
     /* ── Brand ─────────────────────────────────────── */
-    --primary:           263 84% 50%;   /* #6D28D9 violet */
+    --primary:           216 100% 42%;  /* #0057D8 azul Bitz */
     --primary-foreground: 0 0% 100%;
-    --primary-light:     263 84% 96%;   /* very light violet bg */
+    --primary-light:     216 100% 96%;  /* azul bem claro */
 
     /* ── Neutrals ──────────────────────────────────── */
     --background:        220 20% 97%;   /* near-white cool gray */
@@ -28,10 +28,10 @@
     --secondary:         220 14% 95%;
     --secondary-foreground: 220 15% 20%;
     --muted:             220 14% 95%;
-    --accent:            263 84% 96%;
-    --accent-foreground: 263 84% 40%;
+    --accent:            216 100% 96%;
+    --accent-foreground: 216 100% 35%;
     --input:             220 14% 92%;
-    --ring:              263 84% 50%;
+    --ring:              216 100% 42%;
     --radius:            0.75rem;
   }
 
@@ -69,7 +69,7 @@
 
   /* focus ring */
   .ring-brand {
-    @apply ring-2 ring-violet-500/30 ring-offset-0;
+    @apply ring-2 ring-brand-500/30 ring-offset-0;
   }
 }
 
@@ -83,7 +83,7 @@
   .badge {
     @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
   }
-  .badge-primary { @apply badge bg-violet-100 text-violet-700; }
+  .badge-primary { @apply badge bg-brand-100 text-brand-700; }
   .badge-green   { @apply badge bg-green-100 text-green-700; }
   .badge-amber   { @apply badge bg-amber-100 text-amber-700; }
   .badge-gray    { @apply badge bg-gray-100 text-gray-600; }
@@ -115,9 +115,9 @@
 .dark .border-gray-50, .dark .border-gray-100 { border-color: #232734; }
 .dark .border-gray-200, .dark .border-gray-300 { border-color: #323849; }
 .dark .divide-gray-50 > :not([hidden]) ~ :not([hidden]), .dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #232734; }
-.dark .bg-violet-50 { background-color: rgb(124 58 237 / 0.16); }
-.dark .bg-violet-100 { background-color: rgb(124 58 237 / 0.24); }
-.dark .text-violet-600, .dark .text-violet-700 { color: #c4b5fd; }
+.dark .bg-brand-50 { background-color: rgb(0 87 216 / 0.16); }
+.dark .bg-brand-100 { background-color: rgb(0 87 216 / 0.24); }
+.dark .text-brand-600, .dark .text-brand-700 { color: #86b3fa; }
 .dark .bg-red-50 { background-color: rgb(239 68 68 / 0.14); }
 .dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.14); }
 .dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.14); }
@@ -129,30 +129,30 @@
 .dark .bg-slate-50 { background-color: #0f1117; }
 
 /* Acessibilidade: foco visível, link de pular e menos movimento */
-:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 2px; }
-.skip-link { position: absolute; left: 8px; top: -48px; z-index: 100; background: #6d28d9; color: #fff; padding: 8px 14px; border-radius: 10px; font-size: 14px; }
+:focus-visible { outline: 2px solid #1f6fee; outline-offset: 2px; }
+.skip-link { position: absolute; left: 8px; top: -48px; z-index: 100; background: #0057d8; color: #fff; padding: 8px 14px; border-radius: 10px; font-size: 14px; }
 .skip-link:focus { top: 8px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 
 /* Tema escuro: variantes translúcidas e gradientes claros */
-.dark .bg-violet-50\/40, .dark .bg-violet-50\/50, .dark .bg-violet-50\/60 { background-color: rgb(124 58 237 / 0.14); }
+.dark .bg-brand-50\/40, .dark .bg-brand-50\/50, .dark .bg-brand-50\/60 { background-color: rgb(0 87 216 / 0.14); }
 .dark .bg-amber-50\/40, .dark .bg-amber-50\/50 { background-color: rgb(245 158 11 / 0.12); }
 .dark .bg-gray-50\/50, .dark .bg-gray-50\/60, .dark .bg-gray-50\/80 { background-color: rgb(255 255 255 / 0.03); }
 .dark .bg-white\/95 { background-color: rgb(24 27 36 / 0.95); }
-.dark .border-violet-100 { border-color: rgb(124 58 237 / 0.3); }
+.dark .border-brand-100 { border-color: rgb(0 87 216 / 0.3); }
 .dark .border-amber-100, .dark .border-amber-200 { border-color: rgb(245 158 11 / 0.3); }
-.dark .text-violet-900, .dark .text-violet-800 { color: #ddd6fe; }
-.dark .from-violet-50 { --tw-gradient-from: rgb(124 58 237 / 0.2) var(--tw-gradient-from-position); --tw-gradient-to: rgb(24 27 36 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+.dark .text-brand-900, .dark .text-brand-800 { color: #b9d3fd; }
+.dark .from-brand-50 { --tw-gradient-from: rgb(0 87 216 / 0.2) var(--tw-gradient-from-position); --tw-gradient-to: rgb(24 27 36 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
 .dark .to-white { --tw-gradient-to: #181b24 var(--tw-gradient-to-position); }
 .dark .via-white { --tw-gradient-stops: var(--tw-gradient-from), #131620 var(--tw-gradient-via-position), var(--tw-gradient-to); }
-.dark .to-fuchsia-50 { --tw-gradient-to: #181326 var(--tw-gradient-to-position); }
+.dark .to-brand-100 { --tw-gradient-to: #0f1a2e var(--tw-gradient-to-position); }
 
 /* Tema escuro: cartões de aniversário e reconhecimento (gradientes e vidro claros) */
 .dark .from-amber-50 { --tw-gradient-from: rgb(245 158 11 / 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgb(24 27 36 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
 .dark .from-pink-50 { --tw-gradient-from: rgb(236 72 153 / 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgb(24 27 36 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
-.dark .to-violet-50 { --tw-gradient-to: rgb(124 58 237 / 0.16) var(--tw-gradient-to-position); }
+.dark .to-brand-50 { --tw-gradient-to: rgb(0 87 216 / 0.16) var(--tw-gradient-to-position); }
 .dark .to-amber-50 { --tw-gradient-to: rgb(245 158 11 / 0.14) var(--tw-gradient-to-position); }
 .dark .via-white { --tw-gradient-stops: var(--tw-gradient-from), #181b24 var(--tw-gradient-via-position), var(--tw-gradient-to); }
 .dark .bg-white\/70 { background-color: rgb(255 255 255 / 0.05); }
@@ -162,10 +162,9 @@
 /* Barras de ícones do Workspace (menu à esquerda, pessoas à direita) */
 .ws-rail-scroll { scrollbar-width: none; }
 .ws-rail-scroll::-webkit-scrollbar { display: none; }
-.dark .ws-rail { background-color: #181b24; border-right: 1px solid #232734; }
-.dark .ws-rail .bg-white { background-color: rgb(124 58 237 / 0.35); }
+.dark .ws-rail { border-right: 1px solid #232734; }
 .dark .bg-amber-100 { background-color: rgb(245 158 11 / 0.16); }
-.dark .text-fuchsia-50 { color: #181326; }
+.dark .text-brand-100 { color: #0f1a2e; }
 
 /* Workspace: fundo cinza-azulado e cartões sem borda, com sombra suave (cartões "flutuam" sobre o fundo) */
 .ws-bg { background-color: #f1f3f8; }

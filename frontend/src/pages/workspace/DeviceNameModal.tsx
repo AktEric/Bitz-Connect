@@ -11,7 +11,7 @@ export default function DeviceNameModal({ onConfirm, onCancel }: { onConfirm: (n
     <Modal title="Cadastrar este dispositivo" onClose={onCancel}>
       <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (ok) onConfirm(name.trim()) }}>
         <p className="flex items-start gap-2 text-sm text-gray-600">
-          <Laptop className="mt-0.5 h-4 w-4 flex-shrink-0 text-violet-600" />
+          <Laptop className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-600" />
           Sua empresa só aceita marcações de dispositivos aprovados pelo RH. Dê um nome a este aparelho para o RH reconhecê-lo.
         </p>
         <div>

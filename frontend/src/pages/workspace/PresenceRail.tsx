@@ -41,10 +41,10 @@ export default function PresenceRail({ slug, onOpenChat, onOpenPerson }: { slug:
       <button
         type="button" onClick={onOpenChat} aria-label="Abrir o chat"
         onMouseEnter={(e) => tip.show(e, 'Chat da empresa')} onMouseLeave={tip.hide}
-        className="relative mt-3 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 hover:text-violet-700"
+        className="relative mt-3 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 hover:text-brand-700"
       >
         <MessageSquare className="h-5 w-5" />
-        {totalUnread > 0 && <span className="absolute right-0.5 top-0.5 min-w-[16px] rounded-full bg-violet-600 px-1 text-center text-[10px] font-bold leading-4 text-white">{totalUnread > 9 ? '9+' : totalUnread}</span>}
+        {totalUnread > 0 && <span className="absolute right-0.5 top-0.5 min-w-[16px] rounded-full bg-brand-600 px-1 text-center text-[10px] font-bold leading-4 text-white">{totalUnread > 9 ? '9+' : totalUnread}</span>}
       </button>
       <span className="my-2 h-px w-8 flex-shrink-0 bg-gray-200" aria-hidden />
       <ul className="ws-rail-scroll flex w-full flex-1 flex-col items-center gap-2 overflow-y-auto pb-20">
@@ -56,10 +56,10 @@ export default function PresenceRail({ slug, onOpenChat, onOpenPerson }: { slug:
                 type="button" onClick={() => { tip.hide(); onOpenPerson({ uuid: p.uuid, name: p.name, avatar_url: p.avatar_url }) }}
                 aria-label={`Conversar com ${p.name}`}
                 onMouseEnter={(e) => tip.show(e, p.name)} onMouseLeave={tip.hide}
-                className="relative block rounded-full ring-violet-300 ring-offset-2 transition hover:ring-2"
+                className="relative block rounded-full ring-brand-300 ring-offset-2 transition hover:ring-2"
               >
                 <Avatar src={p.avatar_url} name={p.name} size="md" />
-                {n > 0 && <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-violet-600" aria-label={`${n} não lida(s)`} />}
+                {n > 0 && <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-brand-600" aria-label={`${n} não lida(s)`} />}
               </button>
             </li>
           )

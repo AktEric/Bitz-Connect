@@ -37,7 +37,7 @@ export function MentionText({ text, names, className }: { text: string; names?: 
     <p className={className}>
       {parts.map((p, i) => typeof p === 'string'
         ? <span key={i}>{p}</span>
-        : <span key={i} className={p.known ? 'font-medium text-violet-700' : 'text-gray-500'}>@{p.label}</span>)}
+        : <span key={i} className={p.known ? 'font-medium text-brand-700' : 'text-gray-500'}>@{p.label}</span>)}
     </p>
   )
 }
@@ -120,7 +120,7 @@ export function MentionField({
               <button
                 type="button"
                 onMouseDown={(e) => { e.preventDefault(); pick(m.name, m.uuid) }}
-                className={cn('flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm', i === active ? 'bg-violet-50' : 'hover:bg-gray-50')}
+                className={cn('flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm', i === active ? 'bg-brand-50' : 'hover:bg-gray-50')}
               >
                 <Avatar src={m.avatar_url} name={m.name} size="xs" />
                 <span className="font-medium text-gray-900">{m.name}</span>

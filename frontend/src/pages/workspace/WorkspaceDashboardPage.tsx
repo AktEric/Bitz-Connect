@@ -19,7 +19,7 @@ function Stat({ label, value, hint, tone = 'default' }: { label: string; value: 
 function Card({ title, Icon, children }: { title: string; Icon: typeof Users; children: ReactNode }) {
   return (
     <Panel>
-      <h2 className="mb-3 flex items-center gap-2 font-semibold text-gray-900"><Icon className="h-4 w-4 text-violet-500" /> {title}</h2>
+      <h2 className="mb-3 flex items-center gap-2 font-semibold text-gray-900"><Icon className="h-4 w-4 text-brand-500" /> {title}</h2>
       {children}
     </Panel>
   )
@@ -144,7 +144,7 @@ export default function WorkspaceDashboardPage() {
                     : <span className="text-gray-300"> · banco oculto (menos de {data.min_group} pessoas)</span>}
                 </span>
               </div>
-              <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-violet-500" style={{ width: `${Math.round((d.headcount / maxHead) * 100)}%` }} /></div>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-brand-500" style={{ width: `${Math.round((d.headcount / maxHead) * 100)}%` }} /></div>
             </li>
           ))}
         </ul>

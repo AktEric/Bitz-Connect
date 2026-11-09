@@ -47,11 +47,11 @@ export default function LoginPessoaPage() {
   return (
     <div className="flex min-h-screen bg-white">
       {/* ── Painel de marca (desktop) ── */}
-      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-violet-700 via-violet-600 to-fuchsia-600 px-12 py-12 text-white lg:flex">
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-ink-950 via-ink-900 to-brand-700 px-12 py-12 text-white lg:flex">
         {/* Decoração de fundo */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -bottom-32 -right-16 h-96 w-96 rounded-full bg-fuchsia-400/20 blur-3xl" />
+          <div className="absolute -bottom-32 -right-16 h-96 w-96 rounded-full bg-brand-400/20 blur-3xl" />
           <div className="absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:28px_28px]" />
         </div>
 
@@ -67,7 +67,7 @@ export default function LoginPessoaPage() {
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
             RH e rede social para o seu trabalho.
           </h1>
-          <p className="mt-4 text-base leading-relaxed text-violet-100">
+          <p className="mt-4 text-base leading-relaxed text-brand-100">
             Profissionais, empresas e especialistas em um só lugar — sua próxima
             grande oportunidade começa aqui.
           </p>
@@ -75,23 +75,23 @@ export default function LoginPessoaPage() {
           <div className="mt-10 flex items-center gap-8">
             <div>
               <p className="text-2xl font-bold">+12 mil</p>
-              <p className="text-sm text-violet-200">profissionais</p>
+              <p className="text-sm text-brand-200">profissionais</p>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div>
               <p className="text-2xl font-bold">+800</p>
-              <p className="text-sm text-violet-200">empresas parceiras</p>
+              <p className="text-sm text-brand-200">empresas parceiras</p>
             </div>
             <div className="h-8 w-px bg-white/20" />
             <div>
               <p className="text-2xl font-bold">+3 mil</p>
-              <p className="text-sm text-violet-200">vagas abertas</p>
+              <p className="text-sm text-brand-200">vagas abertas</p>
             </div>
           </div>
         </div>
 
-        <p className="relative z-10 text-xs text-violet-200">
-          © {new Date().getFullYear()} ConnectHotel. Todos os direitos reservados.
+        <p className="relative z-10 text-xs text-brand-200">
+          © {new Date().getFullYear()} Bitz Connect. Todos os direitos reservados.
         </p>
       </div>
 
@@ -196,7 +196,7 @@ export default function LoginPessoaPage() {
 
           <Link
             to="/entrar"
-            className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-violet-200 bg-violet-50 py-2.5 text-sm font-medium text-violet-700 transition-colors hover:bg-violet-100"
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border border-brand-200 bg-brand-50 py-2.5 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-100"
           >
             <Building2 className="h-4 w-4" />
             Sou funcionário de uma empresa

@@ -110,14 +110,14 @@ export default function WorkspacePayslipsPage() {
         <div className="space-y-2">
           {data.items.map((p) => (
             <Panel key={p.uuid} className="flex items-center gap-3 !p-3">
-              <FileText className="h-8 w-8 flex-shrink-0 text-violet-400" />
+              <FileText className="h-8 w-8 flex-shrink-0 text-brand-400" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-gray-900">{p.title}</p>
                 <p className="truncate text-xs text-gray-400">
                   {KIND[p.kind]} · {fmtMonth(p.reference_month)}{scope === 'all' && p.owner ? ` · ${p.owner.name}` : ''}{p.amount_cents != null ? ` · ${fmtMoney(p.amount_cents)}` : ''}
                 </p>
               </div>
-              {!p.viewed && scope === 'mine' && <Pill tone="violet">Novo</Pill>}
+              {!p.viewed && scope === 'mine' && <Pill tone="brand">Novo</Pill>}
               {scope === 'all' && <Pill tone={p.viewed ? 'green' : 'gray'}>{p.viewed ? 'Visto' : 'Não visto'}</Pill>}
               <button className={btnGhost} onClick={() => download(p)}><Download className="h-4 w-4" /> Baixar</button>
               {isAdmin && (

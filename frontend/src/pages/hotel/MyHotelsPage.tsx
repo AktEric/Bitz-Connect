@@ -52,7 +52,7 @@ export default function MyHotelsPage() {
                 <CompanyLink
                   slug={hotel.slug}
                   name={hotel.name}
-                  className="text-base font-semibold text-gray-900 hover:text-violet-600"
+                  className="text-base font-semibold text-gray-900 hover:text-brand-600"
                 />
                 {hotel.segment && (
                   <p className="text-sm text-gray-500 mt-0.5">{hotel.segment}</p>

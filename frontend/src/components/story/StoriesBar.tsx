@@ -30,7 +30,7 @@ export function StoriesBar() {
       <div className="mb-3 flex items-center gap-3 overflow-x-auto rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
         {canCreate && (
           <button onClick={() => setShowCreate(true)} className="flex w-16 flex-shrink-0 flex-col items-center gap-1">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-violet-300 text-violet-500">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-brand-300 text-brand-500">
               <Plus className="h-5 w-5" />
             </span>
             <span className="max-w-[64px] truncate text-[11px] text-gray-600">Criar</span>

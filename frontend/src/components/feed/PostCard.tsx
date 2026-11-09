@@ -60,7 +60,7 @@ export default function PostCard({ post }: PostCardProps) {
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'ConnectHotel', text, url })
+        await navigator.share({ title: 'Bitz Connect', text, url })
         return
       } catch {
         // user cancelled or not supported — fall through to clipboard
@@ -93,14 +93,14 @@ export default function PostCard({ post }: PostCardProps) {
         <div className="min-w-0 flex-1">
           {post.hotel ? (
             <div className="flex flex-wrap items-center gap-1.5">
-              <CompanyLink slug={post.hotel.slug} name={post.hotel.name} className="flex items-center gap-1 font-semibold text-gray-900 hover:text-violet-600 transition-colors text-sm">
+              <CompanyLink slug={post.hotel.slug} name={post.hotel.name} className="flex items-center gap-1 font-semibold text-gray-900 hover:text-brand-600 transition-colors text-sm">
                 {post.hotel.name}
                 <Building2 className="h-3.5 w-3.5 text-gray-400" />
               </CompanyLink>
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-1.5">
-              <UserLink uuid={post.user.uuid} name={post.user.name} className="font-semibold text-gray-900 hover:text-violet-600 transition-colors text-sm" />
+              <UserLink uuid={post.user.uuid} name={post.user.name} className="font-semibold text-gray-900 hover:text-brand-600 transition-colors text-sm" />
               <PremiumBadge plan={post.user.plan} compact />
             </div>
           )}
@@ -154,7 +154,7 @@ export default function PostCard({ post }: PostCardProps) {
               onChange={(e) => setEditContent(e.target.value)}
               rows={4}
               maxLength={3000}
-              className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition"
+              className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition"
               autoFocus
             />
             <div className="mt-2 flex justify-end gap-2">
@@ -164,7 +164,7 @@ export default function PostCard({ post }: PostCardProps) {
               </button>
               <button type="submit"
                 disabled={!editContent.trim() || editContent.trim() === post.content || updatePost.isPending}
-                className="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50 transition-colors">
+                className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 transition-colors">
                 {updatePost.isPending ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
@@ -210,7 +210,7 @@ export default function PostCard({ post }: PostCardProps) {
             aria-label={showComments ? 'Ocultar comentários' : 'Ver comentários'}
             aria-expanded={showComments}
             className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors
-              ${showComments ? 'bg-violet-50 text-violet-600' : 'text-gray-500 hover:bg-gray-100'}`}
+              ${showComments ? 'bg-brand-50 text-brand-600' : 'text-gray-500 hover:bg-gray-100'}`}
           >
             <MessageCircle className="h-4 w-4" />
             <span>{post.comments_count}</span>

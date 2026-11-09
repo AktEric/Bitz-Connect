@@ -121,7 +121,7 @@ export default function HotelProfilePage() {
       <div className="mx-auto max-w-md px-4 py-16 text-center">
         <h1 className="text-4xl font-bold text-gray-900">404</h1>
         <p className="mt-2 text-gray-500">Hotel não encontrado.</p>
-        <Link to="/hotels" className="mt-4 inline-block text-sm text-violet-600 hover:underline">
+        <Link to="/hotels" className="mt-4 inline-block text-sm text-brand-600 hover:underline">
           ← Voltar para Hotéis
         </Link>
       </div>
@@ -177,14 +177,14 @@ export default function HotelProfilePage() {
               disabled={unfollow.isPending}
               className="flex items-center gap-1.5 rounded-full border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
-              <Heart className="h-4 w-4 fill-violet-600 text-violet-600" />
+              <Heart className="h-4 w-4 fill-brand-600 text-brand-600" />
               Deixar de Seguir
             </button>
           ) : (
             <button
               onClick={() => follow.mutate()}
               disabled={follow.isPending}
-              className="flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
             >
               <Heart className="h-4 w-4" />
               Seguir
@@ -249,7 +249,7 @@ export default function HotelProfilePage() {
               onClick={() => setTab(t.id)}
               className={`flex-shrink-0 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
                 tab === t.id
-                  ? 'border-violet-600 text-violet-600'
+                  ? 'border-brand-600 text-brand-600'
                   : 'border-transparent text-gray-500 hover:text-gray-800'
               }`}
             >
@@ -352,7 +352,7 @@ export default function HotelProfilePage() {
                 <div className="flex justify-end">
                   <Link
                     to="/jobs/new"
-                    className="flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-violet-700 transition-colors"
+                    className="flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 transition-colors"
                   >
                     <Plus className="h-4 w-4" />
                     Publicar vaga

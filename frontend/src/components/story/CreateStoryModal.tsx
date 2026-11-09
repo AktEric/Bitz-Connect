@@ -124,7 +124,7 @@ export function CreateStoryModal({ open, onClose }: CreateStoryModalProps) {
                 <button
                   onClick={() => setStoryType('job')}
                   className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
-                    storyType === 'job' ? 'border-primary bg-violet-50 text-primary' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    storyType === 'job' ? 'border-primary bg-brand-50 text-primary' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}
                 >
                   <Briefcase className="h-4 w-4" /> Vaga
@@ -134,7 +134,7 @@ export function CreateStoryModal({ open, onClose }: CreateStoryModalProps) {
                 <button
                   onClick={() => setStoryType('mentorship')}
                   className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
-                    storyType === 'mentorship' ? 'border-primary bg-violet-50 text-primary' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    storyType === 'mentorship' ? 'border-primary bg-brand-50 text-primary' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}
                 >
                   <GraduationCap className="h-4 w-4" /> Mentoria

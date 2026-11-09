@@ -104,7 +104,7 @@ function RequestDetail({ slug, uuid, canDecide, canResolve, onClose }: { slug: s
           <p className="text-base font-medium text-gray-900">{r.title}</p>
           {r.type === 'ticket' && (
             <p className="flex flex-wrap items-center gap-2 text-gray-600">
-              {r.category && <Pill tone="violet">{CATEGORY_LABEL[r.category]}</Pill>}
+              {r.category && <Pill tone="brand">{CATEGORY_LABEL[r.category]}</Pill>}
               {r.assigned_to && <span>Atendido por <b>{r.assigned_to.name}</b></span>}
               {r.due_at && (r.status === 'pending' || r.status === 'in_progress') && <Pill tone={r.overdue ? 'red' : 'gray'}>{r.overdue ? 'Prazo vencido' : `Prazo: ${fmtDate(r.due_at)}`}</Pill>}
             </p>

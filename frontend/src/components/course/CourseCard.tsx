@@ -23,7 +23,7 @@ export function CourseCard({ course }: CourseCardProps) {
       to={`/courses/${course.uuid}`}
       className="group flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white transition-shadow hover:shadow-md"
     >
-      <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-violet-500 to-indigo-600">
+      <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-brand-500 to-ink-900">
         {course.thumbnail_url ? (
           <img src={course.thumbnail_url} alt={course.title} className="h-full w-full object-cover" />
         ) : (

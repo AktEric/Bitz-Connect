@@ -181,7 +181,7 @@ export function VideoUploadModal({ open, onClose }: VideoUploadModalProps) {
                 type="file"
                 accept="image/*"
                 onChange={(e) => setThumbFile(e.target.files?.[0] ?? null)}
-                className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-violet-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary hover:file:bg-violet-100"
+                className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary hover:file:bg-brand-100"
               />
             </div>
 
