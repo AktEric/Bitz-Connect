@@ -41,6 +41,7 @@ docker/volumes/
 
 # Bootstrap de desenvolvimento (credenciais geradas)
 backend/storage/app/dev-*
+backend/storage/app/hr-demo-*
 frontend/dev-verify/
 
 # Arquivos privados e de teste gerados em runtime
