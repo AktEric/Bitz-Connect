@@ -588,11 +588,11 @@ class WorkspaceFeedController extends WorkspaceBaseController
             return $this->notFound('Publicação não encontrada.');
         }
 
-        $likes = WorkspacePostLike::where('workspace_post_id', $p->id)->orderBy('id')->get();
+        $likes = WorkspacePostLike::where('workspace_post_id', $p->id)->orderByDesc('updated_at')->orderByDesc('id')->get();
         $users = \App\Models\User::whereIn('id', $likes->pluck('user_id'))->get()->keyBy('id');
         $titles = HotelUser::where('hotel_id', $hotel->id)->whereIn('user_id', $likes->pluck('user_id'))->get()->keyBy('user_id');
 
-        $items = $likes->map(fn ($l) => ['reaction' => $l->reaction, 'person' => $this->access->person($users[$l->user_id] ?? null, $titles[$l->user_id] ?? null)])
+        $items = $likes->map(fn ($l) => ['reaction' => $l->reaction, 'reacted_at' => ($l->updated_at ?? $l->created_at)?->toISOString(), 'mine' => $l->user_id === $request->user()->id, 'person' => $this->access->person($users[$l->user_id] ?? null, $titles[$l->user_id] ?? null)])
             ->filter(fn ($i) => $i['person'])->values();
         $counts = array_merge(array_fill_keys(self::REACTIONS, 0), $items->countBy('reaction')->all());
 

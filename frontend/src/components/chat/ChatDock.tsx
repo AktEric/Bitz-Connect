@@ -15,6 +15,7 @@ import ChatComposer from './ChatComposer'
 import { stickerById } from './stickers'
 import StickerImage from './StickerImage'
 import { useMyStickers } from './useMyStickers'
+import ReactionDetails from './ReactionDetails'
 import type { DeliveryStatus } from '@/types/chatGroup.types'
 import type { RichPayload } from './StickerGifPanel'
 
@@ -83,7 +84,8 @@ interface BubbleMessage {
   is_announcement?: boolean
 }
 
-const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
+/** As mesmas reações dos posts: curtir, amei, parabéns, palmas, risada, surpreso, pensando e triste. */
+const REACTION_EMOJIS = ['👍', '❤️', '🎉', '👏', '😂', '😮', '🤔', '😢']
 
 /** ✓ enviada · ✓✓ entregue · ✓✓ azul visualizada (só nas minhas mensagens). */
 function Ticks({ status, onDark }: { status?: DeliveryStatus | null; onDark: boolean }) {
@@ -110,6 +112,7 @@ function Bubble({ m, group, slug, showAvatar, onReact, savedStickers }: { m: Bub
   const caption = (att && /^(📷 Foto|🎤 Mensagem de voz|📎 )/.test(m.content)) || (m.type === 'listing' && m.content === '🛍️ Anúncio do marketplace') ? '' : m.content
   const bare = !!builtin || !!customUuid || !!gif
   const [picker, setPicker] = useState(false)
+  const [details, setDetails] = useState(false)
   const reactions = m.reactions ?? []
 
   // foto de quem fala, na última mensagem de cada sequência (como nas redes sociais); as demais deixam o espaço
@@ -127,12 +130,13 @@ function Bubble({ m, group, slug, showAvatar, onReact, savedStickers }: { m: Bub
     </p>
   )
 
-  const react = (
-    <div className={cn('relative flex-shrink-0 self-center', m.is_mine && 'order-first')}>
+  // não se reage à própria mensagem
+  const react = m.is_mine ? null : (
+    <div className="relative flex-shrink-0 self-center">
       <button type="button" onClick={() => setPicker((v) => !v)} aria-label="Reagir à mensagem" aria-expanded={picker}
         className="rounded-full p-1 text-gray-400 opacity-0 transition hover:bg-gray-100 hover:text-gray-700 focus:opacity-100 group-hover:opacity-100"><SmilePlus className="h-4 w-4" /></button>
       {picker && (
-        <div role="menu" aria-label="Reações" className={cn('absolute -top-10 z-20 flex gap-0.5 rounded-full border border-gray-100 bg-white px-1.5 py-1 shadow-lg', m.is_mine ? 'right-0' : 'left-0')}>
+        <div role="menu" aria-label="Reações" className="absolute -top-10 left-0 z-20 flex gap-0.5 rounded-full border border-gray-100 bg-white px-1.5 py-1 shadow-lg">
           {REACTION_EMOJIS.map((e) => {
             const mine = reactions.some((r) => r.mine && r.emoji === e)
             return <button key={e} type="button" role="menuitem" aria-label={`Reagir com ${e}`} onClick={() => { setPicker(false); onReact(mine ? null : e) }} className={cn('rounded-full px-1 text-lg transition-transform hover:scale-125', mine && 'bg-brand-50')}>{e}</button>
@@ -145,7 +149,6 @@ function Bubble({ m, group, slug, showAvatar, onReact, savedStickers }: { m: Bub
   return (
     <div className={cn('group flex items-end gap-1.5', m.is_mine && 'justify-end')}>
       {avatar}
-      {m.is_mine && react}
       <div className={cn('flex min-w-0 max-w-[78%] flex-col', m.is_mine ? 'items-end' : 'items-start')}>
         {bare ? (
           <div className="max-w-full">
@@ -185,7 +188,7 @@ function Bubble({ m, group, slug, showAvatar, onReact, savedStickers }: { m: Bub
         {!!reactions.length && (
           <div className={cn('-mt-1 flex flex-wrap gap-1', m.is_mine ? 'justify-end' : 'justify-start')}>
             {reactions.map((r) => (
-              <button key={r.emoji} type="button" onClick={() => onReact(r.mine ? null : r.emoji)} aria-pressed={r.mine} title={r.people.join(', ')} aria-label={`${r.emoji} ${r.count}: ${r.people.join(', ')}`}
+              <button key={r.emoji} type="button" onClick={() => setDetails(true)} aria-haspopup="dialog" title="Ver quem reagiu" aria-label={`${r.emoji} ${r.count}: ver quem reagiu`}
                 className={cn('inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs shadow-sm', r.mine ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50')}>
                 <span>{r.emoji}</span>{r.count > 1 && <span className="font-medium">{r.count}</span>}
               </button>
@@ -193,7 +196,8 @@ function Bubble({ m, group, slug, showAvatar, onReact, savedStickers }: { m: Bub
           </div>
         )}
       </div>
-      {!m.is_mine && react}
+      {react}
+      {details && <ReactionDetails messageUuid={m.uuid} onRemoveMine={() => onReact(null)} onClose={() => setDetails(false)} />}
     </div>
   )
 }

@@ -224,6 +224,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/unread-count',           [ChatController::class, 'unreadCount']);
         Route::get('/attachments/{uuid}',     [ChatController::class, 'attachment']);
         Route::post('/messages/{uuid}/react', [ChatController::class, 'react'])->middleware('throttle:120,1');
+        Route::get('/messages/{uuid}/reactions', [ChatController::class, 'reactionList']);
         Route::get('/gifs',                   [\App\Http\Controllers\Api\V1\GifController::class, 'search'])->middleware('throttle:60,1');
         Route::get('/conversations',          [ChatController::class, 'conversations']);
         // Conversa pessoal com a caixa compartilhada de um hotel

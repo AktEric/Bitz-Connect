@@ -11,7 +11,8 @@ use App\Models\User;
 /** Reações às mensagens (no lugar de responder): um emoji por pessoa por mensagem, só de quem participa da conversa. */
 class ChatReactions
 {
-    public const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+    /** As mesmas reações dos posts: curtir, amei, parabéns, palmas, risada, surpreso, pensando e triste. */
+    public const EMOJIS = ['👍', '❤️', '🎉', '👏', '😂', '😮', '🤔', '😢'];
 
     /** Mensagem (direta ou de grupo) que $user pode ver, a partir do uuid. @return array{0:string,1:Message|ChatGroupMessage}|null */
     public function find(User $user, string $uuid): ?array
@@ -39,6 +40,18 @@ class ChatReactions
         }
 
         return $this->summaries($kind, [$messageId], $user->id)[$messageId] ?? [];
+    }
+
+    /** Quem reagiu, com o quê e quando (mais recente primeiro) — o que abre ao tocar numa reação. */
+    public function details(string $kind, int $messageId, int $viewerId): array
+    {
+        $rows = ChatMessageReaction::where('message_kind', $kind)->where('message_id', $messageId)->orderByDesc('updated_at')->orderByDesc('id')->get();
+        $users = User::whereIn('id', $rows->pluck('user_id'))->get()->keyBy('id');
+
+        return $rows->filter(fn ($r) => $users->has($r->user_id))->map(fn ($r) => [
+            'person' => ['uuid' => $users[$r->user_id]->uuid, 'name' => $users[$r->user_id]->name, 'avatar_url' => $users[$r->user_id]->avatar_path ? asset('storage/' . $users[$r->user_id]->avatar_path) : null],
+            'emoji' => $r->emoji, 'reacted_at' => ($r->updated_at ?? $r->created_at)?->toISOString(), 'mine' => $r->user_id === $viewerId,
+        ])->values()->all();
     }
 
     /**

@@ -612,7 +612,21 @@ class ChatController extends Controller
             return $this->notFound('Mensagem não encontrada.');
         }
         [$kind, $message] = $found;
+        if ($message->sender_id === $request->user()->id) {
+            return $this->forbidden('Você não pode reagir à sua própria mensagem.');
+        }
 
         return $this->success('Reação atualizada.', ['reactions' => $reactions->set($request->user(), $kind, $message->id, $data['emoji'])]);
+    }
+
+    /** GET /chat/messages/{uuid}/reactions — quem reagiu, com o quê e quando (só quem participa da conversa). */
+    public function reactionList(Request $request, string $uuid, ChatReactions $reactions): JsonResponse
+    {
+        $found = $reactions->find($request->user(), $uuid);
+        if (! $found) {
+            return $this->notFound('Mensagem não encontrada.');
+        }
+
+        return $this->success('Reações carregadas.', ['items' => $reactions->details($found[0], $found[1]->id, $request->user()->id)]);
     }
 }

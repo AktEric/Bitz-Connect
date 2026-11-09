@@ -88,14 +88,11 @@ it('lets participants react to a direct message, switch or remove the reaction, 
     $r = $this->postJson("/api/v1/chat/messages/{$uuid}/react", ['emoji' => '❤️'])->assertOk();
     expect($r->json('data.reactions.0'))->toMatchArray(['emoji' => '❤️', 'count' => 1, 'mine' => true]);
     $this->postJson("/api/v1/chat/messages/{$uuid}/react", ['emoji' => '😂'])->assertOk();            // trocar
-    Sanctum::actingAs($this->ana);
-    $this->postJson("/api/v1/chat/messages/{$uuid}/react", ['emoji' => '😂'])->assertOk();            // a outra pessoa também
-
-    $msg = $this->getJson("/api/v1/chat/{$this->bruno->uuid}/messages")->json('data.0');
-    expect($msg['reactions'])->toHaveCount(1)->and($msg['reactions'][0]['emoji'])->toBe('😂')->and($msg['reactions'][0]['count'])->toBe(2)->and($msg['reactions'][0]['mine'])->toBeTrue();
+    $msg = $this->getJson("/api/v1/chat/{$this->ana->uuid}/messages")->json('data.0');
+    expect($msg['reactions'])->toHaveCount(1)->and($msg['reactions'][0]['emoji'])->toBe('😂')->and($msg['reactions'][0]['count'])->toBe(1)->and($msg['reactions'][0]['mine'])->toBeTrue();
 
     $this->postJson("/api/v1/chat/messages/{$uuid}/react", ['emoji' => null])->assertOk();            // remover a minha
-    expect($this->getJson("/api/v1/chat/{$this->bruno->uuid}/messages")->json('data.0.reactions.0.count'))->toBe(1);
+    expect($this->getJson("/api/v1/chat/{$this->ana->uuid}/messages")->json('data.0.reactions'))->toBe([]);
 });
 
 it('rejects unknown emojis and strangers reacting to a conversation they are not in', function () {
@@ -192,4 +189,32 @@ it('does not let anyone send a custom sticker they do not hold, and rejects bad 
     $this->post('/api/v1/stickers', ['image' => Illuminate\Http\UploadedFile::fake()->createWithContent('x.html', '<script>1</script>')], ['Accept' => 'application/json'])->assertUnprocessable();
     $this->post('/api/v1/stickers', ['image' => Illuminate\Http\UploadedFile::fake()->image('mini.png', 10, 10)], ['Accept' => 'application/json'])->assertUnprocessable();
     $this->post('/api/v1/stickers', ['image' => Illuminate\Http\UploadedFile::fake()->image('grande.png', 2000, 2000)], ['Accept' => 'application/json'])->assertUnprocessable();
+});
+
+
+it('does not let anyone react to their own message, and accepts all the post reactions', function () {
+    $uuid = ($this->sent)($this->ana, $this->bruno);
+    Sanctum::actingAs($this->ana);
+    $this->postJson("/api/v1/chat/messages/{$uuid}/react", ['emoji' => '👍'])->assertForbidden();
+
+    Sanctum::actingAs($this->bruno);
+    foreach (['👍', '❤️', '🎉', '👏', '😂', '😮', '🤔', '😢'] as $e) {
+        $this->postJson("/api/v1/chat/messages/{$uuid}/react", ['emoji' => $e])->assertOk();
+    }
+    $this->postJson("/api/v1/chat/messages/{$uuid}/react", ['emoji' => '🙏'])->assertUnprocessable();
+});
+
+it('lists who reacted, with what and when, only to participants', function () {
+    $uuid = ($this->sent)($this->ana, $this->bruno);
+    Sanctum::actingAs($this->bruno);
+    $this->postJson("/api/v1/chat/messages/{$uuid}/react", ['emoji' => '🤔'])->assertOk();
+
+    foreach ([$this->ana, $this->bruno] as $u) {
+        Sanctum::actingAs($u);
+        $items = $this->getJson("/api/v1/chat/messages/{$uuid}/reactions")->assertOk()->json('data.items');
+        expect($items)->toHaveCount(1)->and($items[0]['emoji'])->toBe('🤔')->and($items[0]['person']['name'])->toBe($this->bruno->name)
+            ->and($items[0]['reacted_at'])->not->toBeNull()->and($items[0]['mine'])->toBe($u->id === $this->bruno->id);
+    }
+    Sanctum::actingAs($this->carla);
+    $this->getJson("/api/v1/chat/messages/{$uuid}/reactions")->assertNotFound();
 });
