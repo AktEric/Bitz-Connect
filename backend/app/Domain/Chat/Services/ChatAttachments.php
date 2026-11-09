@@ -1,0 +1,114 @@
+<?php
+
+namespace App\Domain\Chat\Services;
+
+use App\Models\ChatGroup;
+use App\Models\ChatGroupMember;
+use App\Models\ChatGroupMessage;
+use App\Models\Message;
+use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+/**
+ * Anexos de conversa (foto, arquivo e mensagem de voz). Ficam em disco PRIVADO e só são entregues por
+ * rota autenticada a quem participa da conversa; o caminho em disco nunca sai na API.
+ */
+class ChatAttachments
+{
+    public const MAX_FILE_KB  = 10240;
+    public const MAX_AUDIO_KB = 5120;
+    public const MAX_VOICE_SECONDS = 300;
+
+    private const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    private const AUDIO_EXT = ['webm', 'ogg', 'oga', 'mp3', 'm4a', 'wav', 'mp4', 'aac'];
+    private const FILE_EXT  = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'zip', 'odt', 'ods'];
+
+    /** Regras de validação do campo de arquivo ('file') e de apoio, para o controller usar. */
+    public static function rules(): array
+    {
+        return [
+            'file'     => ['nullable', 'file', 'max:' . self::MAX_FILE_KB],
+            'voice'    => ['sometimes', 'boolean'],
+            'duration' => ['nullable', 'integer', 'min:1', 'max:' . self::MAX_VOICE_SECONDS],
+        ];
+    }
+
+    /**
+     * Valida e guarda o arquivo. Devolve [type, content, metadata] da mensagem, ou uma string de erro.
+     *
+     * @return array{0:string,1:string,2:array}|string
+     */
+    public function store(UploadedFile $file, bool $voice, ?int $duration, ?string $caption, string $scope): array|string
+    {
+        $ext = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: '');
+
+        if ($voice) {
+            if (! in_array($ext, self::AUDIO_EXT, true)) {
+                return 'Formato de áudio não suportado.';
+            }
+            if ($file->getSize() > self::MAX_AUDIO_KB * 1024) {
+                return 'O áudio é grande demais (máx. 5 MB).';
+            }
+            $kind = 'audio';
+        } elseif (in_array($ext, self::IMAGE_EXT, true)) {
+            if (@getimagesize($file->getRealPath()) === false) {
+                return 'A imagem enviada é inválida.';
+            }
+            $kind = 'image';
+        } elseif (in_array($ext, self::FILE_EXT, true)) {
+            $kind = 'file';
+        } else {
+            return 'Tipo de arquivo não permitido.';
+        }
+
+        $uuid = (string) Str::uuid();
+        $path = $file->storeAs("chat/{$scope}", "{$uuid}.{$ext}", 'local');
+        $name = Str::limit(preg_replace('/[\x00-\x1f\/\\\\]/', '', $file->getClientOriginalName()) ?: "arquivo.{$ext}", 120, '');
+
+        $content = $caption !== null && trim($caption) !== ''
+            ? trim($caption)
+            : match ($kind) { 'image' => '📷 Foto', 'audio' => '🎤 Mensagem de voz', default => "📎 {$name}" };
+
+        return [$kind, $content, [
+            'uuid' => $uuid, 'path' => $path, 'name' => $name, 'size' => $file->getSize(), 'kind' => $kind,
+            'mime' => $kind === 'audio' ? 'audio/' . ($ext === 'm4a' ? 'mp4' : $ext) : ($file->getMimeType() ?: 'application/octet-stream'),
+            'duration' => $kind === 'audio' ? $duration : null,
+        ]];
+    }
+
+    /** Metadata seguro para a API: sem o caminho em disco. */
+    public static function publicMetadata(?array $metadata): ?array
+    {
+        if (! $metadata || ! isset($metadata['path'])) {
+            return $metadata;
+        }
+        unset($metadata['path']);
+
+        return $metadata;
+    }
+
+    /** Mensagem (pessoal ou de grupo) que contém o anexo, se $user puder acessá-la. Devolve [path, name, mime, kind]. */
+    public function findFor(User $user, string $uuid): ?array
+    {
+        $direct = Message::where('metadata->uuid', $uuid)->first();
+        if ($direct && ($direct->sender_id === $user->id || $direct->receiver_id === $user->id)) {
+            return $this->descriptor($direct->metadata);
+        }
+
+        $group = ChatGroupMessage::where('metadata->uuid', $uuid)->first();
+        if ($group && ChatGroupMember::where('chat_group_id', $group->chat_group_id)->where('user_id', $user->id)->exists()) {
+            return $this->descriptor($group->metadata);
+        }
+
+        return null;
+    }
+
+    private function descriptor(?array $m): ?array
+    {
+        return $m && isset($m['path']) && Storage::disk('local')->exists($m['path'])
+            ? ['path' => $m['path'], 'name' => $m['name'] ?? 'arquivo', 'mime' => $m['mime'] ?? 'application/octet-stream', 'kind' => $m['kind'] ?? 'file']
+            : null;
+    }
+}

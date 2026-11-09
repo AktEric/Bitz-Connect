@@ -3,7 +3,7 @@ import { getDeviceKey } from '@/pages/workspace/deviceKey'
 import type { ApiResponse } from '@/types/api.types'
 import type {
   DevelopmentItem, DevelopmentPlan, FeedComment, FeedPost, Goal, GoalSummaryRow, InvitePreview,
-  Paged, Payslip, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
+  Paged, Payslip, PayslipSignatureProof, SignPayslipInput, WorkspaceDepartment, WorkspaceInfo, WorkspaceInvite, WorkspaceMember,
   WorkspaceRequest, WorkspaceSummary, TimeToday, Timesheet, TimeTeamRow, TimeType, TimeAdjustment,
   RoleRow, SegmentTemplate, AccessRole, SchedulesPayload, WorkSchedule, TimeBank, TimeBankRow, ClosingItem, ClosingDetail, PunchSettings, AreasPayload, DelegationItem, ReactionType,
   CalendarPayload, ReportItem, ReportData, CalendarEventInput, RsvpStatus, MyDevice, TimeDeviceItem, CompanySecurity, AuditPage, SearchResults, AckPanel, DashboardData, OnboardingData, TimeReceipt, IntegrityResult, PersonCard, PersonProfileFields, ReactionList, CareerPayload, CareerInput, PersonOrg, MyProfile, PersonRecord, JobItem, JobApplicationItem, PublicJob, HomeHighlights,
@@ -168,6 +168,8 @@ const workspaceService = {
     get<Paged<Payslip>>(`${w(slug)}/payslips`, { user: params.user, all: params.all ? 1 : undefined }),
   uploadPayslip: async (slug: string, form: FormData) =>
     (await api.post<ApiResponse<Payslip>>(`${w(slug)}/payslips`, form, { headers: { 'Content-Type': 'multipart/form-data' } })).data.data,
+  signPayslip: (slug: string, uuid: string, body: SignPayslipInput) => post<Payslip>(`${w(slug)}/payslips/${uuid}/sign`, { ...body, accept: true }),
+  payslipSignature: (slug: string, uuid: string) => get<PayslipSignatureProof>(`${w(slug)}/payslips/${uuid}/signature`),
   deletePayslip: (slug: string, uuid: string) => del(`${w(slug)}/payslips/${uuid}`),
   /** Baixa o arquivo com o token do usuário (o disco é privado: não há URL pública). */
   async downloadPayslip(slug: string, p: Payslip): Promise<void> {

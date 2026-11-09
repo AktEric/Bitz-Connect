@@ -81,6 +81,15 @@ const chatGroupService = {
     return res.data.data
   },
 
+  async sendFile(groupUuid: string, file: File, opts: { voice?: boolean; duration?: number } = {}): Promise<ChatGroupMessage> {
+    const fd = new FormData()
+    fd.append('file', file)
+    if (opts.voice) fd.append('voice', '1')
+    if (opts.duration) fd.append('duration', String(opts.duration))
+    const res = await api.post<ApiResponse<ChatGroupMessage>>(`/chat-groups/${groupUuid}/messages`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    return res.data.data
+  },
+
   async markRead(groupUuid: string): Promise<void> {
     await api.patch(`/chat-groups/${groupUuid}/read`)
   },

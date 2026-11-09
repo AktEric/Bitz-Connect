@@ -119,7 +119,7 @@ export default function BiancaChat({ workspace, className }: Props) {
           className="fixed inset-x-3 bottom-20 z-50 flex h-[min(34rem,calc(100vh-7rem))] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl sm:inset-x-auto sm:right-4 sm:w-[24rem] lg:bottom-5"
         >
           <header className="flex items-center gap-3 bg-brand-600 px-4 py-3 text-white">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-base font-semibold" aria-hidden>V</span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-base font-semibold" aria-hidden>B</span>
             <div className="min-w-0 flex-1">
               <p className="font-semibold leading-tight">Bianca</p>
               <p className="text-xs text-brand-100">Central de ajuda</p>

@@ -25,6 +25,17 @@ const chatService = {
     return res.data.data
   },
 
+  /** POST /chat/:uuid/messages — foto, arquivo ou mensagem de voz (multipart) */
+  async sendFile(userUuid: string, file: File, opts: { voice?: boolean; duration?: number; caption?: string } = {}): Promise<Message> {
+    const fd = new FormData()
+    fd.append('file', file)
+    if (opts.voice) fd.append('voice', '1')
+    if (opts.duration) fd.append('duration', String(opts.duration))
+    if (opts.caption) fd.append('content', opts.caption)
+    const res = await api.post<ApiResponse<Message>>(`/chat/${userUuid}/messages`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    return res.data.data
+  },
+
   /** PATCH /chat/:uuid/read — mark messages from a user as read */
   async markRead(userUuid: string): Promise<void> {
     await api.patch(`/chat/${userUuid}/read`)

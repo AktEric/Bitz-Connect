@@ -197,9 +197,22 @@ export interface Payslip {
   size: number
   viewed: boolean
   first_viewed_at: string | null
+  signed_at: string | null
+  signature_kind: 'drawn' | 'typed' | null
   owner: WorkspacePerson | null
   created_at: string
 }
+
+export interface PayslipSignatureProof {
+  title: string
+  kind: 'drawn' | 'typed'
+  name: string
+  /** PNG em data URL (só assinatura desenhada). */
+  image: string | null
+  signed_at: string
+  hash: string
+}
+export type SignPayslipInput = { kind: 'typed'; name: string } | { kind: 'drawn'; image: string }
 
 export type GoalStatus = 'active' | 'achieved' | 'missed' | 'cancelled'
 

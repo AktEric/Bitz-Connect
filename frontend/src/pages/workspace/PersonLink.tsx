@@ -27,7 +27,7 @@ export default function PersonLink({ person, className, children }: { person: Pe
 /** Foto da pessoa levando ao perfil. */
 export function PersonAvatarLink({ person, size = 'sm', className }: { person: PersonRef | null | undefined; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'; className?: string }) {
   return (
-    <PersonLink person={person} className={cn('flex-shrink-0', className)}>
+    <PersonLink person={person} className={cn('flex-shrink-0 rounded-full hover:no-underline', className)}>
       <Avatar src={person?.avatar_url} name={person?.name ?? '?'} size={size} />
     </PersonLink>
   )

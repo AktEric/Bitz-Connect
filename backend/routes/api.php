@@ -219,6 +219,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Chat — literal routes MUST come before parameterized {user} routes
     Route::prefix('chat')->group(function () {
         Route::get('/unread-count',           [ChatController::class, 'unreadCount']);
+        Route::get('/attachments/{uuid}',     [ChatController::class, 'attachment']);
         Route::get('/conversations',          [ChatController::class, 'conversations']);
         // Conversa pessoal com a caixa compartilhada de um hotel
         Route::get('/hotels/{hotel}/messages',  [ChatController::class, 'hotelThreadMessages']);
@@ -369,6 +370,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/payslips',                      [PayslipController::class, 'index']);
         Route::post('/payslips',                     [PayslipController::class, 'store'])->middleware('throttle:60,1');
         Route::get('/payslips/{uuid}/download',      [PayslipController::class, 'download']);
+        Route::post('/payslips/{uuid}/sign',         [PayslipController::class, 'sign'])->middleware('throttle:20,1');
+        Route::get('/payslips/{uuid}/signature',     [PayslipController::class, 'signature']);
         Route::delete('/payslips/{uuid}',            [PayslipController::class, 'destroy']);
 
         // Metas
