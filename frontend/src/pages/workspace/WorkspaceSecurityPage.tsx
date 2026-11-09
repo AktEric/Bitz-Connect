@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useCan } from './permissions'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import QRCode from 'qrcode'
@@ -255,16 +256,17 @@ function PasswordCard() {
 }
 
 function CompanyPolicyCard() {
-  const { slug, info } = useWs()
+  const { slug } = useWs()
+  const canView = useCan('security.view')
   const qc = useQueryClient()
   const [error, setError] = useState('')
-  const { data } = useQuery({ queryKey: ['ws', slug, 'security'], queryFn: () => workspaceService.security(slug), enabled: info.me.is_admin })
+  const { data } = useQuery({ queryKey: ['ws', slug, 'security'], queryFn: () => workspaceService.security(slug), enabled: canView })
   const save = useMutation({
     mutationFn: (v: boolean) => workspaceService.saveSecurity(slug, v),
     onSuccess: () => { setError(''); void qc.invalidateQueries({ queryKey: ['ws', slug, 'security'] }) },
     onError: (e) => setError(errMsg(e)),
   })
-  if (!info.me.is_admin || !data) return null
+  if (!canView || !data) return null
 
   return (
     <Panel>

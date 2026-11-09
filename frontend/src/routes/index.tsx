@@ -5,6 +5,7 @@ import GuestRoute from './GuestRoute'
 import HotelPrivateRoute from './HotelPrivateRoute'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import HomeGate from './HomeGate'
+import { RequireCan } from '@/pages/workspace/permissions'
 import WorkspaceRoute from './WorkspaceRoute'
 
 // Auth pages (lazy loaded) — Pessoa
@@ -120,17 +121,17 @@ export default function AppRoutes() {
             <Route path="mural" element={<WorkspaceFeedPage />} />
             <Route path="calendario" element={<WorkspaceCalendarPage />} />
             <Route path="seguranca" element={<WorkspaceSecurityPage />} />
-            <Route path="auditoria" element={<WorkspaceAuditPage />} />
+            <Route path="auditoria" element={<RequireCan cap="audit.view"><WorkspaceAuditPage /></RequireCan>} />
             <Route path="pesquisas" element={<WorkspaceClimatePage />} />
             <Route path="organograma" element={<WorkspaceOrgChartPage />} />
             <Route path="vagas" element={<WorkspaceJobsPage />} />
             <Route path="perfil" element={<WorkspaceProfilePage />} />
             <Route path="pessoas/:uuid" element={<WorkspaceProfilePage />} />
-            <Route path="relatorios" element={<WorkspaceReportsPage />} />
-            <Route path="painel" element={<WorkspaceDashboardPage />} />
-            <Route path="comecar" element={<WorkspaceOnboardingPage />} />
+            <Route path="relatorios" element={<RequireCan cap="reports.view"><WorkspaceReportsPage /></RequireCan>} />
+            <Route path="painel" element={<RequireCan cap="dashboard.view"><WorkspaceDashboardPage /></RequireCan>} />
+            <Route path="comecar" element={<RequireCan cap="onboarding.view"><WorkspaceOnboardingPage /></RequireCan>} />
             <Route path="equipe" element={<WorkspaceTeamPage />} />
-            <Route path="configuracoes" element={<WorkspaceAdminPage />} />
+            <Route path="configuracoes" element={<RequireCan cap="roles.view"><WorkspaceAdminPage /></RequireCan>} />
             <Route path="solicitacoes" element={<WorkspaceRequestsPage />} />
             <Route path="recebimentos" element={<WorkspacePayslipsPage />} />
             <Route path="metas" element={<WorkspaceGoalsPage />} />

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\ChatController;
 use App\Http\Controllers\Api\V1\ChatGroupController;
 use App\Http\Controllers\Api\V1\CompanyDirectoryController;
 use App\Http\Controllers\Api\V1\CompanyInviteController;
+use App\Http\Controllers\Api\V1\CareerController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\Api\V1\WorkspaceSearchController;
 use App\Http\Controllers\Api\V1\AccountSecurityController;
@@ -257,6 +258,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me/profile',                [PersonController::class, 'mine']);
         Route::put('/me/profile',                [PersonController::class, 'updateMine']);
         Route::get('/people/{uuid}/profile',     [PersonController::class, 'show']);
+        Route::get('/people/{uuid}/org',         [PersonController::class, 'org']);
+        Route::get('/people/{uuid}/career',                [CareerController::class, 'index']);
+        Route::post('/people/{uuid}/career',               [CareerController::class, 'store']);
+        Route::put('/people/{uuid}/career/{entry}',        [CareerController::class, 'update']);
+        Route::delete('/people/{uuid}/career/{entry}',     [CareerController::class, 'destroy']);
         Route::get('/people/{uuid}/record',      [PersonController::class, 'record']);
         Route::put('/people/{uuid}/record',      [PersonController::class, 'updateRecord']);
 
@@ -340,6 +346,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/feed/{post}/ack',              [WorkspaceFeedController::class, 'ack']);
         Route::get('/feed/{post}/acks',              [WorkspaceFeedController::class, 'acks']);
         Route::post('/feed/{post}/react',            [WorkspaceFeedController::class, 'react']);
+        Route::get('/feed/{post}/reactions',         [WorkspaceFeedController::class, 'reactions']);
         Route::post('/feed/{post}/like',             [WorkspaceFeedController::class, 'like']);
         Route::get('/feed/{post}/comments',          [WorkspaceFeedController::class, 'comments']);
         Route::post('/feed/{post}/comments',         [WorkspaceFeedController::class, 'comment']);

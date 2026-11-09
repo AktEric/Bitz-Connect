@@ -1,8 +1,8 @@
+import { useCan } from './permissions'
 import { useRef, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BadgeCheck, Cake, ImagePlus, MessageCircle, Pin, Trash2, Video, X } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
-import { Avatar } from '@/components/ui/Avatar'
 import type { FeedComment, FeedPost } from '@/types/workspace.types'
 import { Empty, Modal, PageHeader, Panel, Pill, Spinner, btnGhost, btnPrimary, errMsg, fmtDate, timeAgo, useWs } from './ui'
 import { MentionField, MentionText, applyMentions, type Mention } from './MentionField'
@@ -10,6 +10,7 @@ import PhotoGrid from './PhotoGrid'
 import KudosModal, { BADGES } from './KudosModal'
 import { PollBlock, PollModal } from './PollParts'
 import ReactionBar from './ReactionBar'
+import PersonLink, { PersonAvatarLink } from './PersonLink'
 import { resizeImage } from './imageUtils'
 
 const MAX_PHOTOS = 6
@@ -36,9 +37,9 @@ function Comments({ slug, post, expanded, onExpand }: { slug: string; post: Feed
         <ul className="mb-3 space-y-2">
           {data?.map((c: FeedComment) => (
             <li key={c.uuid} className="flex gap-2">
-              <Avatar src={c.author?.avatar_url} name={c.author?.name ?? '?'} size="xs" />
+              <PersonAvatarLink person={c.author} size="xs" />
               <div className="rounded-xl bg-gray-50 px-3 py-1.5 text-sm">
-                <span className="font-medium text-gray-900">{c.author?.name}</span>
+                <PersonLink person={c.author} className="font-medium text-gray-900" />
                 <MentionText text={c.body} names={c.mentions} className="whitespace-pre-wrap break-words text-gray-600" />
               </div>
             </li>
@@ -69,14 +70,14 @@ function AckPanelModal({ slug, post, onClose }: { slug: string; post: FeedPost; 
             <h3 className="mb-1 font-semibold text-amber-700">Faltam ({data.pending.length})</h3>
             {data.pending.length === 0 ? <p className="text-gray-400">Todos confirmaram.</p> : (
               <ul className="divide-y divide-gray-50">{data.pending.map((p) => (
-                <li key={p.uuid} className="flex items-center gap-2 py-1.5"><Avatar src={p.avatar_url} name={p.name} size="xs" /> <span className="text-gray-900">{p.name}</span> <span className="text-xs text-gray-400">{p.department ?? p.job_title}</span></li>
+                <li key={p.uuid} className="flex items-center gap-2 py-1.5"><PersonAvatarLink person={p} size="xs" /> <PersonLink person={p} className="text-gray-900" /> <span className="text-xs text-gray-400">{p.department ?? p.job_title}</span></li>
               ))}</ul>
             )}
           </div>
           <div>
             <h3 className="mb-1 font-semibold text-emerald-700">Leram ({data.readers.length})</h3>
             <ul className="divide-y divide-gray-50">{data.readers.map((r) => (
-              <li key={r.person.uuid} className="flex items-center gap-2 py-1.5"><Avatar src={r.person.avatar_url} name={r.person.name} size="xs" /> <span className="text-gray-900">{r.person.name}</span> <span className="ml-auto text-xs text-gray-400">{fmtDate(r.acked_at)}</span></li>
+              <li key={r.person.uuid} className="flex items-center gap-2 py-1.5"><PersonAvatarLink person={r.person} size="xs" /> <PersonLink person={r.person} className="text-gray-900" /> <span className="ml-auto text-xs text-gray-400">{fmtDate(r.acked_at)}</span></li>
             ))}</ul>
           </div>
         </div>
@@ -100,25 +101,25 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
         <div className="mb-3 flex items-center gap-3 rounded-2xl bg-white/70 p-3">
           <span className="text-3xl" aria-hidden>{BADGES[post.badge ?? '']?.emoji ?? '⭐'}</span>
           <div className="min-w-0">
-            <p className="text-sm text-gray-900"><b>{post.author?.name}</b> reconheceu <b>{post.subject.name}</b></p>
+            <p className="text-sm text-gray-900"><PersonLink person={post.author} className="font-bold" /> reconheceu <PersonLink person={post.subject} className="font-bold" /></p>
             <p className="text-xs font-medium text-amber-700">{BADGES[post.badge ?? '']?.label ?? 'Reconhecimento'}</p>
           </div>
-          <Avatar src={post.subject.avatar_url} name={post.subject.name ?? '?'} size="lg" className="ml-auto" />
+          <PersonAvatarLink person={post.subject} size="lg" className="ml-auto" />
         </div>
       )}
       {post.kind === 'birthday' && post.subject && (
         <div className="mb-3 flex flex-col items-center gap-2 rounded-2xl bg-white/70 py-5 text-center">
           <Cake className="h-5 w-5 text-pink-500" />
-          <Avatar src={post.subject.avatar_url} name={post.subject.name ?? '?'} size="xl" />
-          <p className="text-lg font-semibold text-gray-900">Feliz aniversário, {post.subject.name?.split(' ')[0]}!</p>
+          <PersonAvatarLink person={post.subject} size="xl" />
+          <PersonLink person={post.subject} className="text-lg font-semibold text-gray-900">Feliz aniversário, {post.subject.name?.split(' ')[0]}!</PersonLink>
           <p className="text-xs text-gray-500">{[post.subject.job_title, post.department].filter(Boolean).join(' · ')}</p>
         </div>
       )}
       <div className="flex items-start gap-3">
-        {post.kind !== 'birthday' && post.kind !== 'kudos' && <Avatar src={post.author?.avatar_url} name={post.author?.name ?? '?'} size="md" />}
+        {post.kind !== 'birthday' && post.kind !== 'kudos' && <PersonAvatarLink person={post.author} size="md" />}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2">
-            <span className="font-semibold text-gray-900">{post.author?.name ?? 'Ex-colaborador'}</span>
+            <PersonLink person={post.author} className="font-semibold text-gray-900" />
             {post.author?.job_title && <span className="text-xs text-gray-400">{post.author.job_title}</span>}
             <span className="text-xs text-gray-400">· {timeAgo(post.created_at)}</span>
             {post.pinned && <Pill tone="amber">Fixado</Pill>}
@@ -169,7 +170,9 @@ function PostCard({ slug, post, isAdmin }: { slug: string; post: FeedPost; isAdm
 type Draft = { id: number; blob: Blob; preview: string }
 
 export function FeedStream({ compact = false }: { compact?: boolean }) {
-  const { slug, info } = useWs()
+  const { slug } = useWs()
+  const canPost = useCan('feed.post')
+  const canModerate = useCan('feed.moderate')
   const qc = useQueryClient()
   const [body, setBody] = useState('')
   const [mentions, setMentions] = useState<Mention[]>([])
@@ -199,7 +202,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
   const { data: departments } = useQuery({
     queryKey: ['ws', slug, 'departments'],
     queryFn: () => workspaceService.departments(slug),
-    enabled: info.me.can_post,
+    enabled: canPost,
   })
 
   const reset = () => {
@@ -254,7 +257,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
     <div>
       {!compact && <PageHeader title="Mural" subtitle="Novidades, fotos e comunicados da empresa." />}
 
-      {!info.me.can_post && (
+      {!canPost && (
         <div className="mb-3 flex justify-end">
           <button type="button" className={btnGhost} onClick={() => setKudos(true)}>🌟 Reconhecer um colega</button>
         </div>
@@ -262,7 +265,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
       {kudos && <KudosModal slug={slug} onClose={() => setKudos(false)} />}
       {pollOpen && <PollModal slug={slug} defaultDept={group !== 'company' ? group : ''} onClose={() => setPollOpen(false)} />}
 
-      {info.me.can_post && (
+      {canPost && (
         <Panel className="mb-4">
           <MentionField
             slug={slug} value={body} onChange={setBody} mentions={mentions} onMentions={setMentions}
@@ -311,7 +314,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
               <summary className={`${tool} list-none`}>⚙ Opções</summary>
               <div className="absolute left-0 z-10 mt-1 w-64 space-y-2 rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
                 <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={requiresAck} onChange={(e) => setRequiresAck(e.target.checked)} /> Exigir confirmação de leitura</label>
-                {info.me.is_admin && (
+                {canModerate && (
                   <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} /> Fixar no topo</label>
                 )}
               </div>
@@ -334,7 +337,7 @@ export function FeedStream({ compact = false }: { compact?: boolean }) {
 
       {feed.isLoading ? <Spinner /> : !posts.length ? <Empty text="Ainda não há publicações." /> : (
         <div className="space-y-3">
-          {posts.map((p) => <PostCard key={p.uuid} slug={slug} post={p} isAdmin={info.me.is_admin} />)}
+          {posts.map((p) => <PostCard key={p.uuid} slug={slug} post={p} isAdmin={canModerate} />)}
           {feed.hasNextPage && (
             <button className={`${btnGhost} w-full`} onClick={() => feed.fetchNextPage()} disabled={feed.isFetchingNextPage}>Carregar mais</button>
           )}

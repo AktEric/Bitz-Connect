@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useCan } from './permissions'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Download, FileText, Trash2, Upload } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
@@ -9,6 +10,7 @@ const KIND: Record<Payslip['kind'], string> = { payslip: 'Holerite', receipt: 'C
 
 function UploadModal({ slug, onClose }: { slug: string; onClose: () => void }) {
   const qc = useQueryClient()
+
   const fileRef = useRef<HTMLInputElement>(null)
   const { data: members } = useQuery({ queryKey: ['ws', slug, 'members'], queryFn: () => workspaceService.members(slug) })
   const [user, setUser] = useState('')
@@ -69,9 +71,9 @@ function UploadModal({ slug, onClose }: { slug: string; onClose: () => void }) {
 }
 
 export default function WorkspacePayslipsPage() {
-  const { slug, info } = useWs()
+  const { slug } = useWs()
   const qc = useQueryClient()
-  const isAdmin = info.me.is_admin
+  const isAdmin = useCan('payslips.manage')
   const [scope, setScope] = useState<'mine' | 'all'>('mine')
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')

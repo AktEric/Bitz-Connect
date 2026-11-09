@@ -1,3 +1,4 @@
+import { useCan } from './permissions'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
@@ -109,8 +110,8 @@ function GoalCard({ slug, goal }: { slug: string; goal: Goal }) {
 }
 
 export default function WorkspaceGoalsPage() {
-  const { slug, info } = useWs()
-  const canManage = info.me.is_admin || info.me.is_manager
+  const { slug } = useWs()
+  const canManage = useCan('goals.manage')
   const [scope, setScope] = useState<'mine' | 'team'>('mine')
   const [creating, setCreating] = useState(false)
 

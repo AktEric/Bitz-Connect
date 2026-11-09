@@ -9,6 +9,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { Avatar } from '@/components/ui/Avatar'
 import type { PersonProfileFields } from '@/types/workspace.types'
 import { ProfileFacts, RecordSection } from './PersonCardModal'
+import ProfileCareer from './ProfileCareer'
+import ProfileOrg from './ProfileOrg'
+import { useCan } from './permissions'
 import { Empty, Panel, Spinner, btnPrimary, errMsg, fmtDate, inputCls, labelCls, timeAgo, useWs } from './ui'
 
 const FIELDS: { key: keyof PersonProfileFields; label: string; placeholder: string; area?: boolean }[] = [
@@ -22,7 +25,7 @@ const FIELDS: { key: keyof PersonProfileFields; label: string; placeholder: stri
 ]
 const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 
-type Tab = 'social' | 'record' | 'notices' | 'team'
+type Tab = 'social' | 'career' | 'record' | 'notices' | 'team'
 
 function SocialEditor({ slug }: { slug: string }) {
   const qc = useQueryClient()
@@ -90,38 +93,10 @@ function Notices() {
   )
 }
 
-function TeamTab({ slug, uuid }: { slug: string; uuid: string }) {
-  const { data: members, isLoading } = useQuery({ queryKey: ['ws', slug, 'members'], queryFn: () => workspaceService.members(slug) })
-  if (isLoading || !members) return <Spinner />
-  const me = members.find((m) => m.uuid === uuid)
-  const peers = members.filter((m) => m.uuid !== uuid && me?.department && m.department?.uuid === me.department.uuid)
-  const reports = members.filter((m) => m.manager?.uuid === uuid)
-  const manager = me?.manager ? members.find((m) => m.uuid === me.manager!.uuid) : null
-
-  const Person = ({ p }: { p: (typeof members)[number] }) => (
-    <Link to={`/w/${slug}/pessoas/${p.uuid}`} className="flex items-center gap-2.5 rounded-xl p-2 hover:bg-gray-50">
-      <Avatar src={p.avatar_url} name={p.name} size="sm" />
-      <span className="min-w-0"><span className="block truncate text-sm font-medium text-gray-900">{p.name}</span><span className="block truncate text-xs text-gray-500">{p.job_title ?? '—'}</span></span>
-    </Link>
-  )
-  const Group = ({ title, list }: { title: string; list: typeof members }) => list.length ? (
-    <div><h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">{title}</h3><div className="grid gap-1 sm:grid-cols-2">{list.map((p) => <Person key={p.uuid} p={p} />)}</div></div>
-  ) : null
-
-  return (
-    <Panel className="space-y-4">
-      <p className="text-sm text-gray-600"><b>Setor:</b> {me?.department?.name ?? 'Não informado'}</p>
-      {manager && <Group title="Gestor" list={[manager]} />}
-      <Group title="Equipe direta" list={reports} />
-      <Group title={`Colegas do setor${me?.department ? ` — ${me.department.name}` : ''}`} list={peers} />
-      {!manager && !reports.length && !peers.length && <p className="text-sm text-gray-400">Sem conexões de equipe cadastradas.</p>}
-    </Panel>
-  )
-}
-
 /** Perfil em abas. Na própria página a pessoa edita só o perfil social; a ficha cadastral é do RH (leitura para a pessoa, edição para o RH). */
 export default function ProfileView({ uuid, self }: { uuid: string; self: boolean }) {
-  const { slug, info } = useWs()
+  const { slug } = useWs()
+  const canManagePeople = useCan('people.manage')
   const { user, setUser } = useAuth()
   const qc = useQueryClient()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -135,10 +110,10 @@ export default function ProfileView({ uuid, self }: { uuid: string; self: boolea
   })
   if (isLoading || !card) return <Spinner />
 
-  const tabs: { key: Tab; label: string }[] = [{ key: 'social', label: 'Perfil social' }]
-  if (self || info.me.is_admin) tabs.push({ key: 'record', label: 'Dados cadastrais' })
+  const tabs: { key: Tab; label: string }[] = [{ key: 'social', label: 'Perfil social' }, { key: 'career', label: 'Carreira' }]
+  if (self || canManagePeople) tabs.push({ key: 'record', label: 'Dados cadastrais' })
   if (self) tabs.push({ key: 'notices', label: 'Avisos' })
-  tabs.push({ key: 'team', label: 'Equipe e conexões' })
+  tabs.push({ key: 'team', label: 'Equipe e liderança' })
   const b = card.birthday
 
   return (
@@ -178,7 +153,8 @@ export default function ProfileView({ uuid, self }: { uuid: string; self: boolea
         {tab === 'social' && (self ? <SocialEditor slug={slug} /> : <Panel><ProfileFacts profile={card.profile as unknown as Record<string, string | null>} /></Panel>)}
         {tab === 'record' && <Panel><RecordSection slug={slug} uuid={uuid} /></Panel>}
         {tab === 'notices' && <Notices />}
-        {tab === 'team' && <TeamTab slug={slug} uuid={uuid} />}
+        {tab === 'career' && <ProfileCareer slug={slug} uuid={uuid} />}
+        {tab === 'team' && <ProfileOrg slug={slug} uuid={uuid} />}
       </div>
     </div>
   )

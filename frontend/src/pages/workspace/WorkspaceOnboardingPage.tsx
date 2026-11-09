@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useCan } from './permissions'
 import { useQuery } from '@tanstack/react-query'
 import { Check, ChevronRight, Rocket } from 'lucide-react'
 import workspaceService from '@/services/workspace.service'
@@ -6,10 +7,11 @@ import { Empty, PageHeader, Panel, Spinner, btnPrimary, errMsg, useWs } from './
 
 /** Primeiros passos da empresa: o que já está pronto e o que falta (deduzido dos dados reais). */
 export default function WorkspaceOnboardingPage() {
-  const { slug, info } = useWs()
-  const { data, isLoading, isError, error } = useQuery({ queryKey: ['ws', slug, 'onboarding'], queryFn: () => workspaceService.onboarding(slug), enabled: info.me.is_admin })
+  const { slug } = useWs()
+  const canOnboard = useCan('onboarding.view')
+  const { data, isLoading, isError, error } = useQuery({ queryKey: ['ws', slug, 'onboarding'], queryFn: () => workspaceService.onboarding(slug), enabled: canOnboard })
 
-  if (!info.me.is_admin) return <Empty text="Os primeiros passos são exclusivos do dono e do RH." />
+  if (!canOnboard) return <Empty text="Os primeiros passos são exclusivos do dono e do RH." />
   if (isLoading) return <Spinner />
   if (isError || !data) return <Empty text={errMsg(error)} />
 

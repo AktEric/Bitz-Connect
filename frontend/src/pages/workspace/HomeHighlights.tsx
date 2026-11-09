@@ -6,6 +6,7 @@ import workspaceService from '@/services/workspace.service'
 import { Avatar } from '@/components/ui/Avatar'
 import { cn } from '@/utils/cn'
 import type { HighlightPerson } from '@/types/workspace.types'
+import PersonLink from './PersonLink'
 import { Panel, fmtDate, useWs } from './ui'
 
 export function useHomeHighlights(slug: string) {
@@ -50,10 +51,10 @@ function PersonBlock({ person, tag, children }: { person: HighlightPerson; tag?:
   return (
     <div className="flex flex-col items-center text-center">
       <div className="relative">
-        <Avatar src={person.avatar_url} name={person.name} size="xl" className="ring-4 ring-brand-50" />
+        <PersonLink person={person}><Avatar src={person.avatar_url} name={person.name} size="xl" className="ring-4 ring-brand-50" /></PersonLink>
         {tag && <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-md bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">{tag}</span>}
       </div>
-      <p className="mt-3 font-semibold text-gray-900">{person.name}</p>
+      <PersonLink person={person} className="mt-3 font-semibold text-gray-900" />
       {children}
     </div>
   )
@@ -118,7 +119,7 @@ export function JobsCard({ slug }: { slug: string }) {
       render={(j) => (
         <div className="flex flex-col items-center text-center">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600"><Briefcase className="h-6 w-6" /></span>
-          <p className="mt-3 font-semibold text-gray-900">{j.title}</p>
+          <Link to={`vagas#${j.uuid}`} className="mt-3 font-semibold text-gray-900 hover:text-brand-700 hover:underline">{j.title}</Link>
           <p className="text-sm text-gray-600">{[j.department, j.contract_type].filter(Boolean).join(' · ')}</p>
           {j.closes_on && <p className="mt-1 text-xs text-gray-400">Inscrições até {fmtDate(j.closes_on)}</p>}
         </div>
@@ -150,8 +151,8 @@ export function BirthdaysCard({ slug }: { slug: string }) {
           <li key={p.uuid} className="relative w-52 flex-shrink-0 overflow-hidden rounded-2xl bg-gradient-to-b from-brand-50 to-brand-100 shadow-sm">
             {CONFETTI.map(([pos, color, rot], k) => <span key={k} className={cn('absolute h-2 w-2 rounded-[2px]', pos, color, rot)} aria-hidden />)}
             <div className="relative flex flex-col items-center px-4 pb-4 pt-6 text-center">
-              <Avatar src={p.avatar_url} name={p.name} size="2xl" className="ring-4 ring-white shadow-md" />
-              <p className="mt-3 font-semibold text-gray-900">{p.name}</p>
+              <PersonLink person={p}><Avatar src={p.avatar_url} name={p.name} size="2xl" className="ring-4 ring-white shadow-md" /></PersonLink>
+              <PersonLink person={p} className="mt-3 font-semibold text-gray-900" />
               <p className="min-h-[1.25rem] text-xs text-brand-700">{p.job_title}</p>
             </div>
             <div className="relative bg-amber-100 px-4 pb-4 pt-5">

@@ -21,7 +21,7 @@ use Illuminate\Support\Str;
 class DevWorkspaceSeeder extends Seeder
 {
     /** Aumente para o DevBootstrap rodar o seeder de novo. */
-    public const VERSION = '1';
+    public const VERSION = '2';
 
     private const PASSWORD = 'Teste@12345';
 
@@ -136,6 +136,8 @@ class DevWorkspaceSeeder extends Seeder
                 'due_on' => now()->addMonths(6)->toDateString(), 'status' => 'todo']);
             $plan->notes()->create(['author_id' => $users['rafael@inovacao.local']->id, 'body' => 'Conversa inicial: ótimo desempenho no atendimento; foco agora em gestão de conflitos.']);
         }
+
+        $this->call(CareerDemoSeeder::class);
 
         $lines = ["Usuários de demonstração (senha de todos: " . self::PASSWORD . ")"];
         foreach ($people as $email => [$name, $title]) {

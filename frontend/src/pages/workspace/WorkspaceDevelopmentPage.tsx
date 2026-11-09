@@ -1,3 +1,4 @@
+import { useCan } from './permissions'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Trash2 } from 'lucide-react'
@@ -116,8 +117,8 @@ function PlanDetail({ slug, uuid, onClose }: { slug: string; uuid: string; onClo
 }
 
 export default function WorkspaceDevelopmentPage() {
-  const { slug, info } = useWs()
-  const canManage = info.me.is_admin || info.me.is_manager
+  const { slug } = useWs()
+  const canManage = useCan('development.manage')
   const [scope, setScope] = useState<'mine' | 'team'>('mine')
   const [creating, setCreating] = useState(false)
   const [openId, setOpenId] = useState<string | null>(null)

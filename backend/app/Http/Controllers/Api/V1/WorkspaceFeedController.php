@@ -25,7 +25,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /** Mural interno: novidades da empresa, com fotos privadas, reações, menções e público-alvo por setor. */
 class WorkspaceFeedController extends WorkspaceBaseController
 {
-    public const REACTIONS = ['like', 'love', 'celebrate', 'clap'];
+    public const REACTIONS = ['like', 'love', 'celebrate', 'clap', 'laugh', 'sad', 'thinking', 'surprised'];
     public const MAX_PHOTOS = 6;
     public const BADGES = ['teamwork', 'innovation', 'service', 'leadership', 'dedication', 'thanks'];
     private const KUDOS_PER_DAY = 5;
@@ -535,7 +535,7 @@ class WorkspaceFeedController extends WorkspaceBaseController
         return ['reactions' => $counts, 'my_reaction' => $mine[$p->id] ?? null, 'likes_count' => array_sum($counts)];
     }
 
-    /** POST /feed/{post}/react  { reaction: like|love|celebrate|clap|null } — null remove a reação. */
+    /** POST /feed/{post}/react  { reaction: like|love|celebrate|clap|laugh|sad|thinking|surprised|null } — null remove a reação. */
     public function react(Request $request, Hotel $hotel, string $post): JsonResponse
     {
         $m = $this->membership($request, $hotel);
@@ -562,6 +562,26 @@ class WorkspaceFeedController extends WorkspaceBaseController
         }
 
         return $this->success('Reação atualizada.', $this->reactionPayload($p, $meId));
+    }
+
+    /** GET /feed/{post}/reactions — quem reagiu e com o quê (qualquer membro que enxerga a publicação). */
+    public function reactions(Request $request, Hotel $hotel, string $post): JsonResponse
+    {
+        $m = $this->membership($request, $hotel);
+        $p = $m ? $this->visible(WorkspacePost::query(), $hotel, $m)->where('uuid', $post)->first() : null;
+        if (! $p) {
+            return $this->notFound('Publicação não encontrada.');
+        }
+
+        $likes = WorkspacePostLike::where('workspace_post_id', $p->id)->orderBy('id')->get();
+        $users = \App\Models\User::whereIn('id', $likes->pluck('user_id'))->get()->keyBy('id');
+        $titles = HotelUser::where('hotel_id', $hotel->id)->whereIn('user_id', $likes->pluck('user_id'))->get()->keyBy('user_id');
+
+        $items = $likes->map(fn ($l) => ['reaction' => $l->reaction, 'person' => $this->access->person($users[$l->user_id] ?? null, $titles[$l->user_id] ?? null)])
+            ->filter(fn ($i) => $i['person'])->values();
+        $counts = array_merge(array_fill_keys(self::REACTIONS, 0), $items->countBy('reaction')->all());
+
+        return $this->success('Reações carregadas.', ['total' => $items->count(), 'counts' => $counts, 'items' => $items]);
     }
 
     /** Compatibilidade: alterna a reação "like". */

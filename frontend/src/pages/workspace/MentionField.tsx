@@ -1,3 +1,4 @@
+import PersonLink from './PersonLink'
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import workspaceService from '@/services/workspace.service'
@@ -37,7 +38,9 @@ export function MentionText({ text, names, className }: { text: string; names?: 
     <p className={className}>
       {parts.map((p, i) => typeof p === 'string'
         ? <span key={i}>{p}</span>
-        : <span key={i} className={p.known ? 'font-medium text-brand-700' : 'text-gray-500'}>@{p.label}</span>)}
+        : p.known
+          ? <PersonLink key={i} person={{ uuid: p.uuid, name: p.label }} className="font-medium text-brand-700">@{p.label}</PersonLink>
+          : <span key={i} className="text-gray-500">@{p.label}</span>)}
     </p>
   )
 }

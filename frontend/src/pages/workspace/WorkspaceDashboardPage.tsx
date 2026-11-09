@@ -1,3 +1,4 @@
+import { useCan } from './permissions'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, BadgeCheck, CalendarDays, Clock, ClipboardList, Hourglass, Newspaper, ShieldCheck, Users } from 'lucide-react'
@@ -29,15 +30,16 @@ const TYPE_LABEL: Record<string, string> = { vacation: 'Férias', document: 'Doc
 
 /** Painel da diretoria: números agregados da empresa (nada aqui identifica o saldo ou a falta de uma pessoa). */
 export default function WorkspaceDashboardPage() {
-  const { slug, info } = useWs()
+  const { slug } = useWs()
+  const canView = useCan('dashboard.view')
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['ws', slug, 'dashboard'],
     queryFn: () => workspaceService.dashboard(slug),
-    enabled: !!info.me.can_see_dashboard,
+    enabled: canView,
     staleTime: 60_000,
   })
 
-  if (!info.me.can_see_dashboard) return <Empty text="O painel da diretoria é exclusivo do dono, do RH e da diretoria." />
+  if (!canView) return <Empty text="O painel da diretoria é exclusivo do dono, do RH e da diretoria." />
   if (isLoading) return <Spinner />
   if (isError || !data) return <Empty text={errMsg(error)} />
 

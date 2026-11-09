@@ -14,6 +14,15 @@ export interface WorkspaceSummary {
   department: string | null
 }
 
+export type Capability =
+  | 'feed.view' | 'feed.post' | 'feed.moderate'
+  | 'jobs.apply' | 'jobs.manage'
+  | 'people.view' | 'people.manage' | 'career.manage' | 'areas.manage' | 'invites.manage' | 'onboarding.view'
+  | 'roles.view' | 'roles.manage' | 'security.view' | 'security.manage' | 'audit.view'
+  | 'calendar.manage' | 'calendar.holiday' | 'climate.manage' | 'climate.results'
+  | 'requests.review' | 'goals.manage' | 'development.manage' | 'time.team' | 'time.settings' | 'time.closing' | 'schedules.manage' | 'payslips.manage'
+  | 'dashboard.view' | 'reports.view'
+
 export interface WorkspaceInfo {
   hotel: { uuid: string; slug: string; name: string; segment: string | null; city: string | null; state: string | null; avatar_url: string | null }
   me: {
@@ -27,6 +36,8 @@ export interface WorkspaceInfo {
     team_size?: number
     areas_headed?: string[]
     can_post: boolean
+    /** Capacidades da pessoa (fonte única para mostrar/esconder telas e botões). */
+    permissions: Capability[]
     job_title: string | null
     hired_at: string | null
     department: string | null
@@ -74,7 +85,37 @@ export interface InvitePreview {
   usable: boolean
 }
 
-export type ReactionType = 'like' | 'love' | 'celebrate' | 'clap'
+export type ReactionType = 'like' | 'love' | 'celebrate' | 'clap' | 'laugh' | 'sad' | 'thinking' | 'surprised'
+
+/** Quem reagiu a uma publicação (modal "Reações"). */
+export interface ReactionList {
+  total: number
+  counts: Record<ReactionType, number>
+  items: { reaction: ReactionType; person: WorkspacePerson }[]
+}
+
+/** Uma etapa da trajetória da pessoa na empresa (`ended_on` nulo = cargo atual). */
+export interface CareerEntry {
+  uuid: string
+  title: string
+  department: string | null
+  started_on: string
+  ended_on: string | null
+  current: boolean
+  note: string | null
+  source: 'manual' | 'job'
+}
+export interface CareerPayload { items: CareerEntry[]; can_edit: boolean }
+export interface CareerInput { title: string; department?: string | null; started_on: string; ended_on?: string | null; note?: string | null }
+
+/** Liderança, equipe direta e colegas de setor de uma pessoa. */
+export interface PersonOrg {
+  manager: WorkspacePerson | null
+  leaders: WorkspacePerson[]
+  team: WorkspacePerson[]
+  department: { uuid: string; name: string; head: WorkspacePerson | null; members_count: number } | null
+  peers: WorkspacePerson[]
+}
 
 export interface FeedMedia {
   uuid: string

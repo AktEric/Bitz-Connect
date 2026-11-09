@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useCan } from './permissions'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Link2, Pencil, Plus, Search, Trash2 } from 'lucide-react'
@@ -156,6 +157,9 @@ function DepartmentsPanel({ slug }: { slug: string }) {
 
 export default function WorkspaceTeamPage() {
   const { slug, info } = useWs()
+  const canInvite = useCan('invites.manage')
+  const canAreas = useCan('areas.manage')
+  const canEditPeople = useCan('people.manage')
   const [tab, setTab] = useState<'people' | 'invites' | 'departments'>('people')
   const [params] = useSearchParams()
   const [q, setQ] = useState(params.get('q') ?? '')
@@ -172,12 +176,12 @@ export default function WorkspaceTeamPage() {
     <div>
       <PageHeader title="Equipe" subtitle={`${members?.length ?? info.counts.members} pessoas na empresa`} />
 
-      {info.me.is_admin && (
-        <Tabs value={tab} onChange={setTab} options={[{ value: 'people', label: 'Pessoas' }, { value: 'invites', label: 'Convites' }, { value: 'departments', label: 'Setores' }]} />
+      {(canInvite || canAreas) && (
+        <Tabs value={tab} onChange={setTab} options={[{ value: 'people', label: 'Pessoas' }, ...(canInvite ? [{ value: 'invites' as const, label: 'Convites' }] : []), ...(canAreas ? [{ value: 'departments' as const, label: 'Setores' }] : [])]} />
       )}
 
-      {tab === 'invites' && info.me.is_admin && <InvitesPanel slug={slug} />}
-      {tab === 'departments' && info.me.is_admin && <DepartmentsPanel slug={slug} />}
+      {tab === 'invites' && canInvite && <InvitesPanel slug={slug} />}
+      {tab === 'departments' && canAreas && <DepartmentsPanel slug={slug} />}
 
       {tab === 'people' && (
         <>
@@ -202,7 +206,7 @@ export default function WorkspaceTeamPage() {
                     <p className="truncate text-xs text-gray-400">{[m.department?.name, m.manager ? `Gestor: ${m.manager.name}` : null].filter(Boolean).join(' · ')}</p>
                     {m.hired_at && <p className="text-xs text-gray-400">Desde {fmtDate(m.hired_at)}</p>}
                   </div>
-                  {info.me.is_admin && (
+                  {canEditPeople && (
                     <button className="text-gray-400 hover:text-brand-600" aria-label={`Editar ${m.name}`} onClick={() => setEditing(m)}><Pencil className="h-4 w-4" /></button>
                   )}
                 </Panel>

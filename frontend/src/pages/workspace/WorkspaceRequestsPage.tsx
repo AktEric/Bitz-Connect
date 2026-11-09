@@ -1,3 +1,4 @@
+import { useCan } from './permissions'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -158,8 +159,9 @@ function RequestDetail({ slug, uuid, canDecide, canResolve, onClose }: { slug: s
 }
 
 export default function WorkspaceRequestsPage() {
-  const { slug, info } = useWs()
-  const canReview = info.me.is_admin || info.me.is_manager
+  const { slug } = useWs()
+  const canReview = useCan('requests.review')
+  const canSeeAll = useCan('people.manage')
   const [params] = useSearchParams()
   const [scope, setScope] = useState<'mine' | 'review' | 'all'>(canReview && params.get('aba') === 'aprovar' ? 'review' : 'mine')
   const [creating, setCreating] = useState(false)
@@ -169,7 +171,7 @@ export default function WorkspaceRequestsPage() {
 
   const options: { value: 'mine' | 'review' | 'all'; label: string }[] = [{ value: 'mine', label: 'Minhas' }]
   if (canReview) options.unshift({ value: 'review', label: 'Para analisar' })
-  if (info.me.is_admin) options.push({ value: 'all', label: 'Todas' })
+  if (canSeeAll) options.push({ value: 'all', label: 'Todas' })
 
   return (
     <div>
@@ -199,7 +201,7 @@ export default function WorkspaceRequestsPage() {
       )}
 
       {creating && <NewRequestModal slug={slug} onClose={() => setCreating(false)} />}
-      {openId && <RequestDetail slug={slug} uuid={openId} canDecide={canReview} canResolve={info.me.is_admin} onClose={() => setOpenId(null)} />}
+      {openId && <RequestDetail slug={slug} uuid={openId} canDecide={canReview} canResolve={canSeeAll} onClose={() => setOpenId(null)} />}
     </div>
   )
 }

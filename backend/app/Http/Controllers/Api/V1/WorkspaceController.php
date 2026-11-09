@@ -20,7 +20,10 @@ class WorkspaceController extends Controller
 {
     use ApiResponseTrait;
 
-    public function __construct(private readonly WorkspaceAccess $access) {}
+    public function __construct(
+        private readonly WorkspaceAccess $access,
+        private readonly \App\Domain\Workspace\Services\WorkspacePermissions $permissions,
+    ) {}
 
     /** GET /me/workspaces — empresas em que o usuário tem vínculo aprovado. */
     public function mine(Request $request): JsonResponse
@@ -250,6 +253,7 @@ class WorkspaceController extends Controller
                 'team_size'    => count($this->access->reportIds($user, $hotel)),
                 'areas_headed' => \App\Models\Department::where('hotel_id', $hotel->id)->where('head_id', $user->id)->orderBy('name')->pluck('name')->all(),
                 'can_post'     => $isAdmin || $isManager,
+                'permissions'  => $this->permissions->for($user, $hotel, $membership),
                 'job_title'    => $membership->job_title,
                 'hired_at'     => $membership->hired_at?->toDateString(),
                 'department'   => $membership->department?->name,

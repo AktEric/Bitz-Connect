@@ -5,6 +5,7 @@ import {
   Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Moon, Sun, Globe, CheckCircle2, ChevronDown,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
+import type { Capability } from '@/types/workspace.types'
 import { useAuth } from '@/hooks/useAuth'
 import { Avatar } from '@/components/ui/Avatar'
 import NotificationBell from '@/components/common/NotificationBell'
@@ -59,7 +60,8 @@ export default function WorkspaceLayout() {
   }
 
   const c = info.counts
-  const lead = info.me.is_admin || info.me.is_manager
+  // O menu só mostra o que a pessoa pode usar: tudo vem de `info.me.permissions` (ver permissions.tsx).
+  const can = (cap: Capability) => info.me.permissions?.includes(cap) ?? false
   const groups: NavGroup[] = [
     {
       title: 'Meu dia',
@@ -73,7 +75,7 @@ export default function WorkspaceLayout() {
     {
       title: 'Meu RH',
       items: [
-        { to: 'solicitacoes', label: 'Férias e solicitações', Icon: ClipboardList, badge: lead ? 0 : c.my_open_requests },
+        { to: 'solicitacoes', label: 'Férias e solicitações', Icon: ClipboardList, badge: can('requests.review') ? 0 : c.my_open_requests },
         { to: 'recebimentos', label: 'Holerites e recebimentos', Icon: Wallet, badge: c.new_payslips },
         { to: 'metas', label: 'Metas', Icon: Target },
         { to: 'desenvolvimento', label: 'Desenvolvimento', Icon: GraduationCap },
@@ -82,26 +84,18 @@ export default function WorkspaceLayout() {
     },
     { title: 'Empresa', items: [{ to: 'equipe', label: 'Pessoas', Icon: Users }, { to: 'organograma', label: 'Organograma', Icon: Network }, { to: 'vagas', label: 'Vagas', Icon: Briefcase }] },
   ]
-  if (info.me.can_see_dashboard) {
+  const company = groups[groups.length - 1].items
+  if (can('dashboard.view')) {
     groups.splice(groups.length - 1, 0, { title: 'Diretoria', items: [{ to: 'painel', label: 'Painel da diretoria', Icon: LayoutDashboard }] })
   }
-  if (info.me.is_admin) {
-    groups[groups.length - 1].items.push({ to: 'comecar', label: 'Primeiros passos', Icon: Rocket })
-    groups[groups.length - 1].items.push({ to: 'configuracoes', label: 'Papéis e estrutura', Icon: Settings2 })
-    groups[groups.length - 1].items.push({ to: 'auditoria', label: 'Auditoria', Icon: ScrollText })
-  }
-  if (lead || info.me.can_see_dashboard) {
-    groups[groups.length - 1].items.push({ to: 'relatorios', label: 'Relatórios', Icon: FileBarChart })
-  }
-  if (lead) {
-    groups.splice(2, 0, {
-      title: 'Gestão',
-      items: [
-        { to: 'solicitacoes?aba=aprovar', label: 'Aprovações', Icon: CheckCircle2, badge: c.requests_to_review },
-        { to: 'ponto?aba=time', label: 'Ponto do time', Icon: Clock },
-      ],
-    })
-  }
+  if (can('onboarding.view')) company.push({ to: 'comecar', label: 'Primeiros passos', Icon: Rocket })
+  if (can('roles.view')) company.push({ to: 'configuracoes', label: 'Papéis e estrutura', Icon: Settings2 })
+  if (can('audit.view')) company.push({ to: 'auditoria', label: 'Auditoria', Icon: ScrollText })
+  if (can('reports.view')) company.push({ to: 'relatorios', label: 'Relatórios', Icon: FileBarChart })
+  const management: NavItem[] = []
+  if (can('requests.review')) management.push({ to: 'solicitacoes?aba=aprovar', label: 'Aprovações', Icon: CheckCircle2, badge: c.requests_to_review })
+  if (can('time.team')) management.push({ to: 'ponto?aba=time', label: 'Ponto do time', Icon: Clock })
+  if (management.length) groups.splice(2, 0, { title: 'Gestão', items: management })
   const mobileTabs: NavItem[] = [
     { to: '', label: 'Início', Icon: Home, end: true },
     { to: 'ponto', label: 'Ponto', Icon: Clock },
