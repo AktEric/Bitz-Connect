@@ -51,7 +51,7 @@ function EntryForm({ entry, onSave, onClose, saving, error }: { entry?: CareerEn
 }
 
 /** Linha do tempo da pessoa na empresa. Todos leem; só o RH/dono edita (o servidor confirma). */
-export default function ProfileCareer({ slug, uuid }: { slug: string; uuid: string }) {
+export default function ProfileCareer({ slug, uuid, editable = false }: { slug: string; uuid: string; editable?: boolean }) {
   const qc = useQueryClient()
   const key = ['ws', slug, 'career', uuid]
   const { data, isLoading } = useQuery({ queryKey: key, queryFn: () => workspaceService.career(slug, uuid) })
@@ -65,12 +65,13 @@ export default function ProfileCareer({ slug, uuid }: { slug: string; uuid: stri
   const remove = useMutation({ mutationFn: (entry: string) => workspaceService.deleteCareer(slug, uuid, entry), onSuccess: (r) => qc.setQueryData(key, r) })
 
   if (isLoading || !data) return <Spinner />
+  const canEdit = editable && data.can_edit
 
   return (
     <Panel>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 font-semibold text-gray-900"><Briefcase className="h-4 w-4 text-brand-500" /> Carreira na empresa</h2>
-        {data.can_edit && <button type="button" className={btnGhost} onClick={() => { setError(''); setForm('new') }}><Plus size={14} /> Adicionar etapa</button>}
+        {canEdit && <button type="button" className={btnGhost} onClick={() => { setError(''); setForm('new') }}><Plus size={14} /> Adicionar etapa</button>}
       </div>
 
       {!data.items.length ? <Empty text="Ainda não há histórico de carreira registrado." /> : (
@@ -86,7 +87,7 @@ export default function ProfileCareer({ slug, uuid }: { slug: string; uuid: stri
               <p className="text-sm text-gray-600">{[e.department, period(e)].filter(Boolean).join(' · ')}</p>
               <p className="text-xs text-gray-400" title={`${ym(e.started_on)} – ${e.ended_on ? ym(e.ended_on) : 'atual'}`}>{duration(e)}</p>
               {e.note && <p className="mt-1 text-sm text-gray-500">{e.note}</p>}
-              {data.can_edit && (
+              {canEdit && (
                 <div className="mt-1 flex gap-3 text-xs text-gray-400">
                   <button type="button" className="inline-flex items-center gap-1 hover:text-gray-700" onClick={() => { setError(''); setForm(e) }}><Pencil size={12} /> Editar</button>
                   <button type="button" className="inline-flex items-center gap-1 hover:text-red-500" onClick={() => { if (confirm('Remover esta etapa do histórico?')) remove.mutate(e.uuid) }}><Trash2 size={12} /> Remover</button>

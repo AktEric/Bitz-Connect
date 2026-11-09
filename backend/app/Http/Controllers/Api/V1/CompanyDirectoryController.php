@@ -253,6 +253,14 @@ class CompanyDirectoryController extends Controller
                 if ($manager->user_id === $user->id) {
                     return $this->error('Uma pessoa não pode ser gestora de si mesma.', [], 422);
                 }
+                // sem ciclos: o novo gestor não pode estar abaixo desta pessoa na hierarquia
+                $cursor = $manager;
+                for ($i = 0; $cursor && $i < 20; $i++) {
+                    if ($cursor->manager_id === $user->id) {
+                        return $this->error('Isso criaria um ciclo na hierarquia (o gestor escolhido já responde a esta pessoa).', [], 422);
+                    }
+                    $cursor = $cursor->manager_id ? HotelUser::where('hotel_id', $hotel->id)->where('user_id', $cursor->manager_id)->first() : null;
+                }
             }
             $changes['manager_id'] = $manager?->user_id;
         }

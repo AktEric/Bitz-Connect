@@ -11,7 +11,7 @@ import type { PersonProfileFields } from '@/types/workspace.types'
 import { ProfileFacts, RecordSection } from './PersonCardModal'
 import ProfileCareer from './ProfileCareer'
 import ProfileOrg from './ProfileOrg'
-import ProfileSalary, { SalaryAdminField } from './ProfileSalary'
+import ProfileSalary from './ProfileSalary'
 import { useCan } from './permissions'
 import { Empty, Panel, Spinner, btnPrimary, errMsg, fmtDate, inputCls, labelCls, timeAgo, useWs } from './ui'
 
@@ -113,7 +113,7 @@ export default function ProfileView({ uuid, self }: { uuid: string; self: boolea
 
   const tabs: { key: Tab; label: string }[] = [{ key: 'social', label: 'Perfil social' }, { key: 'career', label: 'Carreira' }]
   if (self) tabs.push({ key: 'salary', label: 'Salário' })
-  if (self || canManagePeople) tabs.push({ key: 'record', label: 'Dados cadastrais' })
+  if (self) tabs.push({ key: 'record', label: 'Dados cadastrais' })
   if (self) tabs.push({ key: 'notices', label: 'Avisos' })
   tabs.push({ key: 'team', label: 'Equipe e liderança' })
   const b = card.birthday
@@ -139,6 +139,7 @@ export default function ProfileView({ uuid, self }: { uuid: string; self: boolea
             {b && <span className="inline-flex items-center gap-1"><Cake className="h-3 w-3" /> {b.day} de {MONTHS[b.month - 1]}</span>}
             {msg && <span role="status" className="text-brand-600">{msg}</span>}
           </p>
+          {canManagePeople && !self && <Link to={`/w/${slug}/cadastro?pessoa=${uuid}`} className="mt-1 inline-block text-xs font-medium text-brand-600 hover:underline">Abrir no Cadastro de pessoas</Link>}
         </div>
       </Panel>
 
@@ -154,7 +155,7 @@ export default function ProfileView({ uuid, self }: { uuid: string; self: boolea
       <div role="tabpanel">
         {tab === 'social' && (self ? <SocialEditor slug={slug} /> : <Panel><ProfileFacts profile={card.profile as unknown as Record<string, string | null>} /></Panel>)}
         {tab === 'salary' && self && <ProfileSalary slug={slug} />}
-        {tab === 'record' && <Panel><RecordSection slug={slug} uuid={uuid} />{canManagePeople && <div className="mt-5 border-t border-gray-100 pt-4"><SalaryAdminField slug={slug} uuid={uuid} /></div>}</Panel>}
+        {tab === 'record' && self && <Panel><RecordSection slug={slug} uuid={uuid} /></Panel>}
         {tab === 'notices' && <Notices />}
         {tab === 'career' && <ProfileCareer slug={slug} uuid={uuid} />}
         {tab === 'team' && <ProfileOrg slug={slug} uuid={uuid} />}

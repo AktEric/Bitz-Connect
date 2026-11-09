@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   Home, Clock, Newspaper, Users, ClipboardList, Wallet, Target, GraduationCap, MessageSquare,
-  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Moon, Sun, Globe, CheckCircle2, ChevronDown, Store,
+  Menu, X, Settings2, CalendarDays, ShieldCheck, ScrollText, Search, LayoutDashboard, Rocket, FileBarChart, ArrowLeftRight, LogOut, Briefcase, HeartPulse, Network, Moon, Sun, Globe, CheckCircle2, ChevronDown, Store, UserCog,
 } from 'lucide-react'
 import { useWorkspaceInfo } from '@/hooks/useWorkspace'
 import type { Capability } from '@/types/workspace.types'
@@ -93,6 +93,7 @@ function WorkspaceShell() {
   if (can('dashboard.view')) {
     groups.splice(groups.length - 1, 0, { title: 'Diretoria', items: [{ to: 'painel', label: 'Painel da diretoria', Icon: LayoutDashboard }] })
   }
+  if (can('people.manage')) company.push({ to: 'cadastro', label: 'Cadastro de pessoas', Icon: UserCog })
   if (can('onboarding.view')) company.push({ to: 'comecar', label: 'Primeiros passos', Icon: Rocket })
   if (can('roles.view')) company.push({ to: 'configuracoes', label: 'Papéis e estrutura', Icon: Settings2 })
   if (can('audit.view')) company.push({ to: 'auditoria', label: 'Auditoria', Icon: ScrollText })
